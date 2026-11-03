@@ -85,7 +85,7 @@
       }));
     fill('watch', watch, 'Waiting for migrations…');
     fill('agents', s.agents.map(function (a) {
-      var stale = !a.ts || Date.now() / 1000 - a.ts > 120;
+      var stale = !a.ts || Date.now() / 1000 - a.ts > 300;
       var n = item(a.name[0].toUpperCase() + a.name.slice(1), (a.enabled ? 'On' : 'Paused') + ' · ' + ago(a.ts));
       n.firstChild.firstChild.prepend(el('span', 'dot ' + (!a.enabled ? 'none' : stale ? 'stale' : 'ok'))); return n;
     }));
@@ -98,7 +98,7 @@
                 'scanner.min_liquidity_usd', 'scanner.max_top10_pct', 'analyst.min_score', 'desk.report_time'];
     fill('settings', keys.filter(function (k) { return k in s.settings; }).map(function (k) { return item(k, null, String(s.settings[k]), 'mu'); }));
     $('hostnote').textContent = s.hosting === 'A' ? 'Plan A: live API.' : 'Plan B: read-only snapshot every 15s. Change settings in Telegram (e.g. "set stop to -8%").';
-    var age = Date.now() / 1000 - s.ts, lv = $('live'); lv.className = 'live ' + (age < 60 ? 'ok' : 'stale'); lv.lastChild.textContent = 'Updated ' + ago(s.ts);
+    var age = Date.now() / 1000 - s.ts, lv = $('live'); lv.className = 'live ' + (age < 180 ? 'ok' : 'stale'); lv.lastChild.textContent = 'Updated ' + ago(s.ts);
   }
 
   var KIND = { bought: 'up', sold: 'mu', stopped: 'dn', rejected: 'mu' };
