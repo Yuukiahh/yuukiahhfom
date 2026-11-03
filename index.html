@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>FOMO Desk</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">Desk <span class="badge paper" id="badge">PAPER</span></div>
+  <div class="live" id="live"><i></i><span>—</span></div>
+</header>
+
+<main>
+  <section class="tab active" id="tab-home">
+    <div class="hero">
+      <div class="label">Equity</div>
+      <div class="big" id="equity">$—</div>
+      <div class="delta" id="delta">—</div>
+    </div>
+    <canvas id="chart" class="chart"></canvas>
+    <div class="ranges" id="ranges">
+      <button data-h="1">1H</button><button data-h="6">6H</button><button data-h="24" class="on">1D</button><button data-h="48">2D</button>
+    </div>
+    <div class="row stats">
+      <div><span>Stack</span><b id="cash">—</b></div>
+      <div><span>Realized</span><b id="realized">—</b></div>
+      <div><span>Open</span><b id="unreal">—</b></div>
+    </div>
+    <h2>Positions</h2>
+    <div class="list" id="positions"></div>
+    <h2>Watchlist</h2>
+    <div class="list" id="watch"></div>
+  </section>
+
+  <section class="tab" id="tab-agents">
+    <h1>Agents</h1>
+    <div class="list" id="agents"></div>
+    <p class="note">Executor and Risk never place orders. Ideas arrive in Telegram with a button to the coin on FOMO.</p>
+  </section>
+
+  <section class="tab" id="tab-activity">
+    <h1>Activity</h1>
+    <div class="list" id="activity"></div>
+  </section>
+
+  <section class="tab" id="tab-account">
+    <h1>Account</h1>
+    <div class="list" id="account"></div>
+    <h2>Settings</h2>
+    <div class="list" id="settings"></div>
+    <div class="list">
+      <button class="btn" id="forget">Forget this device</button>
+    </div>
+    <p class="note" id="hostnote"></p>
+  </section>
+
+  <section class="sheet" id="coin" hidden>
+    <div class="sheet-top"><button class="back" id="coin-back">‹</button><span id="coin-title"></span></div>
+    <div class="hero"><div class="big" id="coin-price">—</div><div class="delta" id="coin-delta"></div></div>
+    <canvas id="coin-chart" class="chart"></canvas>
+    <a class="btn primary" id="coin-open" target="_blank" rel="noopener">Buy on FOMO</a>
+    <h2>Safety gate</h2><div class="list" id="coin-gate"></div>
+    <h2>Signal</h2><div class="list" id="coin-signal"></div>
+  </section>
+
+  <div class="empty" id="locked" hidden>
+    <h1>Locked</h1><p>Open this app with your private link.</p>
+  </div>
+</main>
+
+<nav class="tabs">
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10h-6v-6H9v6H3z"/></svg>Home</button>
+  <button data-tab="agents"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Agents</button>
+  <button data-tab="activity"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Activity</button>
+  <button data-tab="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6 19c2-3 10-3 12 0"/></svg>Account</button>
+</nav>
+<script src="chart.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+:root{--bg:#000;--card:#0d0d0f;--line:#1c1c1f;--txt:#fff;--mut:#8e8e93;--up:#00c805;--dn:#ff5000;--acc:#00c805;
+  --safe-t:env(safe-area-inset-top);--safe-b:env(safe-area-inset-bottom)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body.down{--acc:var(--dn)}
+.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:calc(10px + var(--safe-t)) 18px 10px;background:rgba(0,0,0,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.2px}
+.badge{font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;margin-left:6px;vertical-align:2px}
+.badge.paper{background:#ffd60a;color:#000}.badge.live{background:#ff5000;color:#000}
+.live{color:var(--mut);font-size:12px;display:flex;gap:6px;align-items:center}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--mut);display:inline-block}
+.live.ok i{background:var(--up)} .live.stale i{background:var(--dn)}
+main{padding:0 18px calc(90px + var(--safe-b))}
+.tab{display:none}.tab.active{display:block}
+h1{font-size:30px;font-weight:700;letter-spacing:-.6px;margin:12px 0 14px}
+h2{font-size:20px;font-weight:700;margin:26px 0 8px;letter-spacing:-.3px}
+.hero{padding:8px 0 4px}.label{color:var(--mut);font-size:14px}
+.big{font-size:38px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.delta{font-size:15px;font-weight:600;color:var(--acc)}
+.chart{width:100%;height:220px;display:block;margin:6px 0 2px;touch-action:none}
+.ranges{display:flex;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.ranges button{flex:1;background:none;border:0;color:var(--acc);font-weight:700;font-size:13px;padding:7px 0;border-radius:8px}
+.ranges button.on{background:var(--acc);color:#000}
+.row.stats{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line)}
+.row.stats div{display:flex;flex-direction:column}.row.stats span{color:var(--mut);font-size:12px}
+.row.stats b{font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column}
+.item{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line);gap:12px;color:inherit;text-decoration:none}
+.item .l{min-width:0}.item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .s{color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{min-width:84px;text-align:center;padding:7px 10px;border-radius:8px;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.pill.up{background:var(--up);color:#000}.pill.dn{background:var(--dn);color:#000}.pill.mu{background:#2c2c2e;color:#fff}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px}
+.dot.ok{background:var(--up)}.dot.degraded{background:#ffd60a}.dot.none,.dot.disabled{background:#48484a}.dot.stale{background:var(--dn)}
+.note{color:var(--mut);font-size:13px;margin-top:18px}
+.empty{padding:80px 0;text-align:center;color:var(--mut)}
+.btn{display:block;width:100%;margin:16px 0 0;padding:14px;border-radius:24px;border:0;background:#1c1c1e;color:#fff;font-weight:700;font-size:16px;text-align:center;text-decoration:none}
+.btn.primary{background:var(--acc);color:#000}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);padding:6px 0 calc(6px + var(--safe-b));z-index:6}
+.tabs button{flex:1;background:none;border:0;color:var(--mut);font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.tabs button.on{color:#fff}
+.sheet{position:fixed;inset:0;background:#000;z-index:10;overflow:auto;padding:calc(8px + var(--safe-t)) 18px calc(30px + var(--safe-b))}
+.sheet-top{display:flex;align-items:center;gap:8px;font-weight:700}
+.back{background:none;border:0;color:var(--acc);font-size:34px;line-height:1;padding:0 8px 0 0}
+input.set{background:#1c1c1e;border:0;border-radius:8px;color:#fff;padding:7px 9px;width:110px;text-align:right;font:inherit}
