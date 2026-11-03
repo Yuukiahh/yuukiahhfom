@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>FOMO Desk</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>body{background:#000;color:#fff;font:16px -apple-system,system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}</style>
+</head>
+<body>
+<p id="m">Unlocking…</p>
+<script>
+(function () {
+  var LS = localStorage;
+  var h = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var q = new URLSearchParams(location.search);
+  ['d', 't', 'b'].forEach(function (k) {
+    var v = h.get(k) || q.get(k);
+    if (v) LS.setItem('desk_' + k, v);
+  });
+  if (!LS.getItem('desk_d') && !LS.getItem('desk_t')) {
+    document.getElementById('m').textContent = 'Missing private link. Ask fomo for the unlock URL.';
+    return;
+  }
+  // Land on the app without secrets in the URL; localStorage already set.
+  location.replace('./index.html');
+})();
+</script>
+</body>
+</html>
