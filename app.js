@@ -5,8 +5,15 @@
   var LS = window.localStorage;
   (function () {
     var h = new URLSearchParams(location.hash.replace(/^#/, ''));
-    ['d', 't', 'b'].forEach(function (k) { if (h.get(k)) LS.setItem('desk_' + k, h.get(k)); });
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    var q = new URLSearchParams(location.search);
+    ['d', 't', 'b'].forEach(function (k) {
+      var v = h.get(k) || q.get(k);
+      if (v) LS.setItem('desk_' + k, v);
+    });
+    // Strip secrets from the visible URL after storing them (hash + query).
+    if (location.hash || q.get('d') || q.get('t') || q.get('b')) {
+      history.replaceState(null, '', location.pathname);
+    }
   })();
   var D = LS.getItem('desk_d'), T = LS.getItem('desk_t'), B = LS.getItem('desk_b') || './d/';
   var POLL_MS = 15000, state = null, chartData = null, range = 24, scrub = false;
