@@ -1,5 +1,5 @@
 /* Service worker: prefer network for shell so updates land; never cache data JSON. */
-var SHELL = 'desk-shell-v3';
+var SHELL = 'desk-shell-v5';
 var FILES = ['./', 'index.html', 'app.css', 'app.js', 'chart.js', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(SHELL).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));

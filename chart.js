@@ -27,7 +27,7 @@
     var p = this.pts;
     var col = getComputedStyle(document.body).getPropertyValue('--acc').trim() || '#00c805';
     if (p.length < 2) {
-      g.strokeStyle = '#2c2c2e'; g.setLineDash([2, 4]); g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+      g.strokeStyle = '#3a2a3e'; g.setLineDash([2, 4]); g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
       return;
     }
     var min = Infinity, max = -Infinity;
@@ -36,14 +36,20 @@
     var pad = 12, X = function (i) { return (i / (p.length - 1)) * w; },
         Y = function (v) { return pad + (1 - (v - min) / (max - min)) * (h - 2 * pad); };
     // baseline (first value), dotted
-    g.strokeStyle = '#3a3a3c'; g.lineWidth = 1; g.setLineDash([1, 4]);
+    g.strokeStyle = '#4a3550'; g.lineWidth = 1; g.setLineDash([1, 4]);
     g.beginPath(); g.moveTo(0, Y(p[0][1])); g.lineTo(w, Y(p[0][1])); g.stroke(); g.setLineDash([]);
-    g.strokeStyle = col; g.lineWidth = 2; g.lineJoin = 'round'; g.beginPath();
+    // soft area fill under the line (visual only)
+    if (/^#[0-9a-f]{6}$/i.test(col)) {
+      var gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, col + '33'); gr.addColorStop(1, col + '00');
+      g.fillStyle = gr; g.beginPath(); g.moveTo(0, h);
+      p.forEach(function (q, i) { g.lineTo(X(i), Y(q[1])); }); g.lineTo(w, h); g.closePath(); g.fill();
+    }
+    g.strokeStyle = col; g.lineWidth = 2.4; g.lineJoin = 'round'; g.beginPath();
     p.forEach(function (q, i) { i ? g.lineTo(X(i), Y(q[1])) : g.moveTo(X(i), Y(q[1])); });
     g.stroke();
     if (this.hover != null) {
       var i = Math.round(this.hover * (p.length - 1)), x = X(i), y = Y(p[i][1]);
-      g.strokeStyle = '#48484a'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
+      g.strokeStyle = '#6a5070'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
       g.fillStyle = col; g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill();
     } else {
       var lx = X(p.length - 1), ly = Y(p[p.length - 1][1]);
