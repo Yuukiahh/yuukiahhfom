@@ -14,7 +14,20 @@ def db(x: float) -> float:
 
 
 def fft_len(n: int) -> int:
-    return 1 << int(np.ceil(np.log2(max(2, n))))
+    """Smallest 2^a*3^b*5^c >= n (fast for pocketfft, far less padding than the next power of two)."""
+    n = max(2, int(n))
+    best = 1 << int(np.ceil(np.log2(n)))
+    p5 = 1
+    while p5 < best:
+        p35 = p5
+        while p35 < best:
+            q = p35
+            while q < n:
+                q *= 2
+            best = min(best, q)
+            p35 *= 3
+        p5 *= 5
+    return best
 
 
 # ---------------------------------------------------------------- filters
@@ -47,11 +60,12 @@ def fft_chain(x: np.ndarray, sr: int, specs) -> np.ndarray:
     """Several zero-phase filters in one FFT. specs: [(kind, fc[, q[, order]]), ...]"""
     n = x.shape[0]
     L = fft_len(n + 64)
-    X = np.fft.rfft(x, L, axis=0)
+    X = np.fft.rfft(x.astype(np.float32, copy=False) if n > 1_000_000 else x, L, axis=0)
     f = np.fft.rfftfreq(L, 1 / sr)
     h = np.ones_like(f)
     for sp in specs:
         h = h * _resp(*((sp[0], f) + tuple(sp[1:])))
+    h = h.astype(X.real.dtype)
     return np.fft.irfft(X * (h[:, None] if x.ndim == 2 else h), L, axis=0)[:n].astype(x.dtype, copy=False)
 
 

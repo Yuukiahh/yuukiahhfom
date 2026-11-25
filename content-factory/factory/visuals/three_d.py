@@ -242,7 +242,7 @@ class Renderer:
                 if one.any():
                     self._push(self._coarse, xh[one], yh[one], ch[one], self.Wc, self.Hc)
                 if (~one).any():
-                    xl, yl, rl, cl = xh[~one], yh[~one], rh[~one] * 0.5, ch[~one] / 9
+                    xl, yl, rl, cl = xh[~one], yh[~one], np.minimum(rh[~one] * 0.5, 0.8), ch[~one] / 9
                     for ox in (-1, 0, 1):
                         for oy in (-1, 0, 1):
                             self._push(self._coarse, xl + ox * rl, yl + oy * rl, cl, self.Wc, self.Hc)
@@ -384,6 +384,9 @@ class Renderer:
         soft = self._accumulate(self._soft, self.Ws, self.Hs)
         if self._coarse:
             co = self._accumulate(self._coarse, self.Wc, self.Hc)
+            for _ in range(2):  # small separable [1 2 1] blur hides the tap lattice of big blobs
+                co[1:-1] = co[1:-1] * 0.5 + (co[:-2] + co[2:]) * 0.25
+                co[:, 1:-1] = co[:, 1:-1] * 0.5 + (co[:, :-2] + co[:, 2:]) * 0.25
             box = (0, 0, self.Ws / 4, self.Hs / 4)
             for c in range(3):
                 soft[..., c] += np.asarray(Image.fromarray(np.ascontiguousarray(co[..., c]), "F").resize(
@@ -456,7 +459,7 @@ class Scene3D(Scene):
     def make_sky(self, n=3500, rng=None, bright=1.0):
         rng = rng or self.rng
         self.sky_dir = random_dirs(rng, n).astype(np.float32)
-        b = rng.power(0.18, n) * 0.5 + rng.random(n) ** 30 * 2.5
+        b = 0.08 + rng.random(n) ** 5 * 0.9 + rng.random(n) ** 40 * 2.5
         tint = rng.choice(np.array([[1, 1, 1], [0.75, 0.85, 1], [1, 0.88, 0.7], [0.7, 0.8, 1]], np.float32), n)
         self.sky_col = (tint * b[:, None] * 160 * bright).astype(np.float32)
         self.sky_r = np.where(b > 1.2, 1.2, 0.0).astype(np.float32)
@@ -534,16 +537,17 @@ class Galaxy3D(Scene3D):
         rbx = np.sqrt(vb[:, 0] ** 2 + vb[:, 2] ** 2)
         bcol = lerp_col((255, 236, 205), (255, 180, 110), np.clip(rb / 0.3, 0, 1)) * (11 * np.exp(-rb / 0.25))[:, None]
         # ---- knots (HII regions pink, young clusters blue)
-        nk = 90
-        kr = rng.uniform(0.28, 1.15, nk)
+        nk = 140
+        kr = 0.2 + 0.95 * rng.random(nk) ** 0.8
         ka = rng.integers(0, arms, nk)
         kth = np.log(kr / 0.06) / tanp + ka * armw + rng.normal(0, 0.08, nk)
-        per = max(8, int(n * 0.10 / nk))
+        per = max(8, int(n * 0.07 / nk))
         kidx = np.repeat(np.arange(nk), per)
-        kx = kr[kidx] * np.cos(kth[kidx]) + rng.normal(0, 0.018, len(kidx))
-        kz = kr[kidx] * np.sin(kth[kidx]) + rng.normal(0, 0.018, len(kidx))
+        ks = rng.uniform(0.006, 0.016, nk)[kidx]
+        kx = kr[kidx] * np.cos(kth[kidx]) + rng.normal(0, 1, len(kidx)) * ks
+        kz = kr[kidx] * np.sin(kth[kidx]) + rng.normal(0, 1, len(kidx)) * ks
         ky = rng.normal(0, 0.008, len(kidx))
-        pink = (np.arange(nk) % 2 == 0)[kidx]
+        pink = (rng.random(nk) < 0.45)[kidx]
         kcol = np.where(pink[:, None], np.array([255, 85, 165], np.float32), np.array([120, 165, 255], np.float32))
         kcol = kcol * (rng.random(len(kidx)) ** 2 * 30 + 6)[:, None]
         # ---- combine into polar arrays (radius in the plane, angle, height)
@@ -623,7 +627,7 @@ class Warp3D(Scene3D):
         zt = z + v * dt  # where it was a moment ago (farther away)
         head = np.stack([self.sx, self.sy, z], 1)
         tail = np.stack([self.sx, self.sy, zt], 1)
-        fade = smoothstep(self.L + near, self.L * 0.55, z) * smoothstep(near, near + 1.2, z)
+        fade = smoothstep(self.L + near, self.L * 0.3, z) * smoothstep(near, near + 1.2, z)
         # energy per streak roughly constant -> per-length brightness drops as streaks get long
         xa, ya, za, ia = R.project(head)
         xb, yb, zb, ib = R.project(tail)
@@ -691,8 +695,8 @@ class Globe3D(Scene3D):
         R, a, b = self.R, self.ca, self.cb
         azim = 0.3 + t * 0.12
         elev = 0.28 + 0.1 * math.sin(t * 0.15)
-        cam_pos = orbit((0, -0.15, 0), 3.7 - 0.25 * math.sin(t * 0.08), azim, elev)
-        R.begin(Camera(cam_pos, (0, -0.2, 0), fov=46, roll=0.05 * math.sin(t * 0.13)))
+        cam_pos = orbit((0, -0.15, 0), 6.4 - 0.4 * math.sin(t * 0.08), azim, elev)
+        R.begin(Camera(cam_pos, (0, -0.3, 0), fov=42, roll=0.05 * math.sin(t * 0.13)))
         self.draw_sky()
         M = (self.tilt @ rot_y(t * 0.22).astype(np.float32)).T  # row-vector convention
         view = cam_pos.astype(np.float32)
@@ -707,17 +711,17 @@ class Globe3D(Scene3D):
         L = self.land @ M
         f = facing(L)
         bright = np.where(f > 0, 0.35 + 0.65 * f, 0.10) * self.land_b
-        band = np.exp(-((L[:, 1] - scan) / 0.06) ** 2)
-        colL = lerp_col(a, (235, 255, 255), np.clip(band * 0.9 + (f > 0) * 0.15, 0, 1)) * (bright * (32 + 70 * band))[:, None]
-        R.points3d(L, colL, 0.0035, 0.0, bloom=0.45)
+        band = np.exp(-((L[:, 1] - scan) / 0.035) ** 2)
+        colL = lerp_col(a, (235, 255, 255), np.clip(band * 0.8, 0, 1)) * (bright * (30 + 60 * band))[:, None]
+        R.points3d(L, colL, 0.0, 0.5, bloom=0.5)
         O = self.ocean @ M
         fo = facing(O)
-        R.points3d(O, (b * 0.5 + a * 0.5) * (np.where(fo > 0, 6.0, 1.5))[:, None], 0.002, bloom=0)
+        R.points3d(O, (b * 0.5 + a * 0.5) * (np.where(fo > 0, 7.0, 1.5))[:, None], 0.0, 0.5, bloom=0)
         # wireframe
         A, B = self.segA @ M, self.segB @ M
         fa = facing((A + B) * 0.5)
         wb = np.where(fa > 0, 0.55 + 0.45 * fa, 0.12)
-        R.lines3d(A, B, b[None, :] * 0.55 * wb[:, None] + a * 0.15, width=0.0, bloom=0.3)
+        R.lines3d(A, B, (b * 0.35 + a * 0.25)[None, :] * wb[:, None], width=0.9, bloom=0.4)
         # atmospheric rim: tangent circle of the sphere seen from the camera
         d = float(np.linalg.norm(cam_pos))
         nrm = cam_pos / d
@@ -727,12 +731,12 @@ class Globe3D(Scene3D):
         w = np.cross(nrm, u)
         th = np.linspace(0, TAU, 900, endpoint=False)
         rim = cen + rr * (np.cos(th)[:, None] * u + np.sin(th)[:, None] * w)
-        for scale, colr, s in ((1.0, a * 0.9, 0.0), (1.035, a * 1.6, 0.0), (1.08, b * 2.5, 0.0)):
+        for scale, colr in ((1.0, a * 1.6), (1.03, a * 5.0), (1.07, b * 4.0)):
             x, y, z, _ = R.project(rim * scale)
             if scale == 1.0:
-                R.points(x, y, np.broadcast_to(colr * 2.2, (len(x), 3)), 1.2, bloom=1.2)
+                R.points(x, y, np.broadcast_to(colr, (len(x), 3)), 1.2, bloom=1.5)
             else:
-                R.soft(x, y, np.broadcast_to(colr * 9, (len(x), 3)))
+                R.soft(x, y, np.broadcast_to(colr, (len(x), 3)))
         # orbit rings with satellites and trails
         for rad, Mt, sp, phases in self.rings:
             P = (self.ring_unit[:-1] * rad) @ Mt.T
@@ -859,40 +863,49 @@ class Neural3D(Scene3D):
 
     def frame(self, t):
         R, a, b = self.R, self.ca, self.cb
-        cam = orbit((0, 0, 0), 6.2 - 0.6 * math.sin(t * 0.1), 0.4 + t * 0.16, 0.25 * math.sin(t * 0.12))
-        R.begin(Camera(cam, (0, 0, 0), fov=52, roll=0.08 * math.sin(t * 0.1)))
+        cam = orbit((0, 0, 0), 7.4 - 0.8 * math.sin(t * 0.1), 0.4 + t * 0.14, 0.22 * math.sin(t * 0.12))
+        R.begin(Camera(cam, (0, 0, 0), fov=50, roll=0.08 * math.sin(t * 0.1)))
         self.draw_sky()
+        view = cam.astype(np.float32)
         x, y, z, inv = R.project(self.dust)
         m = z > 0.3
-        R.points(x[m], y[m], self.dust_c[m] * 40, np.clip(0.03 * inv[m], 0.5, 40), bloom=0)
+        R.points(x[m], y[m], self.dust_c[m] * 60, np.clip(0.025 * inv[m], 0.5, 60), bloom=0)
+
+        def fog(P):
+            return np.exp(-np.maximum(np.linalg.norm(P - view, axis=1) - 5.5, 0) / 4.5).astype(np.float32)
+
         A, B = self.nodes[self.ei], self.nodes[self.ej]
-        view = cam.astype(np.float32)
-        fog = lambda P: np.exp(-np.maximum(np.linalg.norm(P - view, axis=1) - 4.0, 0) / 5.0)
         fe = fog((A + B) * 0.5)
-        R.lines3d(A, B, (a * 0.5)[None, :] * fe[:, None] * 0.7 + 4, width=0.6, width_world=0.003, bloom=0.4)
-        # pulses
-        f = (t * self.sp + self.ph) % 1.0
-        f = np.where(self.dir, f, 1 - f)
-        src, dst = np.where(self.dir[:, None], A, B), np.where(self.dir[:, None], B, A)
-        fwd = (t * self.sp + self.ph) % 1.0
-        ntr = 14
-        tr = np.linspace(0, 0.18, ntr, dtype=np.float32)
-        ff = np.clip(fwd[:, None] - tr[None, :], 0, 1)
+        R.lines3d(A, B, (a * 0.42 + b * 0.08)[None, :] * fe[:, None], width=1.0, bloom=0.5)
+        # pulses: each edge fires periodically (active ~40% of the time), short comet trail
+        cyc = 2.4
+        ph = (t * self.sp + self.ph * cyc) % cyc
+        act = ph < 1.0
+        f = np.clip(ph, 0, 1)
+        src = np.where(self.dir[:, None], A, B)
+        dst = np.where(self.dir[:, None], B, A)
+        ntr = 10
+        tr = np.linspace(0, 0.14, ntr, dtype=np.float32)
+        ff = np.clip(f[:, None] - tr[None, :], 0, 1)
         P = (src[:, None, :] + (dst - src)[:, None, :] * ff[..., None]).reshape(-1, 3)
-        w = np.exp(-tr * 18)[None, :] * (fwd[:, None] >= tr[None, :]) * smoothstep(0, 0.08, fwd)[:, None]
-        w = (w * smoothstep(1.0, 0.85, fwd)[:, None] * fe[:, None]).ravel()
-        cols = lerp_col(b, (240, 255, 255), w)[..., :] * (w * 70)[:, None]
-        R.points3d(P, cols, 0.012 + 0.0 * w, bloom=0.9)
+        w = np.exp(-tr * 22)[None, :] * (f[:, None] >= tr[None, :]) * act[:, None]
+        w = (w * smoothstep(1.0, 0.9, f)[:, None] * fe[:, None]).ravel()
+        keep = w > 0.01
+        cols = lerp_col(b, (235, 255, 255), w[keep] ** 2) * (w[keep] * 90)[:, None]
+        R.points3d(P[keep], cols, 0.0, 1.4, bloom=1.0)
         # nodes: fire when a pulse arrives
-        arrive = np.exp(-((fwd - 1.0) / 0.06) ** 2) + np.exp(-(fwd / 0.05) ** 2) * 0.4
+        arrive = np.exp(-((ph - 1.0) / 0.08) ** 2) * (ph >= 0.9)
         fire = np.zeros(len(self.nodes), np.float32)
         np.add.at(fire, np.where(self.dir, self.ej, self.ei), arrive.astype(np.float32))
-        fire = np.clip(fire, 0, 1.5)
-        fn = fog(self.nodes)
-        colN = lerp_col(a, (255, 230, 255), np.clip(fire, 0, 1)) * ((35 + 90 * fire) * fn)[:, None]
-        R.points3d(self.nodes, colN, 0.03 * self.nsize, bloom=1.0)
-        R.points3d(self.nodes, colN * 0.6 + b * 4, 0.12 * self.nsize, bloom=0)  # halo
-        return R.finish(base=None, bloom=(0.7, 0.6), radii=(1.5, 8.0))
+        fire = np.clip(fire, 0, 1.2)
+        fn = fog(self.nodes)[:, None]
+        hot = lerp_col(a, (255, 235, 255), np.clip(fire, 0, 1))
+        R.points3d(self.nodes, hot * (220 + 300 * fire)[:, None] * fn, 0.006 * self.nsize, 1.4, bloom=1.2)
+        _, _, _, ninv = R.project(self.nodes)
+        hr = 0.09 * self.nsize * ninv
+        R.points3d(self.nodes, (a * 0.8 + b * 0.2) * ((0.04 + 0.3 * fire) * math.pi * hr * hr)[:, None] * fn,
+                   0.09 * self.nsize, 0.0, bloom=0)
+        return R.finish(bloom=(0.75, 0.65), radii=(1.5, 8.0))
 
 
 # ======================================================================== 6. terrain
@@ -909,8 +922,8 @@ class Terrain3D(Scene3D):
         fine = periodic_noise((self.Tz, 64), rng, beta=1.4)[:, :self.C]
         xs = (np.arange(self.C) - (self.C - 1) / 2) * self.dx
         self.xs = xs.astype(np.float32)
-        valley = smoothstep(1.6, 11.0, np.abs(xs)) ** 1.3
-        h = (noise ** 1.6) * 9.0 * valley[None, :] + fine * 0.35 * (0.3 + valley[None, :])
+        valley = smoothstep(1.2, 9.0, np.abs(xs)) ** 1.2
+        h = (noise ** 1.5) * 14.0 * valley[None, :] + fine * 0.3 * (0.3 + valley[None, :])
         self.hmap = h.astype(np.float32)
         self.hmax = float(h.max())
         self.ca, self.cb = _pal(self.p, "pink")
@@ -923,7 +936,7 @@ class Terrain3D(Scene3D):
         self.hy = float(hy[0])
         yy = np.arange(H, dtype=np.float32)[:, None]
         v = np.clip((self.hy - yy) / self.hy, 0, 1)
-        sky = lerp_col((255, 70, 150), (8, 3, 25), v[..., 0] ** 0.55)[:, None, :] * 0.85
+        sky = lerp_col((150, 30, 110), (4, 2, 16), v[..., 0] ** 0.45)[:, None, :]
         sky = np.repeat(sky.reshape(H, 1, 3), W, 1)
         st = np.zeros((H, W, 3), np.float32)
         ns = int(W * H * 0.0004)
@@ -935,14 +948,14 @@ class Terrain3D(Scene3D):
         scx, scy = W * 0.5, self.hy - sr * 0.42
         dd = np.sqrt((xx - scx) ** 2 + (yy - scy) ** 2)
         sg = np.clip((yy - (scy - sr)) / (2 * sr), 0, 1)
-        sun_col = lerp_col((255, 235, 120), (255, 50, 150), sg ** 0.9)
+        sun_col = lerp_col((255, 225, 90), (255, 40, 140), sg ** 1.1)
         stripes = ((yy - scy) / sr * 10 + 0.0) % 1.0 > np.clip((yy - scy + sr * 0.15) / sr, 0, 0.75) * 0.9
         disc = np.clip(sr - dd + 0.5, 0, 1) * stripes
         sky = sky * (1 - disc[..., None]) + sun_col * disc[..., None] * 1.05
-        glow = np.exp(-np.clip(dd - sr, 0, None) / (W * 0.12))[..., None] * np.array([255, 80, 140], np.float32) * 0.35
+        glow = np.exp(-np.clip(dd - sr, 0, None) / (W * 0.10))[..., None] * np.array([255, 60, 150], np.float32) * 0.3
         self.sky = (sky + glow).astype(np.float32)
         gy = np.clip((yy - self.hy) / (H - self.hy), 0, 1)
-        self.ground = (lerp_col((70, 10, 70), (6, 2, 14), gy[..., 0] ** 0.35)[:, None, :] * np.ones((1, W, 1), np.float32))
+        self.ground = (lerp_col((40, 6, 46), (3, 1, 8), gy[..., 0] ** 0.3)[:, None, :] * np.ones((1, W, 1), np.float32))
         self.cols_x = np.arange(W, dtype=np.float32)
 
     def frame(self, t):
@@ -964,14 +977,16 @@ class Terrain3D(Scene3D):
         inv = inv.reshape(Hm.shape)
         # occlusion horizon: for each row, the min screen-y of all nearer rows (per pixel column)
         big = 1e6
-        yrow = np.stack([np.interp(self.cols_x, sx[i], sy[i], left=big, right=big) for i in range(self.rows)])
+        rev = sx[0, 0] > sx[0, -1]  # np.interp needs increasing x
+        sxi, syi = (sx[:, ::-1], sy[:, ::-1]) if rev else (sx, sy)
+        yrow = np.stack([np.interp(self.cols_x, sxi[i], syi[i], left=big, right=big) for i in range(self.rows)])
         occ = np.minimum.accumulate(yrow, axis=0)
         occ_prev = np.vstack([np.full((1, self.W), big, np.float32), occ[:-1]])
         dist = sz
-        fogf = np.exp(-dist / 38.0) * smoothstep(self.rows * 1.0, self.rows * 0.7, dist)
+        fogf = (0.25 + 0.75 * np.exp(-dist / 22.0)) * smoothstep(self.rows * 1.0, self.rows * 0.6, dist)
         hn = np.clip(Hm / (self.hmax * 0.75), 0, 1)
-        col = lerp_col(self.ca, self.cb, hn) * (fogf * 1.15)[..., None]
-        col = col + np.array([255, 255, 255], np.float32) * (hn ** 3 * fogf * 0.3)[..., None]
+        col = lerp_col(self.ca, self.cb, hn ** 0.8) * (fogf * 1.9)[..., None]
+        col = col + np.array([255, 255, 255], np.float32) * (hn ** 3 * fogf * 0.5)[..., None]
         wid = np.clip(0.035 * inv, 0, 2.4)
         tol = 1.2
         # row segments
@@ -1014,7 +1029,7 @@ class Atom3D(Scene3D):
                 pos.append(c)
         self.nuc = np.array(pos, np.float32)
         self.proton = rng.random(len(pos)) < 0.5
-        self.sph = fib_sphere(700).astype(np.float32)
+        self.sph = fib_sphere(2200).astype(np.float32)
         self.nr = 0.115
         self.orbits = []
         for i, (rad, rx, rz, sp) in enumerate([(1.55, 0.25, 0.0, 1.3), (1.75, 1.15, 0.6, -1.05), (1.95, -1.0, -0.7, 0.9)]):
@@ -1032,7 +1047,7 @@ class Atom3D(Scene3D):
             sel = axis == ax
             keep[sel] = rng.random(sel.sum()) < d[sel, ax] ** 2
         self.cloud = (d * rr[:, None])[keep].astype(np.float32)
-        self.cloud_c = lerp_col(self.ca, self.cb, rng.random(keep.sum())) * 0.32
+        self.cloud_c = lerp_col(self.ca, self.cb, rng.random(keep.sum())) * 0.9
         self.light = _norm([-0.4, 0.7, -0.5]).astype(np.float32)
         self.make_sky(1500, bright=0.6)
 
@@ -1043,44 +1058,61 @@ class Atom3D(Scene3D):
         view = cam.astype(np.float32)
         self.draw_sky()
         R.points3d(self.cloud, self.cloud_c * 0.9, 0.006, bloom=0.2)
-        # nucleus: shaded spheres (front hemisphere), gentle breathing jiggle
-        jig = 0.012 * np.sin(t * 3.0 + np.arange(len(self.nuc))[:, None] * 1.7 + np.arange(3)[None, :])
+        # nucleus: dense point-sampled spheres, front hemisphere only, with true sphere-sphere occlusion
+        jig = 0.01 * np.sin(t * 2.6 + np.arange(len(self.nuc))[:, None] * 1.7 + np.arange(3)[None, :])
         C = self.nuc + jig.astype(np.float32)
+        nS = len(self.sph)
         P = (C[:, None, :] + self.sph[None, :, :] * self.nr).reshape(-1, 3)
         N = np.tile(self.sph, (len(C), 1))
+        own = np.repeat(np.arange(len(C)), nS)
         V = view - P
         V /= np.linalg.norm(V, axis=1, keepdims=True)
         fac = np.sum(N * V, 1)
-        keep = fac > 0
+        fr = fac > 0.0
+        P, N, V, fac, own = P[fr], N[fr], V[fr], fac[fr], own[fr]
+        oc = P[:, None, :] - C[None, :, :]
+        bq = np.einsum("mjk,mk->mj", oc, V)
+        cq = np.einsum("mjk,mjk->mj", oc, oc) - self.nr ** 2
+        disc = bq * bq - cq
+        hit = (disc > 0) & ((-bq - np.sqrt(np.maximum(disc, 0))) > 1e-3)
+        vis = ~hit.any(1)
+        P, N, V, fac, own = P[vis], N[vis], V[vis], fac[vis], own[vis]
         diff = np.clip(N @ self.light, 0, 1)
         Hh = V + self.light
         Hh /= np.linalg.norm(Hh, axis=1, keepdims=True)
-        spec = np.clip(np.sum(N * Hh, 1), 0, 1) ** 30
-        base = np.repeat(np.where(self.proton[:, None], np.array([255, 95, 70], np.float32), np.array([110, 170, 255], np.float32)), len(self.sph), 0)
-        rim = (1 - fac) ** 2
-        # nucleons nearer the camera are brighter (cheap depth sort substitute for additive blending)
-        dcen = np.linalg.norm(C - view, axis=1)
-        near = np.repeat(np.clip(1.4 - (dcen - dcen.min()) * 1.8, 0.35, 1.2), len(self.sph))
-        sh = (base * (0.15 + 0.85 * diff)[:, None] + (spec * 260)[:, None] + base * (rim * 0.6)[:, None]) * near[:, None]
-        R.points3d(P[keep], sh[keep] * 0.30, 0.007, bloom=0.4)
+        spec = np.clip(np.sum(N * Hh, 1), 0, 1) ** 40
+        cdir = C[own] / np.maximum(np.linalg.norm(C[own], axis=1, keepdims=True), 1e-3)
+        ao = np.clip(0.55 + 0.6 * np.sum(N * cdir, 1), 0.25, 1.0)
+        base = np.where(self.proton[own][:, None], np.array([255, 85, 55], np.float32), np.array([80, 150, 255], np.float32))
+        rim = (1 - fac) ** 3
+        sh = base * ((0.08 + 0.8 * diff) * ao)[:, None] + (spec * 255)[:, None] + base * (rim * 0.9)[:, None]
+        _, _, zc, invc = R.project(C[own])
+        area = 2 * math.pi * (self.nr * invc) ** 2 / nS  # px^2 covered by each surface sample
+        R.points3d(P, sh * area[:, None] * 0.9, 0.0, 1.1, bloom=0.35)
         cx, cy, _, ci = R.project(np.zeros((1, 3)))
-        R.soft(np.repeat(cx, 2), np.repeat(cy, 2), np.array([[255, 160, 120], [160, 190, 255]]) * 30)
+        R.points(np.repeat(cx, 2), np.repeat(cy, 2), np.array([[255, 140, 100], [140, 170, 255]]) * 2500,
+                 [0.45 * ci[0], 0.9 * ci[0]], bloom=0)
         # orbits, electrons with trails
         dn = float(np.linalg.norm(view))
         nrm = view / dn
         for rad, M, sp, ph in self.orbits:
             P = (self.circ * rad) @ M.T
             behind = (np.sum((P - view) * -nrm, 1) > dn) & (np.linalg.norm(np.cross(P - view, nrm), axis=1) < 0.42)
-            R.points3d(P, (a * 0.32)[None, :] * np.where(behind, 0.2, 1.0)[:, None], 0.0035, bloom=0.4)
+            fo = np.where(behind, 0.15, 1.0)[:, None]
+            R.lines3d(P, np.roll(P, -1, 0), (a * 0.30)[None, :] * fo, width=0.9, bloom=0.5)
             ang = ph + t * sp
             ntr = 140
             tr = np.linspace(0, 2.2, ntr) * np.sign(sp)
             angs = ang - tr
             S = np.stack([np.cos(angs), np.zeros_like(angs), np.sin(angs)], 1) * rad @ M.T
             fade = np.exp(-np.linspace(0, 5, ntr))
-            col = lerp_col(b, (255, 255, 255), fade ** 2) * (fade * 55)[:, None]
-            R.points3d(S, col, 0.006 + 0.03 * fade ** 3, bloom=0.8)
-            R.points3d(S[:1], np.array([[200, 240, 255]]) * 90, 0.09, bloom=1.0)
+            col = lerp_col(b, (255, 255, 255), fade ** 2) * (fade * 3.0)[:, None]
+            R.lines3d(S[:-1], S[1:], col[:-1], col[1:], width=0.8 + 1.8 * fade[:-1] ** 2, bloom=0.9)
+            R.points3d(S[:1], np.array([[200, 240, 255]]) * 2.2, 0.0, 2.6, bloom=1.0)
+            ex, ey, ez, ei = R.project(S[:1])
+            if ez[0] > 0.1:
+                hr = 0.12 * ei[0]
+                R.points(ex, ey, (b * 0.5 + 120)[None, :] * 0.22 * math.pi * hr * hr, hr, bloom=0)
         return R.finish(bloom=(0.7, 0.6), radii=(1.5, 8.0))
 
 
@@ -1115,7 +1147,15 @@ class DataCity3D(Scene3D):
                      roll=0.06 * math.sin(t * 0.33))
         R.begin(cam)
         W, H = self.W, self.H
-        canvas = Image.fromarray(np.ascontiguousarray(np.repeat(self.bg[:, None, :], W, 1)).astype(np.uint8))
+        hx, hy, _, _ = R.project(np.array([[cam.pos[0], cy, cz + 2000.0]]))
+        hy = float(hy[0])
+        yy = np.arange(H, dtype=np.float32)
+        above = np.clip((hy - yy) / max(hy, 1.0), 0, 1)
+        below = np.clip((yy - hy) / max(H - hy, 1.0), 0, 1)
+        col = np.where((yy < hy)[:, None], lerp_col((46, 16, 80), (2, 3, 12), above ** 0.5),
+                       lerp_col((22, 8, 40), (2, 2, 6), below ** 0.35))
+        col += (np.exp(-np.abs(yy - hy) / (H * 0.025))[:, None] * np.array([90, 40, 140], np.float32))
+        canvas = Image.fromarray(np.clip(col, 0, 255).astype(np.uint8)[:, None, :]).resize((W, H), Image.NEAREST)
         d = ImageDraw.Draw(canvas)
         Rm = cam.R.astype(np.float64)
         cpos = cam.pos
@@ -1138,7 +1178,7 @@ class DataCity3D(Scene3D):
                 return None
             return [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in out]
 
-        fogc = np.array([40, 18, 70], np.float32)
+        fogc = np.array([34, 12, 58], np.float32)
         far = 34.0
         # ground grid lines (streets)
         gl = []
@@ -1187,7 +1227,7 @@ class DataCity3D(Scene3D):
             hue = float(self.hue[pr, ci])
             emis = self.ca * (1 - hue) + self.cb * hue
             pul = 0.5 + 0.5 * math.sin(t * 2.0 + self.pulse[pr, ci] * TAU)
-            body = np.array([10, 14, 30], np.float32)
+            body = np.array([5, 7, 16], np.float32)
             faces = []
             if cpos[2] < z0:
                 faces.append(([0, 1, 5, 4], body * 1.6 + emis * 0.05))  # front (-z)
@@ -1251,7 +1291,7 @@ class RingPlanet3D(Scene3D):
         self.th = rng.uniform(0, TAU, n).astype(np.float32)
         self.yy = rng.normal(0, 0.004, n).astype(np.float32)
         tone = np.interp(r, rr, periodic_noise((600,), rng, beta=1.0))
-        self.rcol = (lerp_col((140, 115, 95), (240, 220, 185), tone) * (0.5 + 0.7 * rng.random(n) ** 2)[:, None] * 0.5)
+        self.rcol = (lerp_col((150, 120, 95), (245, 225, 190), tone) * (0.5 + 0.7 * rng.random(n) ** 2)[:, None] * 0.55)
         self.omega = (0.12 * r ** -1.5).astype(np.float32)
         self.ring_in, self.ring_out = 1.3, 2.45
         self.prof_r, self.prof = rr, prof / prof.max()
@@ -1266,7 +1306,7 @@ class RingPlanet3D(Scene3D):
                                  (0.8, (200, 160, 120)), (1, (250, 235, 205))]).astype(np.float32)
         self.tw, self.th_ = tw, th_
         self.tilt = (rot_z(0.42) @ rot_x(0.12)).astype(np.float64)  # planet/ring frame -> world
-        self.sun = _norm([1.0, 0.35, -0.6])
+        self.sun = _norm([-0.95, 0.45, 0.35])
         self.make_sky(3000, bright=0.8)
 
     def frame(self, t):

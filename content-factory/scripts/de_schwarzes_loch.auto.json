@@ -1,0 +1,297 @@
+{
+  "title": "Was passiert, wenn du in ein schwarzes Loch fällst?",
+  "hook": "Du fällst in ein schwarzes Loch – und deine Freunde sehen dich nie ankommen.",
+  "hook_text": "Du kommst nie an",
+  "niche": "space",
+  "mood": "cosmic",
+  "scenes": [
+    {
+      "narration": "Du fällst in ein schwarzes Loch – und deine Freunde sehen dich nie ankommen.",
+      "visual": "blackhole",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "black hole accretion disk",
+      "image_prompt": "Tiny astronaut silhouette drifting toward a colossal black hole with a glowing orange accretion disk, gravitational lensing bending starlight, cinematic, ultra detailed, vertical 9:16",
+      "emphasis": [
+        "nie ankommen"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Die NASA hat genau das simuliert.",
+      "visual": "datacity3d",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "supercomputer data center",
+      "image_prompt": "Futuristic NASA supercomputer hall with glowing server racks rendering a black hole simulation on large screens, teal light, cinematic, vertical 9:16",
+      "emphasis": [
+        "NASA",
+        "simuliert"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": "point"
+    },
+    {
+      "narration": "Ein Loch mit 4,3 Millionen Sonnenmassen, wie im Herzen unserer Milchstraße.",
+      "visual": "galaxy3d",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "pull_out",
+      "stock_query": "milky way galactic center",
+      "image_prompt": "Spiral Milky Way galaxy seen from above, bright glowing core with a dark supermassive black hole at the center, violet and gold tones, cinematic, vertical 9:16",
+      "emphasis": [
+        "4,3 Millionen",
+        "Sonnenmassen"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "4,3 Mio.",
+        "sub": "Sonnenmassen"
+      },
+      "mascot": "wow"
+    },
+    {
+      "narration": "Seine Grenze: 12,5 Millionen Kilometer Radius.",
+      "visual": "black_hole",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "dolly_tilt",
+      "stock_query": "black hole event horizon",
+      "image_prompt": "Perfectly dark sphere of a black hole event horizon surrounded by a thin ring of bent light, scale comparison with tiny sun, icy blue palette, cinematic, vertical 9:16",
+      "emphasis": [
+        "12,5 Millionen"
+      ],
+      "sfx": "pop",
+      "stat": {
+        "text": "12,5 Mio.",
+        "sub": "km Radius"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Etwa 3 Stunden fällst du, fast 2 Runden ums Loch.",
+      "visual": "warp3d",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "orbit",
+      "stock_query": "spiraling into space",
+      "image_prompt": "First-person view spiraling around a black hole, warped starfield and blazing accretion disk streaking past, motion blur, cinematic, vertical 9:16",
+      "emphasis": [
+        "3 Stunden",
+        "2 Runden"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Dann die Grenze. Kein Zurück.",
+      "visual": "tunnel",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "push_in",
+      "stock_query": "dark tunnel light",
+      "image_prompt": "Astronaut crossing an invisible boundary into absolute darkness, last ring of light shrinking behind, eerie violet glow, cinematic, vertical 9:16",
+      "emphasis": [
+        "Kein Zurück"
+      ],
+      "sfx": "impact",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Doch dann: Nur 12,8 Sekunden später zerreißt es dich.",
+      "visual": "time",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "countdown clock dramatic",
+      "image_prompt": "Glowing digital countdown reading 12.8 seconds floating in front of a black hole, red-orange light, tense dramatic atmosphere, cinematic, vertical 9:16",
+      "emphasis": [
+        "12,8 Sekunden",
+        "zerreißt"
+      ],
+      "sfx": "glitch",
+      "stat": {
+        "text": "12,8 s",
+        "sub": "bis zur Zerreißung"
+      },
+      "mascot": "wow"
+    },
+    {
+      "narration": "An deinen Füßen zieht die Schwerkraft stärker als am Kopf.",
+      "visual": "physics",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_down",
+      "stock_query": "gravity force abstract",
+      "image_prompt": "Scientific illustration of an astronaut falling feet-first toward a black hole, glowing arrows showing stronger gravitational pull at the feet than at the head, clean infographic style, vertical 9:16",
+      "emphasis": [
+        "Füßen",
+        "Kopf"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": "think"
+    },
+    {
+      "narration": "Du wirst lang gezogen. Wie Spaghetti.",
+      "visual": "plasma",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_down",
+      "stock_query": "stretched light streaks",
+      "image_prompt": "Surreal astronaut body stretched into long thin glowing strands like spaghetti, pulled toward a dark singularity, orange plasma streaks, cinematic, vertical 9:16",
+      "emphasis": [
+        "Spaghetti"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Und deine Freunde draußen? Für sie kommst du nie ganz an.",
+      "visual": "spacecraft",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "pull_out",
+      "stock_query": "spaceship window space",
+      "image_prompt": "Crew inside a distant mothership looking through a window at a black hole, a tiny astronaut figure seemingly stuck at its glowing edge, icy blue tones, cinematic, vertical 9:16",
+      "emphasis": [
+        "nie ganz an"
+      ],
+      "sfx": "ding",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Du bist längst zerrissen. Für sie fällst du noch immer.",
+      "visual": "blackhole",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "black hole accretion disk",
+      "image_prompt": "Tiny astronaut silhouette eternally falling toward a colossal black hole with a glowing orange accretion disk, gravitational lensing, mirrors opening shot, cinematic, vertical 9:16",
+      "emphasis": [
+        "noch immer"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": null
+    }
+  ],
+  "claims": [
+    {
+      "claim": "NASA hat den Sturz in ein schwarzes Loch in einer Visualisierung auf einem Supercomputer simuliert.",
+      "source": "https://svs.gsfc.nasa.gov/14576"
+    },
+    {
+      "claim": "Das simulierte schwarze Loch hat 4,3 Millionen Sonnenmassen, ähnlich dem im Zentrum unserer Galaxie.",
+      "source": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "claim": "Der Ereignishorizont hat einen Radius von etwa 12,5 Millionen Kilometern.",
+      "source": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "claim": "Der Fall bis zum Ereignishorizont dauert etwa 3 Stunden, mit fast 2 vollen Umläufen.",
+      "source": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "claim": "Nach dem Überqueren des Horizonts ist die Spaghettifizierung nur 12,8 Sekunden entfernt.",
+      "source": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "claim": "Der Ereignishorizont ist die Grenze, ab der die Fluchtgeschwindigkeit der Lichtgeschwindigkeit entspricht – kein Zurück.",
+      "source": "https://imagine.gsfc.nasa.gov/science/objects/black_holes1.html"
+    },
+    {
+      "claim": "Spaghettifizierung entsteht durch Gezeitenkräfte: Die Schwerkraft ist an einem Ende stärker als am anderen und zieht das Objekt in Richtung des Lochs in die Länge.",
+      "source": "https://en.wikipedia.org/wiki/Spaghettification"
+    },
+    {
+      "claim": "Bei supermassereichen schwarzen Löchern passiert die Zerreißung erst innerhalb des Ereignishorizonts.",
+      "source": "https://en.wikipedia.org/wiki/Spaghettification"
+    },
+    {
+      "claim": "Für einen weit entfernten Beobachter erreicht der Fallende den Ereignishorizont nie ganz.",
+      "source": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    }
+  ],
+  "metadata": {
+    "title": "Du fällst in ein schwarzes Loch – und kommst nie an 🕳️",
+    "description": "Die NASA hat simuliert, was passiert, wenn du in ein riesiges schwarzes Loch stürzt: 3 Stunden Fall, dann nur noch 12,8 Sekunden bis zur Spaghettifizierung. Und für deine Freunde draußen kommst du nie an. Quellen: science.nasa.gov, svs.gsfc.nasa.gov, imagine.gsfc.nasa.gov, en.wikipedia.org/wiki/Spaghettification",
+    "hashtags": [
+      "schwarzesloch",
+      "weltraum",
+      "astronomie",
+      "wissenschaft",
+      "nasa",
+      "physik",
+      "blackhole",
+      "space",
+      "spaghettification",
+      "science",
+      "universe"
+    ]
+  },
+  "format": "short",
+  "language": "de",
+  "fact_check": {
+    "verdict": "pass",
+    "issues": []
+  },
+  "research_sources": [
+    {
+      "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink (NASA Science)",
+      "url": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "title": "NASA Black Hole Visualization Takes Viewers Beyond the Brink (NASA Scientific Visualization Studio)",
+      "url": "https://svs.gsfc.nasa.gov/14576"
+    },
+    {
+      "title": "New NASA black hole visualization takes viewers beyond the brink (Phys.org)",
+      "url": "https://phys.org/news/2024-05-black-hole-visualization-viewers-brink.pdf"
+    },
+    {
+      "title": "Spaghettification (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Spaghettification"
+    },
+    {
+      "title": "Schwarzschild radius (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Schwarzschild_radius"
+    },
+    {
+      "title": "Black Holes (NASA Imagine the Universe)",
+      "url": "https://imagine.gsfc.nasa.gov/science/objects/black_holes1.html"
+    },
+    {
+      "title": "Sagittarius A* (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Sagittarius_A*"
+    },
+    {
+      "title": "This is the first image of the black hole at the heart of the Milky Way (NPR)",
+      "url": "https://www.npr.org/2022/05/12/1098472567/image-black-hole-milky-way"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Was passiert, wenn man in ein schwarzes Loch fällt?",
+  "research_method": "claude_websearch"
+}
