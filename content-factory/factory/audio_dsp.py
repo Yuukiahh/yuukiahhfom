@@ -265,7 +265,7 @@ def _midpoints(x: np.ndarray) -> np.ndarray:
 
 
 def limit(x: np.ndarray, sr: int, ceiling: float = 0.79, release: float = 0.08, lookahead: float = 0.003,
-          block: int = 32, true_peak: bool = False) -> np.ndarray:
+          block: int = 64, true_peak: bool = False) -> np.ndarray:
     """Look-ahead brickwall limiter with smooth attack ramp and release, plus a final
     soft-clip safety stage. Output |x| <= ceiling."""
     pk = _block_env(x, block, "peak")

@@ -605,8 +605,8 @@ class Warp3D(Scene3D):
         self.gx, self.gy = (gr * np.cos(ga)).astype(np.float32), (gr * np.sin(ga)).astype(np.float32)
         self.gz = rng.uniform(0, self.L, m).astype(np.float32)
         self.gcol = lerp_col(a, b, rng.random(m)) * (0.3 + 0.7 * rng.random(m))[:, None]
-        self.v0 = float(self.p.get("v0", 3.0))
-        self.v1 = float(self.p.get("v1", 38.0))
+        self.v0 = float(self.p.get("v0", 5.0))
+        self.v1 = float(self.p.get("v1", 55.0))
         self.tau = float(self.p.get("ramp", 4.5))
         self.ca, self.cb = a, b
 
@@ -627,7 +627,7 @@ class Warp3D(Scene3D):
         zt = z + v * dt  # where it was a moment ago (farther away)
         head = np.stack([self.sx, self.sy, z], 1)
         tail = np.stack([self.sx, self.sy, zt], 1)
-        fade = smoothstep(self.L + near, self.L * 0.3, z) * smoothstep(near, near + 1.2, z)
+        fade = smoothstep(self.L + near, self.L * 0.3, z) * smoothstep(near, near + 1.2, z) * np.clip(9.0 / z, 0, 1.6)
         # energy per streak roughly constant -> per-length brightness drops as streaks get long
         xa, ya, za, ia = R.project(head)
         xb, yb, zb, ib = R.project(tail)
@@ -640,7 +640,8 @@ class Warp3D(Scene3D):
         gz = (self.gz - s * 0.9) % self.L + near
         gfade = smoothstep(self.L, self.L * 0.5, gz) * smoothstep(near, 4.0, gz)
         gx, gy, gzz, gi = R.project(np.stack([self.gx, self.gy, gz], 1))
-        R.points(gx, gy, self.gcol * (gfade * (60 + 3 * v))[:, None], np.clip(0.5 * gi, 4, 120), bloom=0)
+        gr = np.clip(0.6 * gi, 4, 160)
+        R.points(gx, gy, self.gcol * (gfade * (0.05 + 0.002 * v) * math.pi * gr * gr)[:, None], gr, bloom=0)
         cx, cy, _, _ = R.project(np.array([[0, 0, 60.0]]))
         R.soft(np.repeat(cx, 2), np.repeat(cy, 2), np.stack([self.ca * 30, np.array([255, 255, 255]) * (12 + v)]))
         return R.finish(bloom=(0.6, 0.6), radii=(1.5, 9.0))
@@ -662,7 +663,8 @@ class Globe3D(Scene3D):
         land = n > thr
         coast = land & (n < thr + 0.035)
         self.land = pts[land].astype(np.float32)
-        self.land_b = np.where(coast[land], 1.6, 1.0).astype(np.float32) * (0.75 + 0.5 * rng.random(land.sum()))
+        self.land_b = np.where(coast[land], 1.7, 1.0).astype(np.float32) * (0.6 + 0.5 * rng.random(land.sum()))
+        self.city = np.where(rng.random(land.sum()) < 0.025, 3.5, 1.0).astype(np.float32)  # sparkle "cities"
         # sparse ocean dots (very faint)
         self.ocean = pts[~land][::5].astype(np.float32)
         # wireframe segments (lat every 15 deg, meridians every 15 deg)
@@ -712,7 +714,7 @@ class Globe3D(Scene3D):
         f = facing(L)
         bright = np.where(f > 0, 0.35 + 0.65 * f, 0.10) * self.land_b
         band = np.exp(-((L[:, 1] - scan) / 0.035) ** 2)
-        colL = lerp_col(a, (235, 255, 255), np.clip(band * 0.8, 0, 1)) * (bright * (30 + 60 * band))[:, None]
+        colL = lerp_col(a, (235, 255, 255), np.clip(band * 0.6, 0, 1)) * (bright * (20 + 25 * band) * self.city)[:, None]
         R.points3d(L, colL, 0.0, 0.5, bloom=0.5)
         O = self.ocean @ M
         fo = facing(O)
@@ -753,7 +755,9 @@ class Globe3D(Scene3D):
                 fade = np.exp(-np.linspace(0, 4, 60))
                 hid = ((np.linalg.norm(S - view, axis=1) > d) & (np.linalg.norm(np.cross(S - view, nrm), axis=1) < 1.0))
                 fade = fade * np.where(hid, 0.15, 1.0)
-                R.points3d(S, lerp_col(a, (255, 255, 255), fade) * (fade * 60)[:, None], 0.004 + 0.01 * fade, bloom=0.8)
+                cS = lerp_col(a, (255, 255, 255), fade) * (fade * 3.0)[:, None]
+                R.lines3d(S[:-1], S[1:], cS[:-1], cS[1:], width=0.8 + 1.5 * fade[:-1], bloom=0.8)
+                R.points3d(S[:1], np.array([[230, 250, 255]], np.float32) * 1.5 * fade[0], 0.0, 2.2, bloom=1.0)
         # pedestal: concentric rings + rising motes
         ped_y = -1.42
         for i, pr in enumerate((0.55, 0.85, 1.15, 1.25)):
@@ -1143,7 +1147,7 @@ class DataCity3D(Scene3D):
         camx = 0.5 * self.cell * 0  # in the middle of a street (street at x = 0)
         cy = 1.15 + 0.2 * math.sin(t * 0.4)
         sway = 0.25 * math.sin(t * 0.27)
-        cam = Camera((camx + sway, cy, cz), (camx + sway * 0.4, cy - 0.55, cz + 4), fov=64,
+        cam = Camera((camx + sway, cy, cz), (camx + sway * 0.4, cy - 0.3, cz + 4), fov=64,
                      roll=0.06 * math.sin(t * 0.33))
         R.begin(cam)
         W, H = self.W, self.H
@@ -1348,7 +1352,7 @@ class RingPlanet3D(Scene3D):
         bri = np.where(shadow, 0.06, 1.0) * lit_side
         keep = ~occ
         Pw = Pl[keep] @ T.T
-        R.points3d(Pw.astype(np.float32), self.rcol[keep] * bri[keep, None], 0.0012, bloom=0.35)
+        R.points3d(Pw.astype(np.float32), self.rcol[keep] * bri[keep, None] * 5.0, 0.0, 1.0, bloom=0.3)
         # planet: per-pixel ray cast at half resolution inside its screen bbox
         cx, cy, cz, cinv = R.project(np.zeros((1, 3)))
         rad = float(cinv[0]) * 1.08 + 4
@@ -1393,6 +1397,19 @@ class RingPlanet3D(Scene3D):
             lit = lit * (0.55 + 0.45 * mu ** 0.5)
             rimv = np.exp(-mu / 0.08) * (0.25 + lam) * 60
             img = col * lit[..., None] + rimv[..., None] * np.array([1.0, 0.85, 0.65], np.float32)
+            # rings crossing in front of the planet: partially opaque, lit (or in the planet's shadow)
+            dy_ = np.where(np.abs(D[..., 1]) > 1e-5, D[..., 1], 1e-5)
+            sr = -o[1] / dy_
+            q = o + D * sr[..., None]
+            qr = np.sqrt(q[..., 0] ** 2 + q[..., 2] ** 2)
+            front = (sr > 0) & (sr < s) & (qr > self.ring_in) & (qr < self.ring_out)
+            if front.any():
+                rd = np.interp(qr[front], self.prof_r, self.prof).astype(np.float32)
+                qa = q[front] @ sl
+                qsh = (qa < 0) & ((qr[front] ** 2 - qa ** 2) < 1.0)
+                rl = np.where(qsh, 0.08, 1.0) * (1.0 if (o[1] * sl[1]) > 0 else 0.55)
+                op = np.clip(rd * 0.9, 0, 0.85)[:, None]
+                img[front] = img[front] * (1 - op) + np.array([215, 192, 160], np.float32) * (op * rl[:, None] * 0.75)
             img *= alpha[..., None]
             pil = [Image.fromarray(img[..., ch].astype(np.float32), "F").resize((x1 - x0, y1 - y0), Image.BILINEAR)
                    for ch in range(3)]

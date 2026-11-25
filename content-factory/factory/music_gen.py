@@ -237,8 +237,12 @@ class Engine:
     def cached(self, key, fn):
         v = self.cache.get(key)
         if v is None:
-            v = self.cache[key] = fn()
+            v = self.cache[key] = np.asarray(fn(), np.float32)
         return v
+
+    def panned(self, key, fn, p: float):
+        """Cached equal-power panned stereo copy of a cached mono sound."""
+        return self.cached(("pan", key, round(p, 3)), lambda: d.pan(fn(), p))
 
     # -- drums (one-shots, rendered once per call)
     def kick(self, style: str):
@@ -559,10 +563,10 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
                 if e < 0.7 and s % 2 == 1:
                     continue
                 vel = v * hat_scale * rng.uniform(0.85, 1.1)
-                E.put(E.drums, d.pan(E.hat(False, lofi), 0.25 if s % 2 else -0.1), st_time(b, s), vel)
+                E.put(E.drums, E.panned("hatc", lambda: E.hat(False, lofi), 0.25 if s % 2 else -0.1), st_time(b, s), vel)
             if e >= 0.8:
                 for s in feel["open"]:
-                    E.put(E.drums, d.pan(E.hat(True, lofi), -0.3), st_time(b, s), 0.55)
+                    E.put(E.drums, E.panned("hato", lambda: E.hat(True, lofi), -0.3), st_time(b, s), 0.55)
             if "toms" in feel and e >= 0.8 and (bi % 2 == 1):
                 for j, s in enumerate(feel["toms"]):
                     E.put(E.drums, d.pan(E.tom([110, 98, 82, 73][j]), -0.4 + 0.25 * j), b.t + s * s16, 0.8,
@@ -625,7 +629,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
             order = tones + tones[-2:0:-1]
             for s in range(16):
                 mi = order[s % len(order)] + 12
-                E.put(E.music, d.pan(E.tone(M["arp"], mi, s16 * 0.9), 0.5 if s % 2 else -0.5),
+                E.put(E.music, E.panned(("arp", mi), lambda mi=mi: E.tone(M["arp"], mi, s16 * 0.9), 0.5 if s % 2 else -0.5),
                       st_time(b, s), 0.2 * (1.0 if s % 4 == 0 else 0.75), send=0.25, dly=0.35)
         # ---- lead hook
         lead_on = (b.kind in ("intro", "drop") and e >= 0.45) or (b.kind == "breakdown")
@@ -642,7 +646,8 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
                 mi = _midi(key_pc, mode, prog[ci] + dg, 60)
                 mi = _place_range(mi, 62) if mi < 62 or mi > 86 else mi
                 lvl = 0.5 if b.kind != "breakdown" else 0.4
-                E.put(E.music, d.pan(E.tone(M["lead"], mi, ln * 2 * s16 * 0.92), 0.05), st_time(b, s), lvl,
+                E.put(E.music, E.panned(("lead", mi, ln), lambda mi=mi, ln=ln: E.tone(M["lead"], mi, ln * 2 * s16 * 0.92), 0.05),
+                      st_time(b, s), lvl,
                       send=0.3, dly=0.3)
 
     # swells & off-grid hits for markers

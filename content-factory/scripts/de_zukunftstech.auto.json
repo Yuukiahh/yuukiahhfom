@@ -1,0 +1,532 @@
+{
+  "title": "Zukunftstechnik, die es heute schon gibt",
+  "hook": "Ein Chip löst in 5 Minuten, wofür ein Supercomputer 10 Quadrillionen Jahre bräuchte.",
+  "hook_text": "Das ist schon real",
+  "niche": "future",
+  "mood": "pulse",
+  "scenes": [
+    {
+      "narration": "Ein Chip löst in 5 Minuten, wofür ein Supercomputer 10 Quadrillionen Jahre bräuchte.",
+      "visual": "chip",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "push_in",
+      "stock_query": "quantum computer chip",
+      "image_prompt": "Extreme macro shot of a glowing quantum processor chip suspended in a cryogenic chamber, icy blue light, golden wiring, cinematic depth of field, vertical 9:16",
+      "emphasis": [
+        "5 Minuten",
+        "10 Quadrillionen"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "5 Min",
+        "sub": "statt 10²⁵ Jahre"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Länger, als das Universum existiert.",
+      "visual": "galaxy3d",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "pull_out",
+      "stock_query": "universe galaxies zoom out",
+      "image_prompt": "Vast cosmic panorama of countless galaxies stretching into deep space, violet and blue nebula clouds, sense of infinite time, vertical 9:16",
+      "emphasis": [
+        "Universum"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": "wow"
+    },
+    {
+      "narration": "Und das Verrückteste hier wurde für ein einziges Baby gebaut.",
+      "visual": "dna3d",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "drift",
+      "stock_query": "newborn baby hand",
+      "image_prompt": "Tiny newborn hand gently holding an adult finger, a faint glowing DNA helix hovering above, soft teal hospital light, mysterious mood, vertical 9:16",
+      "emphasis": [
+        "einziges Baby"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Der Chip heißt Willow, von Google. Je mehr Qubits, desto weniger Fehler.",
+      "visual": "quantum",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "orbit",
+      "stock_query": "quantum computing lab",
+      "image_prompt": "Golden chandelier-style quantum computer cryostat in a clean lab, glowing qubit grid overlay where red error dots fade as more qubits light up, vertical 9:16",
+      "emphasis": [
+        "Willow",
+        "weniger Fehler"
+      ],
+      "sfx": "pop",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Nächster Halt: eine Mini-Sonne auf der Erde.",
+      "visual": "fusion",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "sun surface plasma",
+      "image_prompt": "A tiny blazing star floating inside a high-tech target chamber on Earth, intense orange plasma glow, metallic chamber walls, cinematic, vertical 9:16",
+      "emphasis": [
+        "Mini-Sonne"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Ein Laser feuert auf ein Ziel und zündet Kernfusion.",
+      "visual": "plasma",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "dolly_tilt",
+      "stock_query": "laser beam lab",
+      "image_prompt": "Dozens of converging laser beams striking a tiny fuel target at the center of a spherical chamber, white-hot flash, orange and blue light, vertical 9:16",
+      "emphasis": [
+        "Kernfusion"
+      ],
+      "sfx": "impact",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "2022 kam erstmals mehr Energie heraus, als der Laser hineinsteckte.",
+      "visual": "energy",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_up",
+      "stock_query": "energy burst light",
+      "image_prompt": "Energy meter visualization showing output bar surpassing input bar, glowing orange fusion light in background, futuristic lab display, vertical 9:16",
+      "emphasis": [
+        "erstmals",
+        "mehr Energie"
+      ],
+      "sfx": "ding",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "2025 dann der Rekord: 8,6 Megajoule. Über 4-mal so viel, wie der Laser hineinsteckte.",
+      "visual": "reactor",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "fusion reactor chamber",
+      "image_prompt": "Massive spherical fusion target chamber with a brilliant record-breaking flash at its core, sparks of plasma, dramatic orange lighting, vertical 9:16",
+      "emphasis": [
+        "Rekord",
+        "8,6 Megajoule"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "8,6 MJ",
+        "sub": "Fusionsrekord 2025"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Doch hier kommt der Haken: Die Laser selbst schlucken rund 300 Megajoule aus der Steckdose.",
+      "visual": "grid",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_down",
+      "stock_query": "power plug electricity",
+      "image_prompt": "Giant industrial power cable plugged into a wall socket, electricity arcing, huge laser facility looming behind, tense dramatic lighting, vertical 9:16",
+      "emphasis": [
+        "Haken",
+        "300 Megajoule"
+      ],
+      "sfx": "glitch",
+      "stat": null,
+      "mascot": "think"
+    },
+    {
+      "narration": "Strom fürs Netz? Noch nicht.",
+      "visual": "datacity3d",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "drift",
+      "stock_query": "power grid night city",
+      "image_prompt": "City power grid at night with transmission lines, one line still dark and unconnected, moody teal tones, vertical 9:16",
+      "emphasis": [
+        "Noch nicht"
+      ],
+      "sfx": "none",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Dafür fahren in den USA schon Autos ohne Fahrer.",
+      "visual": "flyover",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_right",
+      "stock_query": "self driving car city",
+      "image_prompt": "White autonomous robotaxi with roof sensors driving through a sunny American city street, empty driver seat visible, cinematic, vertical 9:16",
+      "emphasis": [
+        "ohne Fahrer"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Waymo zählt 500.000 bezahlte Robotaxi-Fahrten. Pro Woche.",
+      "visual": "datacity3d",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "city traffic aerial",
+      "image_prompt": "Aerial view of a city grid at dusk with hundreds of glowing route lines tracing robotaxi trips, data visualization style, vertical 9:16",
+      "emphasis": [
+        "500.000",
+        "Pro Woche"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "500.000",
+        "sub": "Fahrten pro Woche"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Doppelt so viele wie knapp ein Jahr zuvor.",
+      "visual": "data",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_up",
+      "stock_query": "growth chart animation",
+      "image_prompt": "Bold rising bar chart doubling in height, neon teal on dark background, futuristic dashboard, vertical 9:16",
+      "emphasis": [
+        "Doppelt"
+      ],
+      "sfx": "pop",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "SpaceX fing eine riesige Raketenstufe mit Greifarmen am Startturm. Beim ersten Versuch.",
+      "visual": "spacecraft",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_down",
+      "stock_query": "rocket booster landing",
+      "image_prompt": "Enormous stainless steel rocket booster descending on flames into two giant mechanical arms of a launch tower, twilight sky, epic scale, vertical 9:16",
+      "emphasis": [
+        "Greifarmen",
+        "ersten Versuch"
+      ],
+      "sfx": "impact",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Bei Neuralink steuern Gelähmte Computer nur mit Gedanken.",
+      "visual": "neural3d",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "push_in",
+      "stock_query": "brain computer interface",
+      "image_prompt": "Person in a wheelchair moving a cursor on a screen, glowing neural signals flowing from their head to the computer, violet sci-fi light, vertical 9:16",
+      "emphasis": [
+        "Gedanken"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Laut Musk waren Anfang 2026 schon 21 Menschen dabei.",
+      "visual": "brain",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "orbit",
+      "stock_query": "brain neurons glowing",
+      "image_prompt": "Translucent human brain with a small glowing implant and thin threads, surrounded by soft violet light particles, medical sci-fi, vertical 9:16",
+      "emphasis": [
+        "21 Menschen"
+      ],
+      "sfx": "pop",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Einen menschenähnlichen Haushaltsroboter kannst du schon vorbestellen. Für 20.000 Dollar.",
+      "visual": "ai",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "dolly_tilt",
+      "stock_query": "humanoid robot home",
+      "image_prompt": "Soft-bodied humanoid robot folding laundry in a cozy modern living room, warm daylight, friendly futuristic atmosphere, vertical 9:16",
+      "emphasis": [
+        "vorbestellen",
+        "20.000 Dollar"
+      ],
+      "sfx": "ding",
+      "stat": null,
+      "mascot": "point"
+    },
+    {
+      "narration": "Und jetzt: das Baby.",
+      "visual": "medicine",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "push_in",
+      "stock_query": "neonatal hospital",
+      "image_prompt": "Quiet neonatal hospital room with soft teal light, an incubator glowing gently in the center, hopeful mood, vertical 9:16",
+      "emphasis": [
+        "Baby"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "KJ hat eine seltene Krankheit: CPS1-Mangel.",
+      "visual": "genome",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "drift",
+      "stock_query": "dna sequence screen",
+      "image_prompt": "Glowing genome sequence on a dark screen with a single highlighted faulty letter pulsing red among teal code, scientific look, vertical 9:16",
+      "emphasis": [
+        "seltene Krankheit"
+      ],
+      "sfx": "glitch",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Ärzte bauten in nur rund 6 Monaten eine CRISPR-Therapie. Nur für ihn.",
+      "visual": "dna3d",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "gene editing lab",
+      "image_prompt": "Rotating DNA double helix where a precise beam of light corrects a single base pair, scientists' silhouettes in background, teal and gold light, vertical 9:16",
+      "emphasis": [
+        "6 Monaten",
+        "Nur für ihn"
+      ],
+      "sfx": "riser",
+      "stat": {
+        "text": "6 Monate",
+        "sub": "Therapie für 1 Baby"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Er ist der erste Patient überhaupt mit so einer maßgeschneiderten CRISPR-Therapie.",
+      "visual": "helix",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pull_out",
+      "stock_query": "baby parents hospital",
+      "image_prompt": "Tiny baby resting peacefully, a delicate luminous DNA strand forming a halo above, warm hopeful light, vertical 9:16",
+      "emphasis": [
+        "erste Patient"
+      ],
+      "sfx": "ding",
+      "stat": null,
+      "mascot": "happy"
+    },
+    {
+      "narration": "Science-Fiction? Nein. Das ist schon heute echt.",
+      "visual": "warp3d",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "push_in",
+      "stock_query": "futuristic technology montage",
+      "image_prompt": "Fast montage collage of quantum chip, fusion flash, robotaxi, rocket and DNA helix merging into a bright light tunnel, vertical 9:16",
+      "emphasis": [
+        "schon heute"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Und vergiss nicht:",
+      "visual": "chip",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "push_in",
+      "stock_query": "quantum chip closeup",
+      "image_prompt": "Return to extreme macro of the glowing quantum chip, icy blue light pulsing, seamless loop framing, vertical 9:16",
+      "emphasis": [
+        "vergiss nicht"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": null
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Googles Willow-Chip löste eine Benchmark-Berechnung in unter 5 Minuten, für die ein Supercomputer 10^25 (10 Quadrillionen) Jahre bräuchte – länger als das Alter des Universums.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "Kernergebnis von Willow: Die Fehler nehmen ab, je mehr Qubits genutzt werden.",
+      "source": "https://www.livescience.com/technology/computing/google-willow-quantum-computing-chip-solved-a-problem-the-best-supercomputer-taken-a-quadrillion-times-age-of-the-universe-to-crack"
+    },
+    {
+      "claim": "2022 erreichte die National Ignition Facility erstmals Fusionszündung: 3,15 MJ Fusionsenergie aus 2,05 MJ Laserenergie.",
+      "source": "https://lasers.llnl.gov/science/pursuit-of-ignition"
+    },
+    {
+      "claim": "Im April 2025 erzielte NIF einen Rekord von 8,6 MJ aus 2,08 MJ Laserenergie, ein Zielgewinn von 4,13.",
+      "source": "https://annual.llnl.gov/sites/annual/files/2026-02/llnlannual25-3-national-ignition-facility.pdf"
+    },
+    {
+      "claim": "Die Laser brauchen rund 300 MJ Energie aus der Steckdose; NIF liefert noch keinen Nettostrom fürs Netz.",
+      "source": "https://gizmodo.com/record-breaking-fusion-lab-more-than-doubles-its-2022-energy-breakthrough-2000604093"
+    },
+    {
+      "claim": "Waymo meldete im März 2026 500.000 bezahlte fahrerlose Robotaxi-Fahrten pro Woche in den USA, doppelt so viele wie knapp ein Jahr zuvor.",
+      "source": "https://techcrunch.com/2026/03/27/waymo-skyrocketing-ridership-in-one-chart/"
+    },
+    {
+      "claim": "SpaceX fing im Oktober 2024 einen zurückkehrenden Super-Heavy-Booster mit den Greifarmen des Startturms beim ersten Versuch.",
+      "source": "https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch"
+    },
+    {
+      "claim": "Laut Elon Musk waren im Januar 2026 21 Menschen in Neuralinks Studien, in denen Gelähmte Computer mit Gedanken steuern.",
+      "source": "https://www.benzinga.com/markets/tech/26/01/50214923/elon-musk-announces-timeline-for-next-gen-neuralink-implant-with-3x-capability-21-people-already-enr"
+    },
+    {
+      "claim": "Der humanoide Haushaltsroboter NEO von 1X kann für 20.000 Dollar vorbestellt werden.",
+      "source": "https://www.notebookcheck.net/1X-opens-pre-orders-for-20-000-NEO-humanoid-home-robot.1149203.0.html"
+    },
+    {
+      "claim": "Baby KJ mit CPS1-Mangel ist der erste Patient mit einer personalisierten CRISPR-Base-Editing-Therapie, entwickelt in rund 6 Monaten nur für ihn.",
+      "source": "https://chop.edu/news/worlds-first-patient-treated-personalized-crispr-gene-editing-therapy-childrens-hospital"
+    }
+  ],
+  "metadata": {
+    "title": "Diese Zukunftstechnik gibt es schon heute – Nr. 7 ist unglaublich 🤯",
+    "description": "Ein Chip, der in 5 Minuten schneller rechnet als ein Supercomputer in 10 Quadrillionen Jahren, eine Mini-Sonne im Labor und eine Gen-Therapie für ein einziges Baby. Science-Fiction ist längst Realität. Quellen: blog.google, livescience.com, lasers.llnl.gov, annual.llnl.gov, gizmodo.com, techcrunch.com, npr.org, benzinga.com, notebookcheck.net, chop.edu",
+    "hashtags": [
+      "Zukunft",
+      "Technologie",
+      "Wissenschaft",
+      "Quantencomputer",
+      "Kernfusion",
+      "CRISPR",
+      "Robotaxi",
+      "Neuralink",
+      "FutureTech",
+      "ScienceFacts",
+      "Innovation",
+      "TechTok"
+    ]
+  },
+  "format": "long",
+  "language": "de",
+  "fact_check": {
+    "verdict": "fix",
+    "issues": [
+      {
+        "text": "2025 dann der Rekord: 8,6 Megajoule. Über 4-mal so viel.",
+        "problem": "Right after the 2022 scene, 'über 4-mal so viel' reads as 4x the 2022 result. That is wrong: 8.6 / 3.15 is about 2.7x. The source's 4.13 is the target gain, meaning fusion output relative to the 2.08 MJ of laser energy delivered.",
+        "fix": "2025 dann der Rekord: 8,6 Megajoule. Über 4-mal so viel, wie der Laser hineinsteckte."
+      },
+      {
+        "text": "Er ist der erste Patient überhaupt mit so einer maßgeschneiderten Gen-Therapie.",
+        "problem": "Too broad. The source says KJ is the first patient treated with a personalized CRISPR base-editing therapy, not the first with any personalized gene therapy.",
+        "fix": "Er ist der erste Patient überhaupt mit so einer maßgeschneiderten CRISPR-Therapie."
+      }
+    ]
+  },
+  "research_sources": [
+    {
+      "title": "Meet Willow, our state-of-the-art quantum chip (Google)",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "title": "Google Willow quantum computing chip solved a problem the best supercomputer [would have] taken a quadrillion times age of the universe to crack (Live Science)",
+      "url": "https://www.livescience.com/technology/computing/google-willow-quantum-computing-chip-solved-a-problem-the-best-supercomputer-taken-a-quadrillion-times-age-of-the-universe-to-crack"
+    },
+    {
+      "title": "Achieving Fusion Ignition (Lawrence Livermore National Laboratory)",
+      "url": "https://lasers.llnl.gov/science/pursuit-of-ignition"
+    },
+    {
+      "title": "LLNL Annual Report 2025 – National Ignition Facility",
+      "url": "https://annual.llnl.gov/sites/annual/files/2026-02/llnlannual25-3-national-ignition-facility.pdf"
+    },
+    {
+      "title": "Record-breaking fusion lab more than doubles its 2022 energy breakthrough (Gizmodo)",
+      "url": "https://gizmodo.com/record-breaking-fusion-lab-more-than-doubles-its-2022-energy-breakthrough-2000604093"
+    },
+    {
+      "title": "FDA Approves First Gene Therapies to Treat Patients with Sickle Cell Disease (FDA)",
+      "url": "https://www.fda.gov/news-events/press-announcements/fda-approves-first-gene-therapies-treat-patients-sickle-cell-disease"
+    },
+    {
+      "title": "World's First Patient Treated with Personalized CRISPR Gene Editing Therapy at Children's Hospital of Philadelphia (CHOP)",
+      "url": "https://chop.edu/news/worlds-first-patient-treated-personalized-crispr-gene-editing-therapy-childrens-hospital"
+    },
+    {
+      "title": "SpaceX rocket booster successfully 'caught' on first attempt during flight test (NPR)",
+      "url": "https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch"
+    },
+    {
+      "title": "Waymo's skyrocketing ridership in one chart (TechCrunch)",
+      "url": "https://techcrunch.com/2026/03/27/waymo-skyrocketing-ridership-in-one-chart/"
+    },
+    {
+      "title": "Waymo Co-CEO Outlines Path to 1 Million Weekly Trips in 2026 (Bloomberg)",
+      "url": "https://www.bloomberg.com/news/articles/2026-02-11/waymo-co-ceo-outlines-path-to-1-million-weekly-trips-in-2026"
+    },
+    {
+      "title": "Elon Musk announces timeline for next-gen Neuralink implant with 3x capability, 21 people already enrolled (Benzinga)",
+      "url": "https://www.benzinga.com/markets/tech/26/01/50214923/elon-musk-announces-timeline-for-next-gen-neuralink-implant-with-3x-capability-21-people-already-enr"
+    },
+    {
+      "title": "Seven patients now participating in Neuralink trial (UCLH NIHR Biomedical Research Centre)",
+      "url": "https://www.uclhospitals.brc.nihr.ac.uk/news/seven-patients-now-participating-neuralink-trial"
+    },
+    {
+      "title": "1X opens pre-orders for $20,000 NEO humanoid home robot (Notebookcheck)",
+      "url": "https://www.notebookcheck.net/1X-opens-pre-orders-for-20-000-NEO-humanoid-home-robot.1149203.0.html"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Unglaubliche Technologien der Zukunft, die es heute schon gibt",
+  "research_method": "claude_websearch"
+}
