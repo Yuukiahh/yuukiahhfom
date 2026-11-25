@@ -1,0 +1,399 @@
+{
+  "title": "Some $30 Pony Card Boxes Now List for $3,000",
+  "hook": "One collector blog says some $30 pony card boxes now list for $3,000.",
+  "hook_text": "$30 → $3,000?!",
+  "niche": "facts",
+  "mood": "playful",
+  "scenes": [
+    {
+      "narration": "One collector blog says some $30 pony card boxes now list for $3,000.",
+      "visual": "holo_cards",
+      "params": {
+        "mode": "burst",
+        "accent": "#E83E8C"
+      },
+      "camera": "push_in",
+      "stock_query": "holographic trading cards",
+      "image_prompt": "Close-up of a sealed pastel trading card box glowing under dramatic studio light, holographic rainbow shimmer, floating asking-price tag reading $3,000, vertical 9:16, cinematic, shallow depth of field, no logos, no characters",
+      "emphasis": [
+        "$30",
+        "$3,000"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "$3,000",
+        "sub": "listed, once ~$30"
+      },
+      "mascot": "wow",
+      "overlay": {
+        "type": "compare",
+        "data": {
+          "left": {
+            "label": "Box price before",
+            "value": "~$30"
+          },
+          "right": {
+            "label": "Listed now",
+            "value": "$3,000+"
+          },
+          "locale": "en"
+        }
+      },
+      "source_label": "One collector blog (Trading Card Archive"
+    },
+    {
+      "narration": "It starts with Kayou, making official cards with Hasbro.",
+      "visual": "corporate",
+      "params": {
+        "accent": "#E83E8C"
+      },
+      "camera": "orbit",
+      "stock_query": "trading card printing",
+      "image_prompt": "Stacks of freshly printed pastel trading cards on a clean factory table, soft pink and lavender lighting, official licensed collectible feel, vertical 9:16, photorealistic, no logos, no characters",
+      "emphasis": [
+        "Kayou",
+        "official"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null,
+      "overlay": {
+        "type": "headline",
+        "data": {
+          "kicker": "FACT",
+          "text": "Kayou makes official, licensed My Little Pony cards with Hasbro",
+          "source": "Comics Beat",
+          "date": "NYCC 2026",
+          "locale": "en"
+        }
+      },
+      "source_label": "Comics Beat"
+    },
+    {
+      "narration": "Newest set: 162 unique cards, 10 rarity tiers.",
+      "visual": "holo_cards",
+      "params": {
+        "mode": "fan",
+        "accent": "#E83E8C"
+      },
+      "camera": "pull_out",
+      "stock_query": "card collection binder",
+      "image_prompt": "A huge fan-shaped spread of pastel holographic trading cards arranged in 10 glowing rows by rarity, moonlit silver and blue tones, vertical 9:16, dreamy collectible aesthetic, no characters, no text",
+      "emphasis": [
+        "162",
+        "10 rarity tiers"
+      ],
+      "sfx": "pop",
+      "stat": {
+        "text": "162",
+        "sub": "unique cards"
+      },
+      "mascot": null,
+      "overlay": {
+        "type": "bars",
+        "data": {
+          "title": "Moon Edition 4",
+          "unit": "",
+          "items": [
+            {
+              "label": "Unique cards",
+              "value": 162
+            },
+            {
+              "label": "Rarity tiers",
+              "value": 10
+            }
+          ],
+          "locale": "en"
+        }
+      },
+      "source_label": "Comics Beat"
+    },
+    {
+      "narration": "On Etsy, rare singles are listed up to $269.",
+      "visual": "stock_chart",
+      "params": {
+        "trend": "up",
+        "accent": "#E83E8C"
+      },
+      "camera": "pan_up",
+      "stock_query": "online marketplace shopping",
+      "image_prompt": "A single rare holographic trading card in a protective case on a velvet stand, floating asking-price tag reading $269, soft spotlight, vertical 9:16, premium collectible vibe, no characters, no logos",
+      "emphasis": [
+        "Etsy",
+        "$269"
+      ],
+      "sfx": "ding",
+      "stat": {
+        "text": "$269",
+        "sub": "asking price, 1 card"
+      },
+      "mascot": null,
+      "overlay": {
+        "type": "counter",
+        "data": {
+          "value": 269,
+          "prefix": "$",
+          "suffix": "",
+          "label": "Top Etsy asking price, singles",
+          "decimals": 0,
+          "locale": "en"
+        }
+      },
+      "source_label": "Etsy (asking prices)"
+    },
+    {
+      "narration": "But here's the twist: bootleg boxes skip the Kayou logo.",
+      "visual": "radar",
+      "params": {
+        "accent": "#E83E8C"
+      },
+      "camera": "dolly_tilt",
+      "stock_query": "magnifying glass inspection",
+      "image_prompt": "Magnifying glass hovering over two near-identical trading card boxes, one with a blank empty logo area and cheaper faded print, red warning glow, vertical 9:16, detective mood, no characters",
+      "emphasis": [
+        "twist",
+        "bootleg",
+        "logo"
+      ],
+      "sfx": "glitch",
+      "stat": null,
+      "mascot": "point",
+      "overlay": {
+        "type": "checklist",
+        "data": {
+          "title": "Bootleg boxes",
+          "items": [
+            "No Kayou logo",
+            "Lower print quality",
+            "Not official Hasbro license"
+          ],
+          "locale": "en"
+        }
+      },
+      "source_label": "One collector blog (Trading Card Archive"
+    },
+    {
+      "narration": "Next stop: Target, Walmart, GameStop, TikTok Shop.",
+      "visual": "globe3d",
+      "params": {
+        "accent": "#E83E8C"
+      },
+      "camera": "pan_right",
+      "stock_query": "retail store shelves",
+      "image_prompt": "Bright retail store aisle with shelves full of colorful pastel trading card packs, wide-angle, energetic lighting, vertical 9:16, no store logos, no characters",
+      "emphasis": [
+        "Target",
+        "TikTok Shop"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null,
+      "overlay": {
+        "type": "checklist",
+        "data": {
+          "title": "Slated for U.S. shelves",
+          "items": [
+            "Target",
+            "Walmart",
+            "GameStop",
+            "TikTok Shop"
+          ],
+          "locale": "en"
+        }
+      },
+      "source_label": "Comics Beat"
+    },
+    {
+      "narration": "At New York Comic Con 2026, Kayou sold its first oversized card ever offered for purchase.",
+      "visual": "calendar",
+      "params": {
+        "accent": "#E83E8C"
+      },
+      "camera": "push_in",
+      "stock_query": "comic convention crowd",
+      "image_prompt": "Giant oversized holographic trading card displayed on a pedestal at a busy comic convention booth, crowd silhouettes, spotlight beams, vertical 9:16, epic reveal moment, no characters, no logos",
+      "emphasis": [
+        "first",
+        "oversized"
+      ],
+      "sfx": "riser",
+      "stat": {
+        "text": "1st",
+        "sub": "oversized Kayou card for sale"
+      },
+      "mascot": null,
+      "overlay": {
+        "type": "headline",
+        "data": {
+          "kicker": "NEWS",
+          "text": "Kayou sells first oversized card ever offered for purchase",
+          "source": "Age of the Nerd",
+          "date": "NYCC 2026",
+          "locale": "en"
+        }
+      },
+      "source_label": "Age of the Nerd"
+    },
+    {
+      "narration": "Eyeing a pricey listing? Check for the Kayou logo first.",
+      "visual": "holo_cards",
+      "params": {
+        "mode": "float",
+        "accent": "#E83E8C"
+      },
+      "camera": "pull_out",
+      "stock_query": "opening card pack",
+      "image_prompt": "Hands holding a pastel trading card box up to the light, checking the logo corner closely, holographic sparkle, vertical 9:16, satisfying cinematic finish, no characters, no logos",
+      "emphasis": [
+        "logo",
+        "Kayou"
+      ],
+      "sfx": "impact",
+      "stat": null,
+      "mascot": "happy",
+      "overlay": {
+        "type": "compare",
+        "data": {
+          "left": {
+            "label": "Official",
+            "value": "Kayou logo"
+          },
+          "right": {
+            "label": "Bootleg",
+            "value": "No logo"
+          },
+          "locale": "en"
+        }
+      },
+      "source_label": "One collector blog (Trading Card Archive"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "One collector blog reports some boxes that used to cost about $30 are now listed for $3,000 or more.",
+      "source": "https://tradingcardarchives.com/2024/08/09/my-little-pony-kayous-trading-card-rocket-ship/"
+    },
+    {
+      "claim": "Kayou publishes official, licensed My Little Pony cards with Hasbro.",
+      "source": "https://www.comicsbeat.com/nycc-26-hasbro-and-kayou-my-little-pony-tcg-set-exclusives-experiences/"
+    },
+    {
+      "claim": "The latest set has 162 unique cards across 10 rarity tiers.",
+      "source": "https://www.comicsbeat.com/nycc-26-hasbro-and-kayou-my-little-pony-tcg-set-exclusives-experiences/"
+    },
+    {
+      "claim": "On Etsy, individual rare 2026 My Little Pony Kayou cards are listed for roughly $9 up to $269 (asking prices).",
+      "source": "https://www.etsy.com/market/my_little_pony_kayou_cards"
+    },
+    {
+      "claim": "Bootleg boxes exist that lack the Kayou logo and are lower quality.",
+      "source": "https://tradingcardarchives.com/2024/08/09/my-little-pony-kayous-trading-card-rocket-ship/"
+    },
+    {
+      "claim": "The cards are slated for Target, Walmart, GameStop, TikTok Shop and other U.S. retailers.",
+      "source": "https://www.comicsbeat.com/nycc-26-hasbro-and-kayou-my-little-pony-tcg-set-exclusives-experiences/"
+    },
+    {
+      "claim": "At New York Comic Con 2026, Kayou sold the first oversized KAYOU card ever offered for purchase.",
+      "source": "https://ageofthenerd.com/2026/10/hasbro-and-kayou-bring-my-little-pony-cards-nycc-exclusives-fan-fueled-fun-to-new-york-comic-con/"
+    }
+  ],
+  "metadata": {
+    "title": "How My Little Pony cards sparked a whole new fanbase 🦄",
+    "description": "Official Kayou x Hasbro My Little Pony cards: a 162-card set, rare singles listed up to $269, and one collector blog reporting some ~$30 boxes listed for $3,000 or more. Plus: how to spot bootleg boxes. Sources: comicsbeat.com, ageofthenerd.com, tradingcardarchives.com, etsy.com",
+    "hashtags": [
+      "mylittlepony",
+      "kayou",
+      "tradingcards",
+      "tcg",
+      "cardcollector",
+      "packopening",
+      "collectibles",
+      "hasbro",
+      "nycc",
+      "facts",
+      "cardtok"
+    ]
+  },
+  "format": "30s",
+  "language": "en",
+  "fact_check": {
+    "verdict": "fix",
+    "issues": [
+      {
+        "text": "Why $30 Pony Card Boxes Now List for $3,000",
+        "problem": "The source says only *some* boxes are listed at $3,000 or more. This title generalizes to all $30 boxes. 'Why' also promises a causal explanation the sources don't give.",
+        "fix": "Some $30 Pony Card Boxes Now List for $3,000"
+      },
+      {
+        "text": "One collector blog says $30 pony card boxes now list for $3,000.",
+        "problem": "This overgeneralizes. The blog says 'some boxes' that used to cost about $30 are listed for $3,000 or more.",
+        "fix": "One collector blog says some $30 pony card boxes now list for $3,000."
+      },
+      {
+        "text": "At Comic Con 2026, Kayou sold its first oversized card ever.",
+        "problem": "The source specifies New York Comic Con 2026 and says it was the first oversized KAYOU card ever offered for purchase. 'First oversized card ever' could be read as the first one ever made.",
+        "fix": "At New York Comic Con 2026, Kayou sold its first oversized card ever offered for purchase."
+      },
+      {
+        "text": "stat sub: 'oversized Kayou card'",
+        "problem": "It omits the 'offered for purchase' qualifier.",
+        "fix": "oversized Kayou card for sale"
+      },
+      {
+        "text": "Check that logo before a $30 box costs you $3,000.",
+        "problem": "This implies boxes actually sell for $3,000 and that bootlegs are sold at that price. The source supports neither: prices are 'listed', and nothing links bootlegs to $3,000 sales.",
+        "fix": "Eyeing a pricey listing? Check for the Kayou logo first."
+      },
+      {
+        "text": "image_prompt (final scene): 'price shifting from $30 to $3,000'",
+        "problem": "This visually reinforces the unsupported claim that a bootleg costs $3,000.",
+        "fix": "Remove the price shift and focus on checking the logo corner."
+      },
+      {
+        "text": "metadata.title: 'Why My Little Pony cards are suddenly a big deal'",
+        "problem": "This leans toward an unsupported trend/hype claim. The source only says the cards sparked a whole new fanbase.",
+        "fix": "How My Little Pony cards sparked a whole new fanbase 🦄"
+      },
+      {
+        "text": "metadata.description: 'one collector blog reporting $30 boxes listed for $3,000'",
+        "problem": "It drops the 'some' qualifier and the 'or more' wording.",
+        "fix": "one collector blog reporting some ~$30 boxes listed for $3,000 or more"
+      },
+      {
+        "text": "hashtag: pokemoncardsalternative",
+        "problem": "This implies a comparison or positioning that no source supports.",
+        "fix": "Remove the hashtag."
+      }
+    ]
+  },
+  "tag": "MLP CARDS · KAYOU",
+  "accent": "#E83E8C",
+  "overlays_planned": 8,
+  "research_sources": [
+    {
+      "title": "ComicsBeat: NYCC '26 – Hasbro and KAYOU give an early look at latest MY LITTLE PONY TCG set",
+      "url": "https://www.comicsbeat.com/nycc-26-hasbro-and-kayou-my-little-pony-tcg-set-exclusives-experiences/"
+    },
+    {
+      "title": "Age of The Nerd: Hasbro and KAYOU bring My Little Pony cards to New York Comic Con",
+      "url": "https://ageofthenerd.com/2026/10/hasbro-and-kayou-bring-my-little-pony-cards-nycc-exclusives-fan-fueled-fun-to-new-york-comic-con/"
+    },
+    {
+      "title": "Trading Card Archives: My Little Pony – Kayou's Trading Card Rocket Ship",
+      "url": "https://tradingcardarchives.com/2024/08/09/my-little-pony-kayous-trading-card-rocket-ship/"
+    },
+    {
+      "title": "Etsy: My Little Pony Kayou cards listings",
+      "url": "https://www.etsy.com/market/my_little_pony_kayou_cards"
+    },
+    {
+      "title": "KAYOU US – TikTok Shop",
+      "url": "https://shop.tiktok.com/us/store/kayou-us/7494109179661485529"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Why are My Little Pony trading cards suddenly a big deal?",
+  "voice": "kokoro|af_heart:0.7,af_nicole:0.3|0.96"
+}

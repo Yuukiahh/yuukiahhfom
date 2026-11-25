@@ -40,7 +40,7 @@ def _card_texture(w: int, h: int, rng: np.random.Generator, accent, rarity: int)
     r = int(w * 0.07)
     # inner art window (pastel)
     pad = int(w * 0.09)
-    d.rounded_rectangle([pad, pad, w - pad, int(h * 0.62)], r // 2, fill=(*[int(c * 0.35 + 150) for c in accent], 235))
+    d.rounded_rectangle([pad, pad, w - pad, int(h * 0.62)], r // 2, fill=(*[int(c * 0.45 + 85) for c in accent], 240))
     cx, cy, s = w / 2, h * 0.36, w * 0.22
     kind = rng.integers(0, 3)
     if kind == 0:  # star
@@ -148,7 +148,15 @@ class HoloCards(Scene):
             warped = np.asarray(self.cards[i].transform((x1 - x0, y1 - y0), Image.PERSPECTIVE, _quad_coeffs(local, src),
                                                         Image.BILINEAR), np.float32)
             shine = 0.8 + 0.3 * (0.5 + 0.5 * math.sin(ry * 2 + t))
-            rgb, al = warped[..., :3] * shine, warped[..., 3:4] / 255
+            hh, ww = warped.shape[:2]
+            gy, gx = np.mgrid[0:hh, 0:ww].astype(np.float32)
+            sweep = ((t * 0.45 + self.phase[i][0] / 6.28) % 1.6) - 0.3   # moving foil sheen
+            pos = (gx / max(ww, 1) + gy / max(hh, 1) * 0.6) / 1.6
+            sheen = np.exp(-((pos - sweep) / 0.06) ** 2)[..., None] * np.array([255, 245, 255], np.float32) * 0.55
+            if z < 0.95:  # depth of field for cards further back
+                warped = np.asarray(Image.fromarray(warped.astype(np.uint8), "RGBA").filter(
+                    ImageFilter.GaussianBlur(2.5 * (0.95 - z) / 0.15 + 0.5)), np.float32)
+            rgb, al = warped[..., :3] * shine + sheen * (warped[..., 3:4] > 0), warped[..., 3:4] / 255
             # clip to frame
             ax0, ay0, ax1, ay1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)
             sl = (slice(ay0 - y0, ay1 - y0), slice(ax0 - x0, ax1 - x0))

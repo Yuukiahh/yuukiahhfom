@@ -25,7 +25,7 @@ from .config import ROOT
 
 FONT_DIR = ROOT / "assets" / "fonts"
 GREEN, RED, ACCENT, ACCENT2, WHITE = (52, 211, 153), (248, 81, 104), (124, 58, 237), (56, 225, 255), (255, 255, 255)
-CARD = (12, 14, 24, 205)
+CARD = (12, 14, 24, 150)
 TYPES = ["headline", "timeline", "bars", "counter", "quote", "person", "checklist", "compare"]
 
 
@@ -140,6 +140,19 @@ def r_timeline(d: dict, t: float, dur: float, W: int) -> Image.Image:
     return im
 
 
+def fmt_value(x: float, unit: str = "", signed: bool = False, ref: float | None = None, locale: str = "en") -> str:
+    """$2,999 / 31 % / -5.9% / 4,3 Mio. – currency in front, sign only for changes, thousands separators."""
+    ref = x if ref is None else ref
+    dec = 0 if abs(ref) >= 10 or float(ref).is_integer() else 1
+    num = f"{abs(x):,.{dec}f}"
+    if locale == "de":
+        num = num.replace(",", "X").replace(".", ",").replace("X", ".")
+    sign = ("+" if x > 0 else "-" if x < 0 else "") if signed else ("-" if x < 0 else "")
+    if unit in ("$", "€", "£", "¥"):
+        return f"{sign}{unit}{num}" if locale != "de" or unit != "€" else f"{sign}{num} €"
+    return f"{sign}{num}{unit}"
+
+
 def r_bars(d: dict, t: float, dur: float, W: int) -> Image.Image:
     items = d.get("items", [])[:4]
     has_neg_pre = any(float(it.get("value", 0)) < 0 for it in items)
@@ -171,7 +184,7 @@ def r_bars(d: dict, t: float, dur: float, W: int) -> Image.Image:
             dr.rounded_rectangle([x, base, x + bw * 0.6, base + hh], 12, fill=(*col, 255))
             ty = base + hh + 8
         shown = v * g
-        txt = f"{'+' if v > 0 else ''}{shown:.0f}{unit}" if abs(v) >= 10 else f"{'+' if v > 0 else ''}{shown:.1f}{unit}"
+        txt = fmt_value(shown, unit, signed=has_neg or unit in ("%", "pp", "Pp"), ref=v, locale=d.get("locale", "en"))
         if g > 0.05:
             dr.text((x + bw * 0.3 - fv.getlength(txt) / 2, ty), txt, font=fv, fill=(*col, 255))
         lab = str(it.get("label", ""))
@@ -183,6 +196,7 @@ def r_bars(d: dict, t: float, dur: float, W: int) -> Image.Image:
 def r_counter(d: dict, t: float, dur: float, W: int) -> Image.Image:
     w, h = int(W * 0.8), 300
     im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ImageDraw.Draw(im).rounded_rectangle([0, 10, w - 1, h - 1], 40, fill=(10, 12, 22, 150))
     dr = ImageDraw.Draw(im)
     v = float(d.get("value", 0))
     dec = int(d.get("decimals", 0 if abs(v) >= 10 or v == int(v) else 1))
@@ -350,6 +364,11 @@ class OverlayLayer:
         self._tag_im = chrome_tag(self.tag, w) if self.tag else None
         self._src_im = chrome_source(self.source, w, spec.get("lang", "de")) if self.source else None
         self.y_center = float(spec.get("overlay_y", 0.36))
+        acc = str((spec.get("params") or {}).get("accent") or "#38E1FF").lstrip("#")
+        try:
+            self.accent = tuple(int(acc[i:i + 2], 16) for i in (0, 2, 4))
+        except ValueError:
+            self.accent = ACCENT2
 
     def active(self) -> bool:
         return bool(self.ov or self._tag_im or self._src_im)
@@ -366,6 +385,39 @@ class OverlayLayer:
         reg = frame[y0:y1, x0:x1].astype(np.float32)
         frame[y0:y1, x0:x1] = (reg * (1 - al) + a[..., :3] * al).astype(np.uint8)
 
+    def _glass(self, frame: np.ndarray, im: Image.Image, x: int, y: int, env: float, lt: float) -> None:
+        """Frosted glass behind the card + soft accent glow around it."""
+        H, W = frame.shape[:2]
+        pad = 40
+        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(W, x + im.width + pad), min(H, y + im.height + pad)
+        if x1 <= x0 or y1 <= y0:
+            return
+        region = Image.fromarray(frame[y0:y1, x0:x1])
+        rw, rh = region.size
+        blurred = np.asarray(region.reduce(3).filter(ImageFilter.GaussianBlur(6)).resize((rw, rh), Image.BILINEAR), np.float32)
+        alpha = Image.new("L", (rw, rh), 0)
+        alpha.paste(im.split()[3].point(lambda v: 255 if v > 8 else 0), (x - x0, y - y0))
+        a = np.asarray(alpha, np.float32)[..., None] / 255 * env
+        glow_a = np.asarray(alpha.reduce(4).filter(ImageFilter.GaussianBlur(6)).resize((rw, rh), Image.BILINEAR), np.float32)[..., None] / 255
+        reg = frame[y0:y1, x0:x1].astype(np.float32)
+        reg = reg * (1 - a) + (blurred * 0.85) * a
+        reg = reg + np.clip(glow_a - a, 0, 1) * np.array(self.accent, np.float32) * 0.55 * env
+        frame[y0:y1, x0:x1] = np.clip(reg, 0, 255).astype(np.uint8)
+
+    @staticmethod
+    def _shine(im: Image.Image, lt: float) -> Image.Image:
+        """Diagonal light sweep across the card during its entrance."""
+        p = (lt - 0.15) / 0.7
+        if not 0 <= p <= 1:
+            return im
+        w, h = im.size
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        pos = (xx + yy * 0.5) / (w + h * 0.5)
+        band = np.exp(-((pos - (p * 1.4 - 0.2)) / 0.05) ** 2)
+        arr = np.asarray(im, np.float32).copy()
+        arr[..., :3] = np.clip(arr[..., :3] + band[..., None] * 120 * (arr[..., 3:4] > 0), 0, 255)
+        return Image.fromarray(arr.astype(np.uint8), "RGBA")
+
     def apply(self, frame: np.ndarray, t: float) -> np.ndarray:
         frame = np.ascontiguousarray(frame)
         if self._tag_im and t >= self.tag_from:
@@ -381,8 +433,9 @@ class OverlayLayer:
                 im = fn(self.ov.get("data", {}), lt, self.t1 - self.t0, self.W)
                 env = _envelope(lt, self.t1 - self.t0, 0.22, 0.2)
                 slide = (1 - ease_out(lt / 0.35)) * 60
-                im = _fade(im, env)
                 x = (self.W - im.width) // 2
                 y = int(self.H * self.y_center - im.height / 2 + slide)
+                self._glass(frame, im, x, y, env, lt)
+                im = _fade(self._shine(im, lt), env)
                 self._comp(frame, im, x, y)
         return frame

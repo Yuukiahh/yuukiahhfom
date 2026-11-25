@@ -160,6 +160,10 @@ def render_scene_clip(spec: dict) -> str:
     from .overlays import OverlayLayer
     ovl = OverlayLayer(spec, w, h)
     ovl = ovl if ovl.active() else None
+    cine = None
+    if cfg().get("render.cinematic", True):
+        from .cinefx import CineFX
+        cine = CineFX(spec, w, h, spec["seed"])
     for i in range(n):
         t = i / fps
         frame = static if static is not None else np.clip(scene.render(t + t0), 0, 255).astype(np.uint8)
@@ -181,9 +185,11 @@ def render_scene_clip(spec: dict) -> str:
         out_f = ((arr.astype(np.uint16) * vig) >> 8).astype(np.int16) + grains[i % 8]
         if bloom:
             out_f = out_f + _bloom(arr, bloom)
+        if cine:
+            out_f = cine.apply(out_f.astype(np.float32), t, fx, fy)
         if spec.get("fade_in") and t < 0.18:
-            out_f = (out_f * (t / 0.18)).astype(np.int16)
-        out8 = np.clip(out_f, 0, 255).astype(np.uint8)
+            out_f = (out_f.astype(np.float32) * (t / 0.18))
+        out8 = out_f if out_f.dtype == np.uint8 else np.clip(out_f, 0, 255).astype(np.uint8)
         if ovl:
             out8 = ovl.apply(out8, t)
         proc.stdin.write(out8.tobytes())

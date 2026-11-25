@@ -284,6 +284,9 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
             sc["visual"] = vis
             prm = (pl or {}).get("params")
             sc["params"] = prm if isinstance(prm, dict) else {}
+            hl = sc["params"].get("highlight")
+            if hl is not None and not (isinstance(hl, int) and 1 <= hl <= 31):
+                sc["params"].pop("highlight")
     if isinstance(res, dict) and res.get("tag"):
         script["tag"] = str(res["tag"])[:26].upper()
     if isinstance(res, dict) and re.fullmatch(r"#[0-9a-fA-F]{6}", str(res.get("accent", ""))):
