@@ -149,6 +149,10 @@ def fmt_value(x: float, unit: str = "", signed: bool = False, ref: float | None 
     if locale == "de":
         num = num.replace(",", "X").replace(".", ",").replace("X", ".")
     sign = ("+" if x > 0 else "-" if x < 0 else "") if signed else ("-" if x < 0 else "")
+    u = unit.strip()
+    if u[:1] in ("$", "€", "£", "¥") and len(u) > 1:  # "$ / 1K views" -> "$0.1 / 1K views"
+        rest = u[1:].strip()
+        return f"{sign}{u[0]}{num}{(' ' + rest) if rest.startswith('/') else rest}"
     if unit in ("$", "€", "£", "¥"):
         return f"{sign}{unit}{num}" if locale != "de" or unit != "€" else f"{sign}{num} €"
     return f"{sign}{num}{unit}"
