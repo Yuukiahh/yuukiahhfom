@@ -61,6 +61,16 @@ loudness_lufs = -14
 music_volume_db = -21
 preset = "cinematic"             # siehe factory/presets.py
 
+[mascot]
+enabled = true
+mode = "moments"                 # moments = Hook, Reaktionen, CTA | always = immer sichtbar mit Lippensync
+size = 620                       # Overlay-Größe in px (Figur ~1/3 davon)
+x = -0.04                        # Position links unten (Anteil der Bildbreite/-höhe), frei von TikTok-UI rechts
+y = 0.56
+
+[brand]
+cta = "Folge für mehr!"
+
 [subtitles]
 font = "Inter Display"
 font_weight = "Black"

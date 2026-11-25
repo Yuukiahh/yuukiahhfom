@@ -16,12 +16,37 @@ Trends ─▶ Thema ─▶ Recherche ─▶ Skript+Storyboard ─▶ Faktencheck
    ─▶ Freigabe ─▶ (optional) Veröffentlichung ─▶ Analytics ─▶ Self-Improvement
 ```
 
+## Neu in v2
+
+* **Ein Befehl pro Video:** `python -m factory video "Dein Thema"` oder Doppelklick auf **`Video erstellen.cmd`**.
+  Das System recherchiert im Web, schreibt das Skript, prüft die Fakten, erzeugt Stimme, 3D-Animationen, Schnitt,
+  Untertitel, Musik und Soundeffekte und gibt eine fertige MP4 aus.
+* **Deutsch ist Standard.** Die Stimmen-Kette ist ElevenLabs (dein Abo, natürlichste Stimme, optional) → Edge-Neural
+  (kostenlos, sehr natürlich) → Thorsten (offline). Zahlen und Einheiten werden korrekt ausgesprochen.
+  Aus „25,9 Mrd. km“ wird zum Beispiel „fünfundzwanzig Komma neun Milliarden Kilometer“.
+* **1080×1920 bei 60 fps.** Echte 3D-Szenen: Spiralgalaxie, Hologramm-Globus, DNA, Synthwave-Landschaft, Atom,
+  Ringplanet, Datenstadt, Hyperraum und neuronales Netz. Dazu Schwarzes Loch mit Gravitationslinse, Sonde, Fusion u. v. m.
+* **3D-Maskottchen „Nova“** (Blender): Intro, Winken, Zeigen, Staunen, Freude, Nachdenken und Lippensync über drei
+  Mund-Varianten. Es reagiert automatisch auf Hook, Zahlenkarten, Fragen und CTA.
+* **Retention-Schnitt:**
+  * eigene Übergänge (Zoom-Punch, Whip-Pan mit Bewegungsunschärfe, Glitch, Flash, Spin, Kreis-Reveal, Dip)
+  * Einstellungswechsel alle 2 bis 3 Sekunden, Handheld-Kamera und Zoom-Bumps auf Schlüsselwörtern
+  * Untertitel mit Highlight-Pill, Zahlenkarten, Hook-Titel und CTA-Karte
+* **Audio v2:**
+  * Musik-Engine mit 7 Stimmungen (Drums, Build-up, Drop genau auf Schnitten), 39 eigene SFX (CC0)
+  * optional lizenzierte Musik aus `assets/music/` mit Lizenz-Sidecar
+* **Automatische Recherche und Trends** über die Websuche der Claude-Code-CLI (dein Abo, keine API-Kosten),
+  mit Quellen-URLs.
+* **MoneyPrinterTurbo-Skill** (offiziell, v1.3.2) liegt unter `.claude/skills/moneyprinterturbo-video/`
+  und wird vom Installer nach `%USERPROFILE%\.claude\skills` kopiert.
+
 ## Schnellstart (Windows 11)
 
 ```powershell
 # Im Ordner content-factory, PowerShell als normaler Benutzer:
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-.\install\windows\install.ps1          # Python, FFmpeg, Git, venv, Modelle, MoneyPrinterTurbo
+.\install\windows\install.ps1          # Python, FFmpeg, Git, venv, Modelle, MoneyPrinterTurbo + Skill
+#   optional: -WithCoqui (Offline-Stimme Thorsten)  -WithBlender (Maskottchen neu rendern)  -WithOllama
 .\.venv\Scripts\Activate.ps1
 python -m factory doctor               # Systemcheck: GPU-Encoder, LLMs, TTS, Keys
 python -m factory make "What happens if you fall into a black hole?"
@@ -33,6 +58,8 @@ python -m factory dashboard            # http://127.0.0.1:8765
 
 | Befehl | Zweck |
 |---|---|
+| `python -m factory video "<Thema>"` | **Thema rein → fertige MP4 raus** (Recherche, Skript, Stimme, 3D, Schnitt) |
+| `python -m factory mascot build` | Maskottchen in Blender neu rendern (GPU) und packen |
 | `python -m factory doctor` | Prüft FFmpeg/NVENC, ONNX-CUDA, Kokoro, Claude CLI, Ollama und Keys |
 | `python -m factory trends` | Trends abrufen, Themen bewerten, Top-Liste anzeigen |
 | `python -m factory make "<Thema>" --format short\|long --lang en\|de` | Ein Video sofort produzieren |

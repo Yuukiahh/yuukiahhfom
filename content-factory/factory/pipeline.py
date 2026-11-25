@@ -269,14 +269,26 @@ def rerender_subtitles(video_id: int) -> dict:
                               cta=r.get("cta"))
     final = Path(v["path"])
     tmp = final.with_suffix(".new.mp4")
+    mascot_track = Path(r["mascot_track"]) if r.get("mascot_track") else None
+    from . import mascot
+    if cfg().get("mascot.enabled", True) and mascot.available():
+        # rebuild with the current mascot settings (size/mode); spans reconstructed from word timings
+        n = len(script["scenes"])
+        starts = [min([w["start"] for w in words if w["scene"] == i] or [0.0]) for i in range(n)]
+        spans = [(starts[i], starts[i + 1] if i + 1 < n else r["total"]) for i in range(n)]
+        cues = mascot.plan_cues(script, words, spans, r["total"], r["stats"])
+        mascot_track = mascot.render_track(cues, work / "voice.wav", r["total"], cfg().get("render.fps", 60),
+                                           work / "mascot.mov", int(cfg().get("mascot.size", 440)))
+    elif not cfg().get("mascot.enabled", True):
+        mascot_track = None
     assemble(r["clips"], r["durations"], r["transitions"], r["trans_dur"], work / "voice.wav", work / "music.wav",
-             work / "sfx.wav", ass, tmp, r["total"], trans_clips=r.get("trans_clips"),
-             mascot_track=Path(r["mascot_track"]) if r.get("mascot_track") else None)
+             work / "sfx.wav", ass, tmp, r["total"], trans_clips=r.get("trans_clips"), mascot_track=mascot_track)
     tmp.replace(final)
     shutil.copy(ass, folder / "subtitles.ass")
     _write_srt(words, folder / "subtitles.srt")
     report = qc.run(final, script, words, json.loads((folder / "licenses.json").read_text("utf-8"))["media"],
-                    sf.info(work / "voice.wav").duration)
+                    sf.info(work / "voice.wav").duration,
+                    extra={"shots": r.get("shots", 0), "mascot_cues": len(locals().get("cues") or [])})
     (folder / "qc.json").write_text(json.dumps(report, indent=2), "utf-8")
     db.update("videos", video_id, qc=report, qc_passed=int(report["passed"]))
     return {"ok": True, "qc": report}

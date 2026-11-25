@@ -28,6 +28,7 @@ KNOWN = {
     "reddit_client_id": "Reddit API (optional, höhere Limits)",
     "reddit_client_secret": "Reddit API Secret (optional)",
     "anthropic_api_key": "Claude API (KOSTENPFLICHTIG – nur mit Freigabe)",
+    "elevenlabs_api_key": "ElevenLabs API – natürlichste deutsche Stimme (nutzt dein Abo-Kontingent)",
 }
 
 
