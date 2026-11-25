@@ -582,3 +582,4 @@ from . import three_d as _three_d  # noqa: E402,F401
 # Topical (news / business / tech / politics) backgrounds, same self-registration pattern; imported
 # after three_d because topical.py builds on its renderer.
 from . import topical as _topical  # noqa: E402,F401
+from . import cards as _cards  # noqa: E402,F401  (trading-card scene)

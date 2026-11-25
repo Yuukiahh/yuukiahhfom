@@ -183,6 +183,7 @@ VISUAL_CATALOG = {
     "datacenter": "server hall aisle with blinking racks (AI compute, cloud, data, servers)",
     "calendar": "3D flipping calendar day cards; params.highlight = day number (dates, deadlines, 'days later')",
     "courtroom": "court bench and gavel (lawsuits, trials, judges)",
+    "holo_cards": "floating holographic trading cards; params.mode float|fan|burst (trading cards, TCG, collectibles, packs, pulls, rare cards)",
     "blackhole": "black hole with lensed accretion disk (black holes, gravity, extreme physics)",
     "galaxy3d": "rotating 3D spiral galaxy (galaxies, universe, cosmic scale)",
     "nebula": "colourful nebula and stars (space, stars, cosmos)",
