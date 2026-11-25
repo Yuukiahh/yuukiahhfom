@@ -144,7 +144,7 @@ def r_timeline(d: dict, t: float, dur: float, W: int) -> Image.Image:
 def fmt_value(x: float, unit: str = "", signed: bool = False, ref: float | None = None, locale: str = "en") -> str:
     """$2,999 / 31 % / -5.9% / 4,3 Mio. – currency in front, sign only for changes, thousands separators."""
     ref = x if ref is None else ref
-    dec = 0 if abs(ref) >= 10 or float(ref).is_integer() else 1
+    dec = 0 if abs(ref) >= 10 or float(ref).is_integer() else 1 if abs(ref) >= 1 else 2 if abs(ref) >= 0.1 else 3
     num = f"{abs(x):,.{dec}f}"
     if locale == "de":
         num = num.replace(",", "X").replace(".", ",").replace("X", ".")
