@@ -195,8 +195,9 @@ function scoreRing(score) {
 function barChart(items, { height = 220, format = fmt.compact, color } = {}) {
   if (!items.length) return empty("Keine Daten", null, "chart");
   const W = 640, H = height, padL = 44, padB = 54, padT = 14;
-  const max = Math.max(...items.map((i) => i.value || 0), 1);
-  const bw = (W - padL - 10) / items.length;
+  const max = Math.max(...items.map((i) => i.value || 0)) || 1;
+  const bw = Math.min((W - padL - 10) / items.length, 90);
+  const x0 = padL + ((W - padL - 10) - bw * items.length) / 2;
   const id = "cg" + Math.random().toString(36).slice(2, 8);
   let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${color || "#8B5CF6"}"/><stop offset="1" stop-color="${color || "#22D3EE"}"/></linearGradient></defs><g class="grid">`;
   for (let i = 0; i <= 4; i++) {
@@ -206,7 +207,7 @@ function barChart(items, { height = 220, format = fmt.compact, color } = {}) {
   s += "</g>";
   items.forEach((it, i) => {
     const bh = (H - padT - padB) * ((it.value || 0) / max);
-    const x = padL + i * bw + bw * 0.18, w = bw * 0.64, y = H - padB - bh;
+    const x = x0 + i * bw + bw * 0.18, w = bw * 0.64, y = H - padB - bh;
     s += `<rect class="bar" x="${x}" y="${y}" width="${w}" height="${Math.max(bh, 1)}" rx="5" fill="url(#${id})"><title>${esc(it.title || it.label)}: ${esc(format(it.value))}</title></rect>`;
     const lbl = String(it.label).length > 14 ? String(it.label).slice(0, 13) + "…" : String(it.label);
     s += `<text class="lbl" x="${x + w / 2}" y="${H - padB + 16}" text-anchor="end" transform="rotate(-28 ${x + w / 2} ${H - padB + 16})">${esc(lbl)}</text>`;
@@ -275,8 +276,10 @@ async function route() {
 }
 
 /* global poll: worker pill + nav badges */
+let lastStatus = null;
 async function pollGlobal() {
   const [st] = await safe(api("/api/status"));
+  if (st) lastStatus = st;
   const pill = $("#workerPill");
   if (!st) { pill.replaceChildren(h("span.dot.red"), h("span", "Server nicht erreichbar")); return; }
   const ws = st.worker_state && st.worker_state.state;
@@ -427,7 +430,8 @@ async function renderTrends(view, ctx) {
     if (t.status === "queued") btn.lastChild.textContent = "Eingereiht";
     btn.addEventListener("click", async () => {
       const ok = await withBusy(btn, async () => {
-        const [r, err] = await safe(apiPost(`/api/topics/${t.id}/enqueue`, {}));
+        let [r, err] = await safe(apiPost(`/api/topics/${t.id}/enqueue`, {}));
+        if (err && err.status === 409 && confirm(`${err.message}\n\nTrotzdem einreihen?`)) [r, err] = await safe(apiPost(`/api/topics/${t.id}/enqueue`, { force: true }));
         if (err) { errToast(err); return false; }
         toast(`Job #${r.job_id} eingereiht: ${t.title}`, "ok");
         return true;
@@ -436,21 +440,29 @@ async function renderTrends(view, ctx) {
     });
     return h("div.topic", scoreRing(t.score),
       h("div", { style: { minWidth: 0 } }, h("div.title", t.title),
-        h("div.ev", t.niche ? h("span.badge.violet", t.niche) : null,
+        h("div.tev", t.niche ? h("span.badge.violet", t.niche) : null,
           detail.map(([k, v]) => h("span.badge", { title: k }, `${k}: ${v.toFixed(2)}`)), links,
           evidence.length > 4 ? h("span", `+${evidence.length - 4}`) : null)),
       btn);
   }
 
   function sourceList(src) {
-    const entries = Object.entries(src);
-    if (!entries.length) return empty("Keine Quellen", null);
-    return h("div", entries.map(([name, s]) => {
-      const ok = typeof s === "object" && s !== null ? (s.ok ?? s.enabled ?? s.available) : !!s;
-      const note = typeof s === "object" && s !== null ? (s.note || s.error || (s.count != null ? `${s.count} Signale` : "") || (s.last_fetch ? fmt.rel(s.last_fetch) : "")) : "";
-      return h("div.row", { style: { padding: "7px 0", borderBottom: "1px solid var(--border)" } },
-        h("span.dot", { class: ok ? "green" : ok === false ? "red" : "" }), h("b", { style: { fontWeight: 500 } }, name), h("span.small.muted", { style: { marginLeft: "auto" } }, String(note)));
-    }));
+    const inner = src && typeof src.sources === "object" ? src.sources : src;
+    const entries = Object.entries(inner || {}).filter(([, s]) => s !== null && typeof s !== "number" || typeof s === "boolean");
+    if (!entries.length) return empty("Noch kein Abruf", "Quellenstatus erscheint nach dem ersten Trend-Refresh.", "trend");
+    return h("div",
+      src.fetched_at ? h("div.small.muted", { style: { marginBottom: "6px" } }, `Letzter Lauf ${fmt.rel(src.fetched_at)}${src.signals != null ? ` · ${src.signals} Signale` : ""}`) : null,
+      entries.map(([name, s]) => {
+        let cls = "", note = "", tip = "";
+        if (typeof s === "object") {
+          const okN = typeof s.ok === "number" ? s.ok : s.ok ? 1 : 0, failN = s.failed || 0;
+          cls = failN && !okN ? "red" : failN ? "amber" : okN || s.ok === true ? "green" : "";
+          note = s.note || [s.signals != null ? `${s.signals} Signale` : null, failN ? `${failN} Fehler` : null].filter(Boolean).join(" · ");
+          tip = (s.errors || []).join("\n") || s.error || "";
+        } else { cls = s ? "green" : "red"; }
+        return h("div.row", { style: { padding: "7px 0", borderBottom: "1px solid var(--border)", flexWrap: "nowrap" }, title: tip || null },
+          h("span.dot", { class: cls }), h("b", { style: { fontWeight: 500 } }, name.replace(/_/g, " ")), h("span.small.muted", { style: { marginLeft: "auto" } }, note));
+      }));
   }
 
   await load();
@@ -478,6 +490,10 @@ async function renderGenerator(view, ctx) {
   const voice = h("select");
   const preset = h("select", (cat.presets || []).map((p) => h("option", { value: p, selected: p === defs.preset }, presetLabel(p))));
   const auto = h("input", { type: "checkbox", checked: true });
+  const scriptIn = h("textarea.mono", { rows: 10, placeholder: '{\n  "title": "…",\n  "hook": "…",\n  "scenes": [ { "narration": "…", "visual": "nebula" } ]\n}' });
+  const scriptBox = h("label.field.full", { hidden: true }, "Eigenes Skript (JSON)", scriptIn,
+    h("span.hint", "Wird unverändert an die Produktion übergeben (Recherche & Faktencheck entfallen). Format wie script.json eines fertigen Videos."));
+  auto.addEventListener("change", () => (scriptBox.hidden = auto.checked));
 
   function fillVoices() {
     const engines = cat.engines || {};
@@ -497,11 +513,17 @@ async function renderGenerator(view, ctx) {
   const form = h("form.card", { onsubmit: async (e) => {
     e.preventDefault();
     if (topic.value.trim().length < 2) { toast("Bitte ein Thema eingeben", "err"); topic.focus(); return; }
+    let script = null;
+    if (!auto.checked) {
+      try { script = JSON.parse(scriptIn.value); } catch (e2) { toast(`Skript ist kein gültiges JSON: ${e2.message}`, "err"); scriptIn.focus(); return; }
+    }
     await withBusy(submit, async () => {
-      const [r, err2] = await safe(apiPost("/api/queue", {
+      const payload = {
         topic: topic.value.trim(), niche: niche.value.trim() || null, format: state.format, language: state.language,
-        preset: preset.value || null, voice: voice.value || null, auto_script: auto.checked,
-      }));
+        preset: preset.value || null, voice: voice.value || null, auto_script: auto.checked, script,
+      };
+      let [r, err2] = await safe(apiPost("/api/queue", payload));
+      if (err2 && err2.status === 409 && confirm(`${err2.message}\n\nTrotzdem einreihen?`)) [r, err2] = await safe(apiPost("/api/queue", { ...payload, force: true }));
       if (err2) return errToast(err2, "Konnte nicht eingereiht werden: ");
       toast(`Job #${r.job_id} eingereiht`, "ok");
       topic.value = "";
@@ -516,7 +538,8 @@ async function renderGenerator(view, ctx) {
       h("div.field", h("label.field", "Format"), seg([["short", "Short · 25–45 s"], ["long", "Long · 60–90 s"]], state.format, (v) => (state.format = v))),
       h("div.field", h("label.field", "Sprache"), seg([["en", "Englisch"], ["de", "Deutsch"]], state.language, (v) => { state.language = v; fillVoices(); })),
       h("label.field.full", "Stimme", voice),
-      h("label.check.full", auto, h("div", h("b", "Skript automatisch"), h("span", "Recherche, Skript und Faktencheck werden vollständig automatisch erstellt. Deaktivieren, um das Skript vor dem Rendern zu prüfen (Status „Prüfung“)."))),
+      h("label.check.full", auto, h("div", h("b", "Skript automatisch"), h("span", "Recherche, Skript und Faktencheck werden vollständig automatisch erstellt. Deaktivieren, um ein eigenes Skript (JSON) vorzugeben."))),
+      scriptBox,
     ),
     h("div.row.end.mt", submit));
   const resultBox = h("div");
@@ -741,8 +764,11 @@ function publishPanel(v) {
   }));
 
   append(wrap, [
-    h("div.notice.info", icon("shield"), h("div", h("b", "Nichts wird ohne dich veröffentlicht"),
-      h("p", "Die Freigabe markiert das Video nur als geprüft. Öffentliches Posten bleibt deaktiviert, bis du es ausdrücklich per ", h("code", "python -m factory publish enable"), " aktivierst."))),
+    lastStatus && lastStatus.publish_enabled
+      ? h("div.notice.warn", icon("warn"), h("div", h("b", "Veröffentlichung ist aktiviert"),
+        h("p", "Freigegebene und eingeplante Videos werden zum geplanten Zeitpunkt hochgeladen.")))
+      : h("div.notice.info", icon("shield"), h("div", h("b", "Nichts wird ohne dich veröffentlicht"),
+        h("p", "Die Freigabe markiert das Video nur als geprüft. Öffentliches Posten bleibt deaktiviert, bis du es ausdrücklich per ", h("code", "python -m factory publish enable"), " aktivierst."))),
     h("div.card", { style: { background: "var(--bg-2)" } }, h("h3", "Freigabe"), h("div.row", h("span.small.muted", "Aktuell:"), statusBadge(v.approval), h("span.spacer", { style: { flex: 1 } }), rejectBtn, approveBtn)),
     h("div.card", { style: { background: "var(--bg-2)" } }, h("h3", "Veröffentlichung planen"),
       v.approval !== "approved" ? h("div.small.muted", { style: { marginBottom: "10px" } }, "Erst nach Freigabe möglich.") : null,
@@ -785,12 +811,12 @@ async function renderSubtitles(view, ctx) {
   let words = w.words.map((x) => ({ ...x }));
   let dirty = false;
   const video = h("video", { src: `/media/${selId}/video`, controls: true, preload: "metadata", poster: `/media/${selId}/thumb` });
-  const caption = h("div.live-caption", "▶ Abspielen für Live-Vorschau");
+  const caption = h("div.live-caption.idle", "Abspielen für Live-Vorschau");
   const tbody = h("tbody");
   const status = h("span.small.muted");
   const saveBtn = button("Speichern", { kind: "primary", ic: "save" });
   const rerenderBtn = button("Neu rendern", { ic: "refresh" });
-  const restoreBtn = button("Original wiederherstellen", { kind: "ghost", ic: "undo", disabled: !w.has_backup });
+  const restoreBtn = button("Original", { kind: "ghost", ic: "undo", disabled: !w.has_backup });
   const shiftInput = h("input", { type: "number", step: "0.05", value: "0", style: { width: "90px" } });
 
   function validate() {
@@ -841,6 +867,7 @@ async function renderSubtitles(view, ctx) {
     const row = tbody.children[idx];
     if (row) { row.classList.add("current"); row.scrollIntoView({ block: "nearest" }); }
     const g0 = Math.max(0, idx - 1), g = words.slice(g0, g0 + 3);
+    caption.classList.remove("idle");
     caption.replaceChildren(...g.map((x, j) => [h("span", { class: g0 + j === idx ? "hl" : "" }, x.text), " "]).flat());
   });
 
@@ -883,7 +910,7 @@ async function renderSubtitles(view, ctx) {
     }, 2000);
     page.timers.push(t);
   }
-  const shiftBtn = button("Alle verschieben", { size: "sm", onclick: () => {
+  const shiftBtn = button("Verschieben", { title: "Alle Wörter um den Versatz verschieben", onclick: () => {
     const off = parseFloat(shiftInput.value) || 0;
     if (!off) return;
     words.forEach((x) => { x.start = Math.max(0, +(x.start + off).toFixed(3)); x.end = Math.max(0, +(x.end + off).toFixed(3)); });
@@ -895,7 +922,7 @@ async function renderSubtitles(view, ctx) {
   view.replaceChildren(h("div.sub-layout",
     h("div.sub-preview.card", video, caption, h("div.small.muted.mt", "Tipp: Klicke ▶ in einer Zeile, um ab diesem Wort abzuspielen.")),
     h("div.card",
-      h("div.row", { style: { marginBottom: "14px" } }, saveBtn, rerenderBtn, restoreBtn, h("span", { style: { flex: 1 } }), h("span.small.muted", "Versatz (s)"), shiftInput, shiftBtn),
+      h("div.row", { style: { marginBottom: "14px" } }, saveBtn, rerenderBtn, restoreBtn, h("span", { style: { flex: 1 } }), h("div.row", { style: { flexWrap: "nowrap", gap: "8px" } }, h("span.small.muted.nowrap", "Versatz (s)"), shiftInput, shiftBtn)),
       h("div.row", { style: { marginBottom: "10px" } }, status),
       h("div.words-scroll", h("table.words-table", h("thead", h("tr", h("th", "#"), h("th", "Wort"), h("th.num", "Start (s)"), h("th.num", "Ende (s)"), h("th.num", "Szene"), h("th", ""))), tbody)))));
   if (w.rerender && w.rerender.running) watchRerender(w.rerender);
@@ -917,8 +944,8 @@ async function renderPublishing(view, ctx) {
   const plats = d.platforms;
   const platformCards = plats
     ? h("div.grid.g-3", Object.entries(plats).map(([name, s]) => h("div.platform",
-      h("div.logo", { class: name }, name.slice(0, 2).toUpperCase()),
-      h("div.info", h("b", name), h("div.small.muted.ellipsis", { title: s.note || "" }, s.note || (s.connected ? "Konto verbunden" : "Nicht verbunden"))),
+      h("div.logo", { class: name }, ({ youtube: "YT", tiktok: "TT", instagram: "IG" })[name] || name.slice(0, 2).toUpperCase()),
+      h("div.info", h("b", ({ youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram" })[name] || name), h("div.small.muted.clamp2", { title: s.note || "" }, s.note || (s.connected ? "Konto verbunden" : "Nicht verbunden"))),
       h("div.stack", { style: { gap: "6px", alignItems: "flex-end" } },
         s.connected ? h("span.badge.green", "Verbunden") : h("span.badge", "Nicht verbunden"),
         s.enabled ? h("span.badge.amber", "Aktiv") : h("span.badge", "Inaktiv")))))
@@ -978,7 +1005,7 @@ async function renderPerformance(view, ctx) {
       m.length ? h("div.table-wrap", h("table",
         h("thead", h("tr", ["Video", "Plattform", "Aufrufe", "Likes", "Komm.", "Shares", "Ø %", "Ø s", "Abos", "Stand"].map((t, i) => h("th", { class: i > 1 && i < 9 ? "num" : "" }, t)))),
         h("tbody", m.map((r) => h("tr",
-          h("td", h("a", { href: "#", onclick: (e) => { e.preventDefault(); openVideo(r.video_id); } }, r.title || `#${r.video_id}`)), h("td", r.platform),
+          h("td", { style: { minWidth: "220px" } }, h("a", { href: "#", onclick: (e) => { e.preventDefault(); openVideo(r.video_id); } }, r.title || `#${r.video_id}`)), h("td", r.platform),
           h("td.num", fmt.num(r.views)), h("td.num", fmt.num(r.likes)), h("td.num", fmt.num(r.comments)), h("td.num", fmt.num(r.shares)),
           h("td.num", r.avg_view_pct == null ? "–" : r.avg_view_pct.toFixed(1)), h("td.num", r.avg_view_duration == null ? "–" : r.avg_view_duration.toFixed(1)),
           h("td.num", fmt.num(r.subscribers_gained)), h("td.nowrap.small.muted", fmt.short(r.fetched_at)))))))

@@ -101,6 +101,8 @@ def _call(module: str, fn: str, *args: Any, _log: bool = True, **kwargs: Any) ->
         return f(*args, **kwargs)
     except HTTPException:
         raise
+    except ValueError as e:  # domain validation from factory modules, e.g. duplicate topic
+        raise _err(409 if "uplikat" in str(e) else 400, str(e), kind="value_error")
     except Exception as e:
         if _log:
             db_log(f"Dashboard: {module}.{fn} fehlgeschlagen: {e}", "error")
@@ -253,6 +255,8 @@ class EnqueueIn(BaseModel):
     preset: str | None = None
     voice: str | None = None
     auto_script: bool = True
+    script: dict | None = None      # optional hand-written script (used when auto_script is False)
+    force: bool = False             # enqueue even if the topic looks like a duplicate
     options: dict | None = None
 
 
@@ -276,8 +280,20 @@ def enqueue(body: EnqueueIn):
         raise _err(400, "language muss en oder de sein")
     opts = dict(body.options or {})
     opts["auto_script"] = body.auto_script
-    job_id = _call("factory.worker", "enqueue", body.topic.strip(), niche=body.niche or None, fmt=fmt,
-                   lang=body.language or None, preset=body.preset or None, voice=body.voice or None, options=opts)
+    if not body.auto_script:
+        if not body.script or not isinstance(body.script.get("scenes"), list) or not body.script["scenes"]:
+            raise _err(400, "Ohne automatisches Skript wird ein Skript-JSON mit 'scenes' benötigt")
+        script = dict(body.script)
+        script.setdefault("language", body.language or cfg().get("general.language", "en"))
+        script.setdefault("format", fmt)
+        if body.niche:
+            script.setdefault("niche", body.niche)
+        opts["script"] = script
+    kwargs: dict[str, Any] = {"niche": body.niche or None, "fmt": fmt, "lang": body.language or None,
+                              "preset": body.preset or None, "voice": body.voice or None, "options": opts}
+    if body.force:
+        kwargs["force"] = True
+    job_id = _call("factory.worker", "enqueue", body.topic.strip(), **kwargs)
     db_log(f"Dashboard: Job {job_id} eingereiht – {body.topic.strip()}", job_id=job_id)
     return {"job_id": job_id}
 
@@ -304,6 +320,7 @@ def retry_job(job_id: int):
 class TopicEnqueueIn(BaseModel):
     format: str = "short"
     language: str | None = None
+    force: bool = False
 
 
 @app.get("/api/trends")
@@ -332,13 +349,13 @@ def topic_enqueue(topic_id: int, body: TopicEnqueueIn | None = None):
     if not t:
         raise _err(404, f"Thema {topic_id} nicht gefunden")
     body = body or TopicEnqueueIn()
-    job_id = _call("factory.worker", "enqueue", t["title"], niche=t.get("niche"), fmt=body.format,
-                   lang=body.language or None, options={"topic_id": topic_id, "auto_script": True})
-    try:
-        db.update("topics", topic_id, status="queued")
-        db.update("jobs", job_id, topic_id=topic_id)
-    except Exception:
-        pass
+    if body.format not in ("short", "long"):
+        raise _err(400, "format muss short oder long sein")
+    kwargs: dict[str, Any] = {"niche": t.get("niche"), "fmt": body.format, "lang": body.language or None,
+                              "options": {"evidence": t.get("evidence"), "auto_script": True}, "topic_id": topic_id}
+    if body.force:
+        kwargs["force"] = True
+    job_id = _call("factory.worker", "enqueue", t["title"], **kwargs)
     db_log(f"Dashboard: Trend-Thema {topic_id} eingereiht als Job {job_id}", job_id=job_id)
     return {"job_id": job_id}
 
