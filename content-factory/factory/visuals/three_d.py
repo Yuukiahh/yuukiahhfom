@@ -306,9 +306,24 @@ class Renderer:
         col = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * step[:, None]
         r = np.asarray(width, np.float32)
         r = r[seg] if r.ndim else np.broadcast_to(r, xs.shape)
-        # a bilinear-splatted line is already ~1.5 px wide: only wider lines need bigger footprints
-        r = np.where(r < 1.4, 0.0, r)
-        self.points(xs, ys, col, r, layer, bloom=0)
+        # a bilinear-splatted line is already ~1.5 px wide; 1.4-3 px lines get two taps across the line,
+        # wider ones go through the point path (soft buffers)
+        thin = r < 1.4
+        wide = r >= 3.0
+        thick = ~thin & ~wide
+        if thin.all():
+            self.points(xs, ys, col, None, layer, bloom=0)
+        else:
+            self.points(xs[thin], ys[thin], col[thin], None, layer, bloom=0)
+            if thick.any():
+                sg = seg[thick]
+                ln = np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2) + 1e-6
+                ox, oy = (-(y1 - y0) / ln)[sg] * r[thick] * 0.5, ((x1 - x0) / ln)[sg] * r[thick] * 0.5
+                xt, yt, ct = xs[thick], ys[thick], col[thick] * 0.5
+                self.points(np.concatenate([xt + ox, xt - ox]), np.concatenate([yt + oy, yt - oy]),
+                            np.concatenate([ct, ct]), None, layer, bloom=0)
+            if wide.any():
+                self.points(xs[wide], ys[wide], col[wide], r[wide], layer, bloom=0)
         if bloom and len(xs):  # glow from every 4th sample is plenty for the 1/4-res bloom buffer
             self._push(self._soft, xs[::4] / self.ds, ys[::4] / self.ds, col[::4] * (4 * bloom / self.ds ** 2), self.Ws, self.Hs)
 
