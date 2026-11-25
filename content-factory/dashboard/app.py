@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -70,6 +71,12 @@ def _err(status: int, msg: str, **extra: Any) -> HTTPException:
 async def _http_exc(_request: Request, exc: HTTPException):
     detail = exc.detail if isinstance(exc.detail, dict) else {"error": str(exc.detail)}
     return JSONResponse(detail, status_code=exc.status_code)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_exc(_request: Request, exc: RequestValidationError):
+    problems = [f"{'.'.join(str(x) for x in e.get('loc', []) if x != 'body')}: {e.get('msg')}" for e in exc.errors()]
+    return JSONResponse({"error": "Ungültige Eingabe", "problems": problems[:20]}, status_code=422)
 
 
 def _module(name: str):
