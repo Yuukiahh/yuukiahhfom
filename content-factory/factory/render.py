@@ -157,6 +157,9 @@ def render_scene_clip(spec: dict) -> str:
     t0 = spec.get("time_offset", 0.0)
     W, H = scene.W, scene.H
     bloom = spec.get("bloom", 0.18)
+    from .overlays import OverlayLayer
+    ovl = OverlayLayer(spec, w, h)
+    ovl = ovl if ovl.active() else None
     for i in range(n):
         t = i / fps
         frame = static if static is not None else np.clip(scene.render(t + t0), 0, 255).astype(np.uint8)
@@ -180,7 +183,10 @@ def render_scene_clip(spec: dict) -> str:
             out_f = out_f + _bloom(arr, bloom)
         if spec.get("fade_in") and t < 0.18:
             out_f = (out_f * (t / 0.18)).astype(np.int16)
-        proc.stdin.write(np.clip(out_f, 0, 255).astype(np.uint8).tobytes())
+        out8 = np.clip(out_f, 0, 255).astype(np.uint8)
+        if ovl:
+            out8 = ovl.apply(out8, t)
+        proc.stdin.write(out8.tobytes())
     proc.stdin.close()
     if proc.wait() != 0:
         raise RuntimeError(f"scene render failed: {out}")

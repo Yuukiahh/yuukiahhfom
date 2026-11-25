@@ -61,6 +61,10 @@ loudness_lufs = -14
 music_volume_db = -21
 preset = "cinematic"             # siehe factory/presets.py
 
+[overlays]
+enabled = true                   # Infografik-Overlays (Timeline, Charts, Zähler, Zitate, Personen-Karten, Checklisten ...)
+y = 0.36                         # Mitte der Overlay-Zone (zwischen Hook-Text und Untertiteln)
+
 [mascot]
 enabled = true
 mode = "moments"                 # moments = Hook, Reaktionen, CTA | always = immer sichtbar mit Lippensync

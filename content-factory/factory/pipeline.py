@@ -52,6 +52,12 @@ def prepare_script(topic: str, niche: str, fmt: str, lang: str, progress: Progre
     progress("factcheck", 0.2)
     script, verdict = scriptwriter.fact_check(script, res)
     script["fact_check"] = verdict
+    if cfg().get("overlays.enabled", True):
+        progress("overlays", 0.24)
+        try:
+            script = scriptwriter.plan_overlays(script, res)
+        except Exception as e:  # overlays are an enhancement - never block a video
+            script["overlays_error"] = str(e)[:200]
     script["research_sources"] = res["sources"]
     script["llm_provider"] = provider
     script["topic"] = topic
@@ -126,9 +132,18 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
                       "seed": seed0 + i, "camera": sc.get("camera", CAMERA_MOVES[i % len(CAMERA_MOVES)]),
                       "shots": _shots(dur, sc.get("camera", CAMERA_MOVES[i % len(CAMERA_MOVES)]), rng), "bumps": bumps,
                       "media": m, "out": str(work / f"scene_{i:02d}.mp4"), "shakes": [0.02] if i == 0 or sc.get("sfx") == "impact" else [],
-                      "fade_in": i == 0, "time_offset": rng.uniform(0, 5)})
+                      "fade_in": i == 0, "time_offset": rng.uniform(0, 5),
+                      "overlay": sc.get("overlay") if cfg().get("overlays.enabled", True) else None,
+                      "overlay_start": round((0.0 if i == 0 else cuts[i - 1]) - g0 + (2.5 if i == 0 else 0.12), 3),
+                      "overlay_end": round((total if i == n - 1 else cuts[i]) - g0 - 0.08, 3),
+                      "overlay_y": float(cfg().get("overlays.y", 0.36)),
+                      "tag": script.get("tag") if cfg().get("overlays.enabled", True) else None,
+                      "tag_from": max(0.0, 2.4 - g0), "lang": lang,
+                      "source_label": sc.get("source_label") if cfg().get("overlays.enabled", True) else None})
         start = 0.0 if i == 0 else cuts[i - 1]
         end = total if i == n - 1 else cuts[i]
+        if sc.get("overlay") and cfg().get("overlays.enabled", True):
+            sfx_events.append((start + (2.5 if i == 0 else 0.12), "swoosh_reverse", 0.3))
         cue = sc.get("sfx", "none")
         if cue in ("riser",) and end - start > 2:
             sfx_events.append((end - 1.6, "riser", 0.5))
@@ -137,7 +152,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         for w in words:
             if w["scene"] == i and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm:
                 sfx_events.append((w["start"], "swish_text", 0.22))
-        if sc.get("stat"):
+        if sc.get("stat") and not (sc.get("overlay") and cfg().get("overlays.enabled", True)):
             st_words = [w for w in words if w["scene"] == i]
             st0 = st_words[0]["start"] if st_words else start
             stats.append({"text": sc["stat"]["text"], "sub": sc["stat"].get("sub", ""), "start": st0 + 0.08,

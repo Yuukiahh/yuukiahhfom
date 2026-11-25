@@ -169,3 +169,67 @@ def validate(s: dict) -> list[str]:
         if not sc["narration"]:
             problems.append("empty narration")
     return problems
+
+
+# ------------------------------------------------------------------ overlay planner (motion graphics)
+OVERLAY_PROMPT = """You are a motion-graphics editor for viral explainer shorts. For the SCRIPT below, choose for EVERY
+scene one on-screen infographic overlay that illustrates exactly what is being said (concrete examples, dates, numbers,
+people, comparisons). Use ONLY facts, numbers and dates that appear in the script or the SOURCES - never invent data.
+Vary the types; do not use the same type more than 3 times. Write overlay text in {lang_name}, short and punchy.
+
+Overlay types and their "data":
+- headline  {{"kicker": "BREAKING|NEWS|UPDATE|FACT", "text": "<= 70 chars", "source": "outlet", "date": "short date"}}
+- timeline  {{"events": [{{"date": "...", "label": "<= 18 chars"}}] (2-4 events, chronological), "active": index}}
+- bars      {{"title": "...", "unit": "%|...", "items": [{{"label": "...", "value": number}}] (2-4, negative allowed)}}
+- counter   {{"value": number, "prefix": "+|", "suffix": "%| Mio.|...", "label": "<= 30 chars", "decimals": 0|1}}
+- quote     {{"text": "<= 110 chars, verbatim or close paraphrase from a source", "source": "who said it / outlet"}}
+- person    {{"name": "...", "role": "...", "status": "<= 16 chars", "status_color": "green|red|yellow"}}
+- checklist {{"title": "...", "items": ["<= 28 chars", ...] (2-4)}}
+- compare   {{"left": {{"label": "...", "value": "<= 12 chars"}}, "right": {{"label": "...", "value": "<= 12 chars"}}}}
+Use "overlay": null for a scene only if a big visual moment needs a clean frame (max 2 scenes).
+
+Return JSON: {{"tag": "<= 22 chars topic tag, e.g. NVIDIA · NOV 2026", "scenes": [{{"overlay": {{"type": "...", "data": {{...}}}} | null,
+"source_label": "short outlet name(s) backing this scene, or null"}}, ...]}} with exactly {n} scene entries in order.
+
+SOURCES:
+{context}
+
+SCRIPT:
+{script}"""
+
+
+def _valid_overlay(o) -> bool:
+    if not isinstance(o, dict) or not isinstance(o.get("data"), dict):
+        return False
+    t, d = o.get("type"), o["data"]
+    need = {"headline": ["text"], "timeline": ["events"], "bars": ["items"], "counter": ["value"], "quote": ["text"],
+            "person": ["name"], "checklist": ["items"], "compare": ["left", "right"]}
+    if t not in need or not all(d.get(k) not in (None, "", []) for k in need[t]):
+        return False
+    if t == "bars":
+        return all(isinstance(i.get("value"), (int, float)) for i in d["items"])
+    if t == "counter":
+        return isinstance(d["value"], (int, float))
+    return True
+
+
+def plan_overlays(script: dict, research: dict | None = None) -> dict:
+    lang = script.get("language", "de")
+    n = len(script["scenes"])
+    narr = "\n".join(f"{i + 1}. {sc['narration']}" for i, sc in enumerate(script["scenes"]))
+    prompt = OVERLAY_PROMPT.format(lang_name={"de": "German", "en": "English"}.get(lang, lang), n=n, script=narr,
+                                   context=(research or {}).get("context") or json.dumps(script.get("claims", []), ensure_ascii=False))
+    res, _ = llm.complete_json(prompt, "You design accurate, punchy infographic overlays. JSON only.")
+    plans = res.get("scenes", []) if isinstance(res, dict) else []
+    used = 0
+    for sc, pl in zip(script["scenes"], plans):
+        ov = (pl or {}).get("overlay")
+        if _valid_overlay(ov):
+            sc["overlay"] = {"type": ov["type"], "data": {**ov["data"], "locale": lang}}
+            used += 1
+        if (pl or {}).get("source_label"):
+            sc["source_label"] = str(pl["source_label"])[:40]
+    if isinstance(res, dict) and res.get("tag"):
+        script["tag"] = str(res["tag"])[:26].upper()
+    script["overlays_planned"] = used
+    return script
