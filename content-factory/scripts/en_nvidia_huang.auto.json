@@ -24,7 +24,22 @@
         "text": "11 days",
         "sub": "gone, then back"
       },
-      "mascot": "wow"
+      "mascot": "wow",
+      "overlay": {
+        "type": "compare",
+        "data": {
+          "left": {
+            "label": "Resigned",
+            "value": "Nov 12"
+          },
+          "right": {
+            "label": "Reinstated",
+            "value": "Nov 23"
+          },
+          "locale": "en"
+        }
+      },
+      "source_label": "SEC · Nvidia"
     },
     {
       "narration": "November 12: Jensen Huang quits as CEO.",
@@ -41,7 +56,18 @@
       ],
       "sfx": "glitch",
       "stat": null,
-      "mascot": null
+      "mascot": null,
+      "overlay": {
+        "type": "headline",
+        "data": {
+          "kicker": "BREAKING",
+          "text": "Jensen Huang resigns as Nvidia CEO, effective immediately",
+          "source": "SEC filing",
+          "date": "Nov 12",
+          "locale": "en"
+        }
+      },
+      "source_label": "SEC"
     },
     {
       "narration": "CFO Colette Kress becomes interim CEO.",
@@ -57,7 +83,18 @@
       ],
       "sfx": "whoosh",
       "stat": null,
-      "mascot": null
+      "mascot": null,
+      "overlay": {
+        "type": "person",
+        "data": {
+          "name": "Colette Kress",
+          "role": "Nvidia CFO",
+          "status": "Interim CEO",
+          "status_color": "yellow",
+          "locale": "en"
+        }
+      },
+      "source_label": "SEC"
     },
     {
       "narration": "The board says foreign intelligence had targeted him.",
@@ -73,7 +110,16 @@
       ],
       "sfx": "riser",
       "stat": null,
-      "mascot": "think"
+      "mascot": "think",
+      "overlay": {
+        "type": "quote",
+        "data": {
+          "text": "Huang had been the target of a foreign intelligence effort.",
+          "source": "Nvidia board",
+          "locale": "en"
+        }
+      },
+      "source_label": "Nvidia"
     },
     {
       "narration": "Then the twist: November 23, the board votes unanimously to reinstate him.",
@@ -91,7 +137,25 @@
       ],
       "sfx": "impact",
       "stat": null,
-      "mascot": null
+      "mascot": null,
+      "overlay": {
+        "type": "timeline",
+        "data": {
+          "events": [
+            {
+              "date": "Nov 12",
+              "label": "Huang resigns"
+            },
+            {
+              "date": "Nov 23",
+              "label": "Board reinstates"
+            }
+          ],
+          "active": 1,
+          "locale": "en"
+        }
+      },
+      "source_label": "SEC · Nvidia"
     },
     {
       "narration": "Nvidia stock jumps about 31%.",
@@ -110,7 +174,19 @@
         "text": "+31%",
         "sub": "Nov 23, one day"
       },
-      "mascot": "happy"
+      "mascot": "happy",
+      "overlay": {
+        "type": "counter",
+        "data": {
+          "value": 31,
+          "prefix": "+",
+          "suffix": "%",
+          "label": "NVDA stock on Nov 23",
+          "decimals": 0,
+          "locale": "en"
+        }
+      },
+      "source_label": "24/7 Wall St."
     },
     {
       "narration": "Days later, an AI selloff drags it down.",
@@ -129,7 +205,30 @@
         "text": "-8%",
         "sub": "Nov 25 after open"
       },
-      "mascot": null
+      "mascot": null,
+      "overlay": {
+        "type": "bars",
+        "data": {
+          "title": "Nvidia stock, daily move",
+          "unit": "%",
+          "items": [
+            {
+              "label": "Nov 23",
+              "value": 31
+            },
+            {
+              "label": "Nov 24",
+              "value": -5.86
+            },
+            {
+              "label": "Nov 25 (open)",
+              "value": -8
+            }
+          ],
+          "locale": "en"
+        }
+      },
+      "source_label": "24/7 Wall St. · CNN"
     },
     {
       "narration": "Who sealed it? Per CNBC, Trump's personal promise.",
@@ -146,7 +245,18 @@
       ],
       "sfx": "pop",
       "stat": null,
-      "mascot": "point"
+      "mascot": "point",
+      "overlay": {
+        "type": "person",
+        "data": {
+          "name": "Donald Trump",
+          "role": "U.S. President",
+          "status": "Personal promise",
+          "status_color": "yellow",
+          "locale": "en"
+        }
+      },
+      "source_label": "CNBC"
     },
     {
       "narration": "And the investigation? Still running.",
@@ -162,7 +272,20 @@
       ],
       "sfx": "riser",
       "stat": null,
-      "mascot": null
+      "mascot": null,
+      "overlay": {
+        "type": "checklist",
+        "data": {
+          "title": "The investigation",
+          "items": [
+            "Independent directors only",
+            "Still ongoing",
+            "Board: no security risk"
+          ],
+          "locale": "en"
+        }
+      },
+      "source_label": "Nvidia"
     }
   ],
   "claims": [
@@ -257,5 +380,7 @@
   ],
   "llm_provider": "claude_cli",
   "topic": "Nvidia CEO Jensen Huang resigned - and was back 11 days later. What happened?",
-  "voice": "kokoro|af_heart:0.7,af_nicole:0.3|0.96"
+  "voice": "kokoro|af_heart:0.7,af_nicole:0.3|0.96",
+  "tag": "NVIDIA · NOV 2026",
+  "overlays_planned": 9
 }
