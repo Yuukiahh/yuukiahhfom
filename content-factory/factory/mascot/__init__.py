@@ -93,7 +93,8 @@ def _voice_env(voice_wav: Path, fps: int, n: int) -> np.ndarray:
     if a.ndim > 1:
         a = a.mean(1)
     hop = sr / fps
-    env = np.array([np.sqrt(np.mean(a[int(i * hop): int(i * hop + hop)] ** 2) + 1e-9) for i in range(n)])
+    env = np.array([np.sqrt(np.mean(seg ** 2) + 1e-9) if len(seg := a[int(i * hop): int(i * hop + hop)]) else 0.0
+                    for i in range(n)])
     ref = np.percentile(env[env > 1e-3], 90) if (env > 1e-3).any() else 1
     env = np.clip(env / ref, 0, 1.2)
     return np.convolve(env, np.ones(3) / 3, mode="same")
