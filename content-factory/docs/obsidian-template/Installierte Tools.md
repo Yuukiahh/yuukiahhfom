@@ -1,7 +1,7 @@
 <!-- cf:auto:start – dieser Block wird automatisch erzeugt -->
 # Installierte Tools
 
-Automatisch geprüft auf diesem Rechner (2026-11-25 12:33). Installation: `install/windows/install.ps1`.
+Automatisch geprüft auf diesem Rechner (2026-11-25 13:04). Installation: `install/windows/install.ps1`.
 
 ## Programme
 | Tool | gefunden | Zweck |

@@ -1,12 +1,12 @@
 <!-- cf:auto:start – dieser Block wird automatisch erzeugt -->
 # AI Content Factory – Übersicht
 
-Stand: 2026-11-25 12:33
+Stand: 2026-11-25 13:04
 
 ## Status
-- Videos produziert: **0**
+- Videos produziert: **3**
 - Jobs: queued: 1
-- Freigaben: keine
+- Freigaben: pending: 3
 - Veröffentlichungen: keine
 - Metrik-Datensätze: 0
 - Veröffentlichung global: **AUS** (Privatsphäre: private)
