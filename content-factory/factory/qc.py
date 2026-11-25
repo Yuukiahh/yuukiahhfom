@@ -45,7 +45,7 @@ def contact_sheet(path: Path, out: Path, n: int = 8) -> Path:
     return out
 
 
-def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_dur: float) -> dict:
+def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_dur: float, extra: dict | None = None) -> dict:
     checks: list[dict] = []
 
     def add(name, ok, detail="", severity="error"):
@@ -102,7 +102,7 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
             h, m, sec = x.split(":")
             return int(h) * 3600 + int(m) * 60 + float(sec)
         evs = sorted((_t(l.split(",")[1]), _t(l.split(",")[2])) for l in ass_path.read_text("utf-8").splitlines()
-                     if l.startswith("Dialogue: 2,"))
+                     if l.startswith("Dialogue: 4,"))
         overlaps = sum(1 for a, b in zip(evs, evs[1:]) if b[0] < a[1] - 0.005)
         add("subtitle_no_overlap", overlaps == 0, f"{overlaps} overlapping caption events")
 
@@ -131,6 +131,14 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("visual_brightness", all(m > 12 for m in means), "mean luma " + ", ".join(f"{m:.0f}" for m in means))
     diffs = [np.abs(sheet_vals[i] - sheet_vals[i + 1]).mean() for i in range(len(sheet_vals) - 1)]
     add("visual_variety", all(d > 4 for d in diffs), "frame diffs " + ", ".join(f"{d:.0f}" for d in diffs), "warn")
+
+    extra = extra or {}
+    if extra.get("shots"):
+        n_cuts = extra["shots"]
+        asl = dur / max(1, n_cuts)
+        add("pacing", asl <= 3.2, f"Ø Einstellungslänge {asl:.1f}s ({n_cuts} Einstellungen) – Ziel ≤ 3,2 s", "warn")
+    if cfg().get("mascot.enabled", True):
+        add("mascot", extra.get("mascot_cues", 0) >= 2, f"{extra.get('mascot_cues', 0)} Maskottchen-Auftritte", "warn")
 
     errors = [c for c in checks if not c["ok"] and c["severity"] == "error"]
     warns = [c for c in checks if not c["ok"] and c["severity"] == "warn"]

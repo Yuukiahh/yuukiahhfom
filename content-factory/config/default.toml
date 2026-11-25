@@ -5,7 +5,7 @@
 [general]
 output_dir = "output"            # fertige Videos: output/<YYYY-MM-DD>/<slug>/
 data_dir = "data"                # SQLite-DB, Cache, Logs
-language = "en"                  # en | de  (Stimme + Skriptsprache)
+language = "de"                  # de | en  (Stimme + Skriptsprache) – Standard: Deutsch
 timezone = "Europe/Berlin"
 
 [schedule]
@@ -27,13 +27,20 @@ anthropic_model = "claude-sonnet-5-5"
 timeout_seconds = 300
 
 [tts]
-# kokoro: lokal (ONNX, GPU via onnxruntime-gpu), Englisch
-# edge  : Microsoft Edge Online-TTS, kostenlos, viele Sprachen inkl. Deutsch
-engine = { en = "kokoro", de = "edge" }
+# Engine-Kette je Sprache: die erste funktionierende wird genutzt.
+#  elevenlabs : natürlichste Stimme (dein ElevenLabs-Abo, API-Key nötig, Zeichenbudget unten)
+#  edge       : Microsoft-Neural-Stimmen, kostenlos, sehr natürlich (Internet nötig)
+#  coqui      : Thorsten (VITS), kostenlos + offline
+#  kokoro     : englisch, offline
+engine = { de = ["elevenlabs", "edge", "coqui"], en = ["elevenlabs", "edge", "kokoro"] }
+voices = { elevenlabs = { de = "IWm8DnJ4NGjFI7QAM5lM", en = "IWm8DnJ4NGjFI7QAM5lM" }, edge = { de = "de-DE-FlorianMultilingualNeural", en = "en-US-AndrewMultilingualNeural" }, coqui = { de = "thorsten" }, kokoro = { en = "am_michael" } }
+speed = 1.08
+elevenlabs_model = "eleven_multilingual_v2"
+elevenlabs_monthly_chars = 0     # 0 = ElevenLabs aus. z.B. 60000 = max. Zeichen/Monat aus deinem Abo
+coqui_python = ""                # leer = gleiches Python; sonst Pfad zur Python-Exe mit coqui-tts
+coqui_model_dir = "models/tts_models--de--thorsten--vits"
 kokoro_model = "models/kokoro-v1.0.onnx"
 kokoro_voices = "models/voices-v1.0.bin"
-voice = { en = "am_michael", de = "de-DE-ConradNeural" }
-speed = 1.08
 
 [visuals]
 # Reihenfolge: procedural (eigene Original-Renders), nasa (Public Domain),
@@ -45,7 +52,7 @@ render_scale = 1.0
 [render]
 width = 1080
 height = 1920
-fps = 30
+fps = 60
 video_bitrate = "12M"
 audio_bitrate = "192k"
 encoder = "auto"                 # auto -> h264_nvenc wenn verfügbar, sonst libx264

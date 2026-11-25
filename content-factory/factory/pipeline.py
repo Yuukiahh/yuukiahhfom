@@ -19,7 +19,7 @@ import soundfile as sf
 
 from . import audio, db, dedupe, metadata, qc, research, scriptwriter, subtitles, tts
 from .config import cfg
-from .render import CAMERA_MOVES, XFADE_SETS, assemble, render_scenes, thumbnail
+from .render import CAMERA_MOVES, assemble, render_scenes, thumbnail
 from .visuals import media as media_mod
 
 Progress = Callable[[str, float], None]
@@ -39,7 +39,7 @@ def prepare_script(topic: str, niche: str, fmt: str, lang: str, progress: Progre
     from . import learning
 
     progress("research", 0.05)
-    res = research.gather(topic, lang)
+    res = research.gather_auto(topic, lang)
     if research_override and (res.get("offline") or not res.get("context")):
         res = research_override
     elif research_override:
@@ -60,11 +60,28 @@ def prepare_script(topic: str, niche: str, fmt: str, lang: str, progress: Progre
     return script
 
 
+def _shots(dur: float, first_move: str, rng: random.Random) -> list[tuple[float, str]]:
+    """Split long scenes into 2-3 s shots with different camera moves (pattern interrupts)."""
+    shots = [(0.0, first_move)]
+    seg = float(cfg().get("render.shot_length", 2.6))
+    t = seg
+    while dur - t > 1.4:
+        prev = shots[-1][1]
+        shots.append((round(t, 3), rng.choice([m for m in CAMERA_MOVES if m != prev])))
+        t += seg + rng.uniform(-0.4, 0.4)
+    return shots
+
+
 def produce(script: dict, job_id: int | None = None, progress: Progress = _noop, out_root: Path | None = None) -> dict:
+    from . import mascot
+    from .render import render_transitions
+    from .transitions import SFX_FOR
+    from .transitions import SETS as TSETS
+
     t_start = time.time()
-    lang = script.get("language", cfg().get("general.language", "en"))
+    lang = script.get("language", cfg().get("general.language", "de"))
     preset = script.get("preset") or cfg().get("render.preset", "cinematic")
-    W, H, FPS = cfg().get("render.width"), cfg().get("render.height"), cfg().get("render.fps")
+    W, H, FPS = cfg().get("render.width"), cfg().get("render.height"), cfg().get("render.fps", 60)
     date = dt.date.today().isoformat()
     slug = slugify(script.get("title") or script.get("topic", "video"))
     out_root = out_root or cfg().path("general.output_dir")
@@ -74,6 +91,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     work = folder / "_work"
     work.mkdir(parents=True, exist_ok=True)
     (folder / "script.json").write_text(json.dumps(script, ensure_ascii=False, indent=2), "utf-8")
+    rng = random.Random(script.get("seed") or random.randint(0, 10 ** 9))
 
     # ---- voice
     progress("voice", 0.3)
@@ -81,90 +99,124 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     narrations = [sc["narration"] for sc in script["scenes"]]
     words, spans, voice_info = tts.synthesize(narrations, voice_wav, lang, script.get("voice"))
     voice_dur = sf.info(voice_wav).duration
-    lead_in = 0.0
-    total = voice_dur + 0.9  # outro tail
+    total = voice_dur + 1.0  # outro tail (CTA)
 
-    # ---- visuals
-    progress("visuals", 0.4)
-    seed0 = random.randint(0, 10 ** 6)
-    media_items, specs = [], []
-    trans_dur = 0.4 if preset != "documentary" else 0.6
-    transitions = XFADE_SETS.get(preset, XFADE_SETS["cinematic"])[:]
-    random.shuffle(transitions)
-    sfx_events: list[tuple[float, str, float]] = []
-    stats = []
+    # ---- timeline: scene i spans [b_{i-1}-T/2, b_i+T/2]; transition centred on each cut b_i
+    T = float(cfg().get("render.transition_seconds", 0.3))
     n = len(script["scenes"])
+    cuts = [spans[i + 1][0] for i in range(n - 1)]
+    progress("visuals", 0.4)
+    seed0 = rng.randint(0, 10 ** 6)
+    media_items, specs = [], []
+    tkinds = (TSETS.get(preset) or TSETS["cinematic"])[:]
+    rng.shuffle(tkinds)
+    sfx_events: list[tuple[float, str, float]] = [(0.0, "impact", 0.85), (0.05, "braam", 0.45), (0.25, "sparkle", 0.35)]
+    stats = []
+    emph_norm = {re.sub(r"[^a-z0-9äöüß]", "", e.lower()) for sc in script["scenes"] for e in sc.get("emphasis", [])}
     for i, sc in enumerate(script["scenes"]):
-        s0, s1 = spans[i]
-        start = 0.0 if i == 0 else s0
-        end = total if i == n - 1 else spans[i + 1][0]
-        dur = end - start + (trans_dur if i < n - 1 else 0)
+        g0 = 0.0 if i == 0 else cuts[i - 1] - T / 2
+        g1 = total if i == n - 1 else cuts[i] + T / 2
+        dur = round(g1 - g0, 4)
         m = None
         if sc.get("visual_source", "auto") != "procedural":
             m = media_mod.fetch(sc, work / "media", script.get("niche", ""))
-        if m:
-            media_items.append({**m, "scene": i})
-        else:
-            media_items.append({"scene": i, "source": "procedural", "type": "generated", "kind": sc["visual"],
-                                "license": "Original procedural render (own work)"})
-        shakes = [0.05] if sc.get("sfx") == "impact" else []
-        specs.append({"w": W, "h": H, "fps": FPS, "duration": round(dur, 3), "kind": sc["visual"],
-                      "params": sc.get("params", {}), "seed": seed0 + i, "camera": sc.get("camera", CAMERA_MOVES[i % 8]),
-                      "media": m, "out": str(work / f"scene_{i:02d}.mp4"), "shakes": shakes, "fade_in": i == 0,
-                      "intensity": 1.0, "time_offset": random.uniform(0, 5)})
-        # SFX cues
+        media_items.append({**m, "scene": i} if m else {"scene": i, "source": "procedural-3d", "type": "generated",
+                                                       "kind": sc["visual"], "license": "Original render (own work)"})
+        bumps = [round(w["start"] - g0, 3) for w in words if w["scene"] == i
+                 and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm]
+        specs.append({"w": W, "h": H, "fps": FPS, "duration": dur, "kind": sc["visual"], "params": sc.get("params", {}),
+                      "seed": seed0 + i, "camera": sc.get("camera", CAMERA_MOVES[i % len(CAMERA_MOVES)]),
+                      "shots": _shots(dur, sc.get("camera", CAMERA_MOVES[i % len(CAMERA_MOVES)]), rng), "bumps": bumps,
+                      "media": m, "out": str(work / f"scene_{i:02d}.mp4"), "shakes": [0.02] if i == 0 or sc.get("sfx") == "impact" else [],
+                      "fade_in": i == 0, "time_offset": rng.uniform(0, 5)})
+        start = 0.0 if i == 0 else cuts[i - 1]
+        end = total if i == n - 1 else cuts[i]
         cue = sc.get("sfx", "none")
-        if i > 0:
-            sfx_events.append((start - 0.25, "whoosh", 0.55))
-        if cue in ("impact", "riser", "pop", "glitch", "ding"):
-            at = start + (0.0 if cue != "riser" else max(0, (end - start) - 1.5))
-            sfx_events.append((at, cue, 0.8 if cue == "impact" else 0.6))
+        if cue in ("riser",) and end - start > 2:
+            sfx_events.append((end - 1.6, "riser", 0.5))
+        elif cue in ("glitch", "ding", "pop", "impact", "heartbeat", "typing", "notification") and i > 0:
+            sfx_events.append((start + 0.05, cue, 0.55))
+        for w in words:
+            if w["scene"] == i and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm:
+                sfx_events.append((w["start"], "swish_text", 0.22))
         if sc.get("stat"):
             st_words = [w for w in words if w["scene"] == i]
             st0 = st_words[0]["start"] if st_words else start
-            stats.append({"text": sc["stat"]["text"], "sub": sc["stat"].get("sub", ""), "start": st0 + 0.1,
-                          "end": min(end - 0.1, st0 + 2.6)})
-            sfx_events.append((st0 + 0.1, "pop", 0.7))
+            stats.append({"text": sc["stat"]["text"], "sub": sc["stat"].get("sub", ""), "start": st0 + 0.08,
+                          "end": min(end - 0.08, st0 + 2.6)})
+            sfx_events += [(st0 + 0.08, "pop", 0.7), (st0 + 0.08, "sub_drop", 0.5)]
+    tspecs, tnames = [], []
+    for i, b in enumerate(cuts):
+        k = tkinds[i % len(tkinds)]
+        tnames.append(k)
+        tspecs.append({"clip_a": specs[i]["out"], "clip_b": specs[i + 1]["out"], "kind": k, "dur": T, "fps": FPS,
+                       "w": W, "h": H, "out": str(work / f"trans_{i:02d}.mp4"), "seed": seed0 + 100 + i})
+        sfx_events.append((b - T / 2 - 0.08, SFX_FOR.get(k, "whoosh"), 0.6))
+    cta_text = cfg().get("brand.cta", "Folge für mehr!" if lang == "de" else "Follow for more!")
+    cta = {"text": cta_text, "start": max(0.0, total - 2.1), "end": total}
+    sfx_events.append((cta["start"], "notification", 0.45))
 
     # ---- audio beds
     progress("music", 0.48)
     lib = audio.build_sfx_library(cfg().path("general.data_dir") / "sfx")
     music_wav, sfx_wav = work / "music.wav", work / "sfx.wav"
     mood = script.get("mood") or audio.NICHE_MOOD.get(script.get("niche", ""), "cosmic")
-    audio.music(total + 0.5, mood, music_wav)
+    music_info = f"Original procedural score ({mood})"
+    track = getattr(audio, "pick_library_track", lambda *a: None)(mood, total)
+    if track and hasattr(audio, "fit_track"):
+        audio.fit_track(track, total + 0.5, music_wav)
+        side = Path(track).with_suffix(".json")
+        music_info = json.loads(side.read_text("utf-8")) if side.exists() else str(track)
+    else:
+        try:
+            audio.music(total + 0.5, mood, music_wav, seed=rng.randint(0, 10 ** 6), markers=cuts)
+        except TypeError:
+            audio.music(total + 0.5, mood, music_wav)
     audio.sfx_track(sfx_events, total, lib, sfx_wav)
 
-    # ---- subtitles
+    # ---- captions + mascot
     emphasis = [e for sc in script["scenes"] for e in sc.get("emphasis", [])]
-    ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H)
+    ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta)
+    mascot_track, cues = None, []
+    if cfg().get("mascot.enabled", True) and mascot.available():
+        cues = mascot.plan_cues(script, words, spans, total, stats)
+        mascot_track = mascot.render_track(cues, voice_wav, total, FPS, work / "mascot.mov",
+                                           int(cfg().get("mascot.size", 440)))
 
     # ---- render
     progress("render_scenes", 0.55)
     clips = render_scenes(specs)
-    progress("assemble", 0.85)
+    progress("transitions", 0.8)
+    trans_clips = render_transitions(tspecs)
+    progress("assemble", 0.86)
     final = folder / f"{slug}.mp4"
-    assemble(clips, [s["duration"] for s in specs], transitions, trans_dur, voice_wav, music_wav, sfx_wav, ass, final, total)
+    assemble(clips, [s["duration"] for s in specs], tnames, T, voice_wav, music_wav, sfx_wav, ass, final, total,
+             trans_clips=trans_clips, mascot_track=mascot_track)
     (work / "render.json").write_text(json.dumps({"clips": clips, "durations": [s["duration"] for s in specs],
-                                                   "transitions": transitions, "trans_dur": trans_dur, "total": total,
-                                                   "stats": stats, "emphasis": emphasis}), "utf-8")
+                                                   "transitions": tnames, "trans_dur": T, "total": total,
+                                                   "trans_clips": trans_clips, "mascot_track": str(mascot_track or ""),
+                                                   "stats": stats, "emphasis": emphasis, "cta": cta,
+                                                   "shots": sum(len(s["shots"]) for s in specs)}), "utf-8")
 
     # ---- QC + packaging
     progress("qc", 0.93)
-    report = qc.run(final, script, words, media_items, voice_dur)
+    report = qc.run(final, script, words, media_items, voice_dur,
+                    extra={"shots": sum(len(s["shots"]) for s in specs), "mascot_cues": len(cues)})
     qc.contact_sheet(final, folder / "qc_contact_sheet.jpg")
     meta = metadata.build(script)
-    thumb_at = stats[0]["start"] + 0.4 if stats else 1.2
+    thumb_at = stats[0]["start"] + 0.45 if stats else 1.3
     thumbnail(final, thumb_at, script.get("hook_text") or script["title"], folder / "thumbnail.jpg")
     (folder / "words.json").write_text(json.dumps(words), "utf-8")
     shutil.copy(ass, folder / "subtitles.ass")
     _write_srt(words, folder / "subtitles.srt")
     (folder / "qc.json").write_text(json.dumps(report, indent=2), "utf-8")
     (folder / "metadata.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), "utf-8")
-    (folder / "licenses.json").write_text(json.dumps({"media": media_items, "music": f"Original procedural score ({mood})",
-                                                       "sfx": "Original synthesised SFX", "voice": voice_info,
-                                                       "font": "Inter (SIL Open Font License)"}, indent=2), "utf-8")
+    (folder / "licenses.json").write_text(json.dumps({"media": media_items, "music": music_info,
+                                                       "sfx": "Original synthesised SFX (assets/sfx, CC0 by owner)",
+                                                       "voice": voice_info, "mascot": "Nova – original Blender render (own work)",
+                                                       "font": "Inter (SIL Open Font License)"}, indent=2, ensure_ascii=False), "utf-8")
     (folder / "sources.md").write_text(_sources_md(script), "utf-8")
-    if not cfg().get("general.keep_work_files", True):  # needed for subtitle re-render; pruned by worker
+    if not cfg().get("general.keep_work_files", True):
         shutil.rmtree(work, ignore_errors=True)
 
     video_id = db.insert("videos", job_id=job_id, slug=slug, title=meta["title"], topic=script.get("topic", script["title"]),
@@ -174,7 +226,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
                          created_at=time.time())
     progress("done", 1.0)
     return {"video_id": video_id, "path": str(final), "folder": str(folder), "qc": report, "metadata": meta,
-            "render_seconds": round(time.time() - t_start, 1)}
+            "render_seconds": round(time.time() - t_start, 1), "voice": voice_info}
 
 
 def _write_srt(words: list[dict], out: Path) -> None:
@@ -215,11 +267,13 @@ def rerender_subtitles(video_id: int) -> dict:
     script = json.loads((folder / "script.json").read_text("utf-8"))
     words = json.loads((folder / "words.json").read_text("utf-8"))
     W, H = cfg().get("render.width"), cfg().get("render.height")
-    ass = subtitles.build_ass(words, work / "subs.ass", r["emphasis"], r["stats"], script.get("hook_text"), W, H)
+    ass = subtitles.build_ass(words, work / "subs.ass", r["emphasis"], r["stats"], script.get("hook_text"), W, H,
+                              cta=r.get("cta"))
     final = Path(v["path"])
     tmp = final.with_suffix(".new.mp4")
     assemble(r["clips"], r["durations"], r["transitions"], r["trans_dur"], work / "voice.wav", work / "music.wav",
-             work / "sfx.wav", ass, tmp, r["total"])
+             work / "sfx.wav", ass, tmp, r["total"], trans_clips=r.get("trans_clips"),
+             mascot_track=Path(r["mascot_track"]) if r.get("mascot_track") else None)
     tmp.replace(final)
     shutil.copy(ass, folder / "subtitles.ass")
     _write_srt(words, folder / "subtitles.srt")

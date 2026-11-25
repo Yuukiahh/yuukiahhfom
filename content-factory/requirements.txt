@@ -15,3 +15,4 @@ kokoro-onnx>=0.4
 # GPU-Inferenz für Kokoro. Der Installer prüft CUDA und fällt bei Problemen auf
 # das CPU-Paket "onnxruntime" zurück (beide Pakete dürfen nicht gleichzeitig installiert sein).
 onnxruntime-gpu>=1.20
+num2words>=0.5.13       # Zahlen/Einheiten korrekt aussprechen (de/en)

@@ -1,0 +1,60 @@
+{
+  "topic": "Unglaubliche Technologien der Zukunft, die es heute schon gibt (Stand November 2026)",
+  "sources": [
+    {
+      "title": "Meet Willow, our state-of-the-art quantum chip (Google)",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "title": "Google Willow quantum computing chip solved a problem the best supercomputer [would have] taken a quadrillion times age of the universe to crack (Live Science)",
+      "url": "https://www.livescience.com/technology/computing/google-willow-quantum-computing-chip-solved-a-problem-the-best-supercomputer-taken-a-quadrillion-times-age-of-the-universe-to-crack"
+    },
+    {
+      "title": "Achieving Fusion Ignition (Lawrence Livermore National Laboratory)",
+      "url": "https://lasers.llnl.gov/science/pursuit-of-ignition"
+    },
+    {
+      "title": "LLNL Annual Report 2025 – National Ignition Facility",
+      "url": "https://annual.llnl.gov/sites/annual/files/2026-02/llnlannual25-3-national-ignition-facility.pdf"
+    },
+    {
+      "title": "Record-breaking fusion lab more than doubles its 2022 energy breakthrough (Gizmodo)",
+      "url": "https://gizmodo.com/record-breaking-fusion-lab-more-than-doubles-its-2022-energy-breakthrough-2000604093"
+    },
+    {
+      "title": "FDA Approves First Gene Therapies to Treat Patients with Sickle Cell Disease (FDA)",
+      "url": "https://www.fda.gov/news-events/press-announcements/fda-approves-first-gene-therapies-treat-patients-sickle-cell-disease"
+    },
+    {
+      "title": "World's First Patient Treated with Personalized CRISPR Gene Editing Therapy at Children's Hospital of Philadelphia (CHOP)",
+      "url": "https://chop.edu/news/worlds-first-patient-treated-personalized-crispr-gene-editing-therapy-childrens-hospital"
+    },
+    {
+      "title": "SpaceX rocket booster successfully 'caught' on first attempt during flight test (NPR)",
+      "url": "https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch"
+    },
+    {
+      "title": "Waymo's skyrocketing ridership in one chart (TechCrunch)",
+      "url": "https://techcrunch.com/2026/03/27/waymo-skyrocketing-ridership-in-one-chart/"
+    },
+    {
+      "title": "Waymo Co-CEO Outlines Path to 1 Million Weekly Trips in 2026 (Bloomberg)",
+      "url": "https://www.bloomberg.com/news/articles/2026-02-11/waymo-co-ceo-outlines-path-to-1-million-weekly-trips-in-2026"
+    },
+    {
+      "title": "Elon Musk announces timeline for next-gen Neuralink implant with 3x capability, 21 people already enrolled (Benzinga)",
+      "url": "https://www.benzinga.com/markets/tech/26/01/50214923/elon-musk-announces-timeline-for-next-gen-neuralink-implant-with-3x-capability-21-people-already-enr"
+    },
+    {
+      "title": "Seven patients now participating in Neuralink trial (UCLH NIHR Biomedical Research Centre)",
+      "url": "https://www.uclhospitals.brc.nihr.ac.uk/news/seven-patients-now-participating-neuralink-trial"
+    },
+    {
+      "title": "1X opens pre-orders for $20,000 NEO humanoid home robot (Notebookcheck)",
+      "url": "https://www.notebookcheck.net/1X-opens-pre-orders-for-20-000-NEO-humanoid-home-robot.1149203.0.html"
+    }
+  ],
+  "context": "SUGGESTED ANGLE: Things that sound like science fiction are already real: a chip that solves in 5 minutes what would take a supercomputer longer than the universe has existed, a laser that ignites a 'mini sun', robotaxis with no driver making half a million trips a week, and a gene therapy built for a single baby.\n- Google's Willow quantum chip performed a standard benchmark computation (random circuit sampling) in under five minutes that would take one of today's fastest supercomputers 10^25, or 10 septillion, years — far longer than the age of the universe. (SOURCE: https://blog.google/technology/research/google-willow-quantum-chip/)\n- The Willow results were published on December 9, 2024 in the journal Nature; their core finding is that errors decrease as more qubits are used. (SOURCE: https://www.livescience.com/technology/computing/google-willow-quantum-computing-chip-solved-a-problem-the-best-supercomputer-taken-a-quadrillion-times-age-of-the-universe-to-crack)\n- On December 5, 2022, the National Ignition Facility (NIF) achieved fusion ignition for the first time, producing 3.15 megajoules (MJ) of fusion energy from 2.05 MJ of laser energy delivered to the target. (SOURCE: https://lasers.llnl.gov/science/pursuit-of-ignition)\n- On April 7, 2025, NIF set a record yield of 8.6 MJ (±0.45 MJ) from 2.08 MJ of laser energy delivered in a 456-terawatt peak-power pulse, a target gain of 4.13. (SOURCE: https://annual.llnl.gov/sites/annual/files/2026-02/llnlannual25-3-national-ignition-facility.pdf)\n- NIF's fusion gain does not count the roughly 300 megajoules of wall-plug energy needed to power the lasers, so the facility does not yet produce net energy at the grid level. (SOURCE: https://gizmodo.com/record-breaking-fusion-lab-more-than-doubles-its-2022-energy-breakthrough-2000604093)\n- On December 8, 2023, the U.S. FDA approved Casgevy, the first FDA-approved therapy using CRISPR/Cas9 gene editing, for sickle cell disease in patients aged 12 and older with recurrent vaso-occlusive crises. (SOURCE: https://www.fda.gov/news-events/press-announcements/fda-approves-first-gene-therapies-treat-patients-sickle-cell-disease)\n- Baby KJ Muldoon, who has the rare disease CPS1 deficiency, became the first patient treated with a personalized CRISPR base-editing therapy, which CHOP and Penn Medicine designed for him in about six months. Results were published in the New England Journal of Medicine on May 15, 2025. (SOURCE: https://chop.edu/news/worlds-first-patient-treated-personalized-crispr-gene-editing-therapy-childrens-hospital)\n- On October 13, 2024, during Starship's fifth test flight, SpaceX caught a returning Super Heavy booster with the launch tower's mechanical 'chopstick' arms on the first attempt. (SOURCE: https://www.npr.org/2024/10/13/nx-s1-5151788/spacex-starship-booster-caught-first-launch)\n- In March 2026, Waymo reported 500,000 paid driverless robotaxi rides per week across 10 U.S. cities, double the 250,000 weekly rides it reported less than a year earlier. (SOURCE: https://techcrunch.com/2026/03/27/waymo-skyrocketing-ridership-in-one-chart/)\n- Waymo's co-CEO said the company aims to exceed 1 million paid weekly robotaxi trips in the U.S. by the end of 2026. (SOURCE: https://www.bloomberg.com/news/articles/2026-02-11/waymo-co-ceo-outlines-path-to-1-million-weekly-trips-in-2026)\n- In January 2026, Elon Musk said Neuralink had 21 people enrolled worldwide in its brain-computer-interface trials, which let paralyzed people control computers with their thoughts. (SOURCE: https://www.benzinga.com/markets/tech/26/01/50214923/elon-musk-announces-timeline-for-next-gen-neuralink-implant-with-3x-capability-21-people-already-enr)\n- Seven patients are taking part in the UK's GB-PRIME Neuralink study, with surgeries carried out at University College London Hospitals between October and December 2025. (SOURCE: https://www.uclhospitals.brc.nihr.ac.uk/news/seven-patients-now-participating-neuralink-trial)\n- 1X opened pre-orders for its NEO humanoid household robot at $20,000 (or a $499 monthly subscription) with a refundable $200 deposit, with U.S. deliveries planned for 2026. (SOURCE: https://www.notebookcheck.net/1X-opens-pre-orders-for-20-000-NEO-humanoid-home-robot.1149203.0.html)",
+  "offline": false,
+  "method": "claude_websearch"
+}

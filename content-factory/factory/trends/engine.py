@@ -63,6 +63,7 @@ def collect() -> dict:
     jobs += [("reddit", lambda s=s: sources.reddit(s)) for s in c.get("trends.subreddits", [])]
     jobs += [("youtube", lambda: sources.youtube("US")), ("wikipedia", lambda: sources.wikipedia_top("en")),
              ("hackernews", sources.hackernews), ("manual", sources.manual_imports),
+             ("websearch", sources.claude_websearch_trends),
              ("instagram", lambda: sources.instagram_hashtags(["space", "ai", "technology", "facts", "psychology"]))]
     from concurrent.futures import ThreadPoolExecutor
     status: dict[str, dict] = defaultdict(lambda: {"ok": 0, "failed": 0, "signals": 0, "errors": []})
@@ -85,7 +86,7 @@ def collect() -> dict:
                 continue
             st["ok"] += 1
             for s in sigs:
-                hint = SUB_NICHE.get(s.get("extra", {}).get("subreddit", "").lower(), "")
+                hint = SUB_NICHE.get(s.get("extra", {}).get("subreddit", "").lower(), "") or (s.get("extra", {}).get("niche_hint") or "")
                 niche, fit = classify(s["title"] + " " + " ".join(s.get("extra", {}).get("news", [])), hint)
                 if hint and not niche:
                     niche, fit = hint, 0.5
@@ -170,8 +171,9 @@ def ideate(topics: list[dict], n: int = 12) -> list[dict]:
     listing = "\n".join(f"{i}. [{t['niche']}] {t['title']}" for i, t in enumerate(topics[:40]))
     prompt = ("Below are REAL trending headlines/topics with their niche. Pick the {n} with the best potential for a "
               "25-90 s educational vertical video (high curiosity, explainable visually, not a tragedy/politics/celebrity gossip, "
-              "safe for advertisers). For each, write a concrete video topic in English as a viewer-facing question or promise.\n"
-              "Return JSON: {{\"ideas\": [{{\"index\": int, \"video_topic\": str, \"why\": str}}]}}\n\n{listing}").format(n=n, listing=listing)
+              "safe for advertisers). For each, write a concrete video topic in {lang_name} as a viewer-facing question or promise.\n"
+              "Return JSON: {{\"ideas\": [{{\"index\": int, \"video_topic\": str, \"why\": str}}]}}\n\n{listing}").format(
+        n=n, listing=listing, lang_name={"de": "German", "en": "English"}.get(cfg().get("general.language", "de"), "German"))
     try:
         res, _ = llm.complete_json(prompt, "You are a viral content strategist. JSON only.")
     except Exception:

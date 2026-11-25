@@ -1,0 +1,6 @@
+# Optional: komplett offline deutsche Stimme "Thorsten" (Coqui VITS). Groß (PyTorch).
+# Wird von install.ps1 -WithCoqui in eine eigene venv (.venv-coqui) installiert.
+coqui-tts>=0.27
+gruut[de]>=2.4
+torchcodec
+six

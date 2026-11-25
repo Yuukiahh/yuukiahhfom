@@ -2,7 +2,9 @@
 
   doctor                      check installation (ffmpeg, GPU encoder, LLMs, TTS, secrets)
   trends [--no-llm]           refresh trend data and list top topics
-  make "<topic>" [--format short|long] [--lang en|de] [--script file.json]
+  video "<Thema>"             EIN Befehl: recherchieren, Skript, Stimme, 3D-Animation, Schnitt -> fertige MP4
+  make "<topic>" [--format short|long] [--lang de|en] [--script file.json]
+  mascot build|pack|status    3D-Maskottchen in Blender rendern / packen
   worker                      run the background worker (start state 'running')
   start | pause | stop        control the worker
   queue "<topic>" [...]       add a job
@@ -16,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+from pathlib import Path
 import json
 import shutil
 import subprocess
@@ -65,7 +68,7 @@ def main(argv=None) -> int:
     sub.add_parser("doctor")
     t = sub.add_parser("trends")
     t.add_argument("--no-llm", action="store_true")
-    for name in ("make", "queue"):
+    for name in ("make", "queue", "video"):
         m = sub.add_parser(name)
         m.add_argument("topic", nargs="?")
         m.add_argument("--format", default="short", choices=["short", "long"])
@@ -86,6 +89,9 @@ def main(argv=None) -> int:
     pp.add_argument("arg", nargs="?")
     sub.add_parser("analytics")
     sub.add_parser("obsidian")
+    mp = sub.add_parser("mascot")
+    mp.add_argument("action", choices=["build", "pack", "status"])
+    mp.add_argument("--size", type=int, default=512)
     a = ap.parse_args(argv)
 
     if a.cmd == "doctor":
@@ -96,6 +102,21 @@ def main(argv=None) -> int:
         for t in engine.top_topics(20):
             print(f"{t['score']:.3f}  [{t['niche']}]  {t['title']}")
         return 0
+    if a.cmd == "mascot":
+        from . import mascot
+        from .config import cfg
+        frames = cfg().path("general.data_dir") / "mascot_frames"
+        if a.action == "build":
+            import shutil as _sh
+            exe = _sh.which("blender") or r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe"
+            subprocess.run([exe, "-b", "--factory-startup", "--python", str(Path(mascot.__file__).with_name("build_mascot.py")),
+                            "--", str(frames), "--size", str(a.size)], check=True)
+        if a.action in ("build", "pack"):
+            print([str(x) for x in mascot.pack(frames)])
+        print("Maskottchen-Assets vorhanden:", mascot.available())
+        return 0
+    if a.cmd == "video":
+        a.cmd = "make"
     if a.cmd in ("make", "queue"):
         from . import pipeline, worker
         script = json.load(open(a.script, encoding="utf-8")) if a.script else None

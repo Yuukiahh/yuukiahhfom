@@ -1,0 +1,40 @@
+{
+  "topic": "Was passiert, wenn man in ein schwarzes Loch fällt?",
+  "sources": [
+    {
+      "title": "New NASA Black Hole Visualization Takes Viewers Beyond the Brink (NASA Science)",
+      "url": "https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/"
+    },
+    {
+      "title": "NASA Black Hole Visualization Takes Viewers Beyond the Brink (NASA Scientific Visualization Studio)",
+      "url": "https://svs.gsfc.nasa.gov/14576"
+    },
+    {
+      "title": "New NASA black hole visualization takes viewers beyond the brink (Phys.org)",
+      "url": "https://phys.org/news/2024-05-black-hole-visualization-viewers-brink.pdf"
+    },
+    {
+      "title": "Spaghettification (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Spaghettification"
+    },
+    {
+      "title": "Schwarzschild radius (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Schwarzschild_radius"
+    },
+    {
+      "title": "Black Holes (NASA Imagine the Universe)",
+      "url": "https://imagine.gsfc.nasa.gov/science/objects/black_holes1.html"
+    },
+    {
+      "title": "Sagittarius A* (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/Sagittarius_A*"
+    },
+    {
+      "title": "This is the first image of the black hole at the heart of the Milky Way (NPR)",
+      "url": "https://www.npr.org/2022/05/12/1098472567/image-black-hole-milky-way"
+    }
+  ],
+  "context": "SUGGESTED ANGLE: Fall into a giant black hole and you would cross the point of no return without feeling anything, then be torn apart 12.8 seconds later. To your friends watching from afar, you would never fall in at all and would seem frozen at the edge forever.\n- In NASA's simulated plunge, the camera takes about 3 hours to fall to the event horizon and completes almost two full 30-minute orbits on the way. To anyone watching from far away, it would never quite get there. (SOURCE: https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/)\n- NASA Goddard scientist Jeremy Schnittman: 'Once the camera crosses the horizon, its destruction by spaghettification is just 12.8 seconds away.' (SOURCE: https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/)\n- In the simulation, spaghettification happens about 79,500 miles (128,000 kilometers) from the singularity. (SOURCE: https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/)\n- The simulated black hole has 4.3 million times the mass of the Sun, similar to the one at the center of our galaxy. Its event horizon has a radius of about 7.8 million miles (12.5 million kilometers). (SOURCE: https://science.nasa.gov/universe/black-holes/new-nasa-black-hole-visualization-takes-viewers-beyond-the-brink/)\n- Jeremy Schnittman and Brian Powell made the visualization on NASA's Discover supercomputer, producing about 10 terabytes of data. (SOURCE: https://svs.gsfc.nasa.gov/14576)\n- In the orbit-and-escape scenario, an astronaut who made the 6-hour round trip near the black hole while colleagues stayed far away on a mothership would come back 36 minutes younger than them. (SOURCE: https://phys.org/news/2024-05-black-hole-visualization-viewers-brink.pdf)\n- Schnittman said that near a rapidly spinning black hole the effect would be much larger: the traveler would return many years younger than her shipmates. (SOURCE: https://phys.org/news/2024-05-black-hole-visualization-viewers-brink.pdf)\n- Spaghettification is caused by tidal forces, meaning gravity differs from one end of an object to the other. It stretches the object along the direction toward the black hole. (SOURCE: https://en.wikipedia.org/wiki/Spaghettification)\n- How far from the black hole an object is torn apart depends on the black hole's mass. For small black holes this happens outside the event horizon; for supermassive ones it happens inside. In Wikipedia's rod example, the rod breaks about 320 km from a 10-solar-mass black hole but about 3,200 km from a 10,000-solar-mass black hole. (SOURCE: https://en.wikipedia.org/wiki/Spaghettification)\n- The event horizon is the boundary where the escape velocity equals the speed of light. It is not a physical surface but a sphere around the black hole. The singularity at the center is where the mass resides. (SOURCE: https://imagine.gsfc.nasa.gov/science/objects/black_holes1.html)\n- The escape velocity from Earth is about 11.2 km/s. (SOURCE: https://imagine.gsfc.nasa.gov/science/objects/black_holes1.html)\n- The Sun's Schwarzschild radius is about 3.0 km (1.9 mi) and Earth's is about 9 mm (0.35 in). That is how small each would have to be squeezed to become a black hole. (SOURCE: https://en.wikipedia.org/wiki/Schwarzschild_radius)\n- The best current estimate of the mass of Sagittarius A*, the black hole at the center of the Milky Way, is 4.297 ± 0.012 million solar masses. (SOURCE: https://en.wikipedia.org/wiki/Sagittarius_A*)\n- The Event Horizon Telescope released the first image of Sagittarius A* on May 12, 2022. (SOURCE: https://www.npr.org/2022/05/12/1098472567/image-black-hole-milky-way)",
+  "offline": false,
+  "method": "claude_websearch"
+}

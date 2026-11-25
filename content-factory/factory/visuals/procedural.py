@@ -575,3 +575,7 @@ def make_scene(kind: str, w: int, h: int, seed: int, params: dict | None = None)
     if kind == "earth":
         params.setdefault("kind", "rocky")
     return cls(w, h, seed, **params)
+
+
+# True-3D scenes register themselves into KINDS on import (kept in a separate module).
+from . import three_d as _three_d  # noqa: E402,F401

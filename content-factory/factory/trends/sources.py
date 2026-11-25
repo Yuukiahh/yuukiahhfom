@@ -184,3 +184,43 @@ def manual_imports() -> list[dict]:
                                 "metric_name": row.get("metric_name", "views"), "metric_value": float(row.get("metric_value") or row.get("views") or 0),
                                 "published": None, "extra": {"import_file": f.name}})
     return out
+
+
+TREND_PROMPT = """Find what is CURRENTLY trending/viral (last 7 days, today is {today}) that would make great
+educational short videos (TikTok/Reels/Shorts) for a {region} audience in these niches: incredible facts, AI,
+technology, space & black holes, mysterious stories, psychology, gaming, future tech.
+Use web search: look at news, Google Trends-style coverage, Reddit/YouTube/TikTok trend reports, science news.
+Return ONLY JSON: {{"items": [{{"title": "short topic headline", "niche": "space|ai|technology|future|facts|mystery|psychology|gaming",
+"url": "a real URL you found that shows this is current", "evidence": "what shows it is trending (as stated by the source)",
+"published": "YYYY-MM-DD or null"}}]}} with 12-20 items, most viral first. Only items you actually found; never invent URLs."""
+
+
+def claude_websearch_trends(region: str = "German-speaking") -> list[dict]:
+    """Trend discovery through the local `claude` CLI web search (Claude subscription, no API cost)."""
+    import datetime as dt
+    import shutil
+    import subprocess
+
+    from ..llm import extract_json
+
+    exe = shutil.which("claude") or shutil.which("claude.cmd")
+    if not exe:
+        return []
+    p = subprocess.run([exe, "-p", "--allowedTools", "WebSearch", "WebFetch", "--output-format", "text"],
+                       input=TREND_PROMPT.format(today=dt.date.today().isoformat(), region=region),
+                       capture_output=True, text=True, encoding="utf-8", timeout=600)
+    items = extract_json(p.stdout).get("items", [])
+    out = []
+    n = len(items)
+    for i, it in enumerate(items):
+        if not str(it.get("url", "")).startswith("http") or not it.get("title"):
+            continue
+        ts = None
+        try:
+            ts = dt.datetime.fromisoformat(str(it.get("published"))).timestamp() if it.get("published") else None
+        except ValueError:
+            pass
+        out.append({"source": "websearch", "title": it["title"], "url": it["url"], "metric_name": "websearch_rank_score",
+                    "metric_value": float(n - i), "published": ts,
+                    "extra": {"evidence": it.get("evidence"), "niche_hint": it.get("niche"), "method": "claude_cli_websearch"}})
+    return out

@@ -25,7 +25,11 @@ param(
     # faster-whisper (requirements-gpu.txt) zusätzlich installieren
     [switch]$WithWhisper,
     # GPU-Paket für onnxruntime überspringen und direkt die CPU-Variante nutzen
-    [switch]$CpuOnly
+    [switch]$CpuOnly,
+    # Offline-Stimme Thorsten (Coqui, ~3 GB inkl. PyTorch) in .venv-coqui installieren
+    [switch]$WithCoqui,
+    # Blender installieren (nur nötig, um das Maskottchen neu zu rendern)
+    [switch]$WithBlender
 )
 
 # 'Continue' statt 'Stop': native Programme (pip, git, winget) schreiben Warnungen nach stderr,
@@ -299,6 +303,49 @@ if (Test-Command 'ollama') {
 # Import-Test der wichtigsten Module
 & $VenvPy -c "import numpy, PIL, soundfile, requests, fastapi, keyring, cryptography, kokoro_onnx, edge_tts; print('ok')" *> $null
 Add-Result 'Python-Importe' $(if ($LASTEXITCODE -eq 0) { 'ok' } else { 'FEHLER' })
+
+
+# --------------------------------------------------------------------------- Zusatz: Skills, Coqui, Blender
+Write-Step 'Claude-Skill "moneyprinterturbo-video" installieren'
+$SkillSrc = Join-Path (Split-Path $Root -Parent) '.claude\skills\moneyprinterturbo-video'
+$SkillDst = Join-Path $env:USERPROFILE '.claude\skills\moneyprinterturbo-video'
+if (Test-Path $SkillSrc) {
+    New-Item -ItemType Directory -Force -Path $SkillDst | Out-Null
+    Copy-Item -Path (Join-Path $SkillSrc '*') -Destination $SkillDst -Recurse -Force
+    Write-Ok "Skill installiert: $SkillDst (auch im Repo unter .claude\skills verfügbar)"
+    Add-Result 'MPT-Skill' 'ok' $SkillDst
+} else {
+    Write-Warn2 'Skill-Quelle nicht gefunden (Repo-Ordner .claude\skills).'
+    Add-Result 'MPT-Skill' 'FEHLT'
+}
+
+if ($WithCoqui) {
+    Write-Step 'Offline-Stimme Thorsten (Coqui) in .venv-coqui'
+    $CoquiVenv = Join-Path $Root '.venv-coqui'
+    if (-not (Test-Path $CoquiVenv)) { & py -3.12 -m venv $CoquiVenv }
+    $CoquiPy = Join-Path $CoquiVenv 'Scripts\python.exe'
+    & $CoquiPy -m pip install --upgrade pip --quiet
+    & $CoquiPy -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
+    & $CoquiPy -m pip install -r (Join-Path $Root 'requirements-coqui.txt')
+    $zip = Join-Path $Models 'thorsten_vits.zip'
+    if (-not (Test-Path (Join-Path $Models 'tts_models--de--thorsten--vits\model_file.pth'))) {
+        Invoke-WebRequest -Uri 'https://github.com/coqui-ai/TTS/releases/download/v0.7.0_models/tts_models--de--thorsten--vits.zip' -OutFile $zip -UseBasicParsing
+        Expand-Archive -Path $zip -DestinationPath $Models -Force
+        Remove-Item $zip
+    }
+    $local = Join-Path $Root 'config\local.toml'
+    $line = "coqui_python = `"$($CoquiPy -replace '\\','/')`""
+    if (-not (Test-Path $local) -or -not (Select-String -Path $local -Pattern 'coqui_python' -Quiet)) {
+        Add-Content -Path $local -Value "`n[tts]`n$line"
+    }
+    Add-Result 'Coqui Thorsten' 'ok' $CoquiPy
+}
+
+if ($WithBlender) {
+    Write-Step 'Blender (Maskottchen neu rendern)'
+    Install-WingetPackage -Id 'BlenderFoundation.Blender' -Command 'blender' -Label 'Blender'
+    Add-Result 'Blender' 'ok' 'python -m factory mascot build'
+}
 
 # --------------------------------------------------------------------------- 7. Zusammenfassung
 Write-Step 'Zusammenfassung'

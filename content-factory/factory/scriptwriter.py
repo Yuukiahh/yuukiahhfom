@@ -23,15 +23,19 @@ from . import llm
 from .render import CAMERA_MOVES
 from .visuals.procedural import KINDS
 
-WPS = {"en": 2.65, "de": 2.35}  # words per second at speed ~1.08
+WPS = {"en": 2.65, "de": 2.55}  # words per second at speed ~1.08
 FORMATS = {"short": (25, 45), "long": (60, 90)}
 
-SYSTEM = """You are a top-tier short-form video scriptwriter (TikTok / YouTube Shorts / Reels) and a rigorous science
-journalist. You write ORIGINAL scripts: never copy text from sources, never invent facts, numbers or quotes.
-Every factual claim must be supported by the provided SOURCES; if the sources do not support something, leave it out.
-Style: hook in the first 2 seconds (question, shocking stat or bold claim), open loops, short punchy sentences,
-second person ("you"), concrete images, one surprising twist, a satisfying payoff and a loop-friendly last line.
-No filler like "In this video", no "Did you know" opener, no emojis in narration. Output JSON only."""
+SYSTEM = """You are a top-tier short-form video scriptwriter (TikTok / Instagram Reels / YouTube Shorts) and a rigorous
+science journalist. You write ORIGINAL scripts in the requested language (native, natural, spoken style - for German:
+idiomatic "du"-Form, kurze Sätze, keine Anglizismen-Flut). Never copy text from sources, never invent facts, numbers or
+quotes. Every factual claim must be supported by the provided SOURCES; if they do not support it, leave it out.
+RETENTION RULES: (1) the first sentence is the hook and must land in < 1.5 s: shocking number, bold claim, direct
+"du"-question or visual promise - no greeting, no "In diesem Video", no "Wusstest du". (2) open a loop in the first
+5 s that is only closed near the end. (3) a new visual/idea every 2-3 seconds -> many short scenes. (4) one
+"Aber hier kommt der Twist / Doch dann ..." pattern interrupt around the middle. (5) concrete images, comparisons
+and numbers. (6) satisfying payoff, and a last line that loops back to the hook so the video rewatches seamlessly.
+Write numbers as digits (they are spoken correctly by the TTS). No emojis in narration. Output JSON only."""
 
 PROMPT = """Write a {format} vertical video script about: "{topic}"
 Niche: {niche}. Language: {language_name}. Target length: {min_s}-{max_s} seconds = {min_w}-{max_w} words of narration TOTAL.
@@ -45,14 +49,18 @@ Return ONE JSON object with exactly these keys:
 - "hook_text": 2-5 word on-screen hook caption
 - "niche": one of space, ai, technology, future, facts, mystery, psychology, gaming
 - "mood": one of cosmic, mystery, pulse, epic, playful
-- "scenes": {n_min}-{n_max} scenes. The first scene's narration starts with the hook. Each scene:
-    "narration" (1-3 short sentences), "visual" (one of: {kinds}),
+- "scenes": {n_min}-{n_max} scenes (each 1-2 short sentences, about 2-4 seconds spoken). The first scene's narration
+    starts with the hook. Each scene:
+    "narration" (1-2 short sentences), "visual" (one of: {kinds} - prefer the dynamic 3D kinds ending in 3d where they fit),
     "params" (optional, e.g. {{"palette":"ember|violet|teal|ice"}}), "camera" (one of: {cams}),
     "stock_query" (2-4 word English stock-footage search), "image_prompt" (detailed English image prompt for an AI image),
     "emphasis" (1-3 key words from this narration to colour-highlight), "sfx" (whoosh|impact|riser|pop|glitch|ding|none),
-    "stat" (optional big on-screen number card: {{"text":"10^12 K","sub":"core temperature"}} or null)
+    "stat" (optional big on-screen number card, max 10 characters: {{"text":"10¹² K","sub":"Kerntemperatur"}} or null;
+            use 2-4 stat cards per video on the most impressive numbers),
+    "mascot" (optional reaction of our 3D mascot Nova: wow|think|happy|point|wave or null; use 1-3 times)
 - "claims": list of {{"claim": "...", "source": "<url from SOURCES>"}} for every factual statement
-- "metadata": {{"title": "<=90 chars incl. 1 emoji", "description": "2-3 sentences + sources line", "hashtags": [8-12 tags without #]}}
+- "metadata": {{"title": "<=90 chars incl. 1 emoji, in the video language", "description": "2-3 sentences + sources line",
+                "hashtags": [8-12 tags without #, mix of the video language and English]}}
 """
 
 VERIFY = """You are a strict fact-checker. Check every factual statement in the SCRIPT against the SOURCES.
@@ -75,8 +83,8 @@ def target_words(fmt: str, lang: str) -> tuple[int, int]:
 def write(topic: str, niche: str, fmt: str, lang: str, research: dict, learnings: str = "") -> tuple[dict, str]:
     lo, hi = FORMATS[fmt]
     min_w, max_w = target_words(fmt, lang)
-    n_min, n_max = (6, 9) if fmt == "short" else (10, 15)
-    prompt = PROMPT.format(format=fmt, topic=topic, niche=niche, language_name={"en": "English", "de": "German"}.get(lang, lang),
+    n_min, n_max = (9, 14) if fmt == "short" else (16, 26)
+    prompt = PROMPT.format(format=fmt, topic=topic, niche=niche, language_name={"en": "English", "de": "German (Deutsch)"}.get(lang, lang),
                            min_s=lo, max_s=hi, min_w=min_w, max_w=max_w, n_min=n_min, n_max=n_max,
                            kinds=", ".join(sorted(set(KINDS))), cams=", ".join(CAMERA_MOVES),
                            context=research.get("context") or "(offline – use only well-established textbook facts and keep numbers conservative)",
