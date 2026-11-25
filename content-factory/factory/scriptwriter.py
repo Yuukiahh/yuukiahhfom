@@ -74,16 +74,27 @@ Return JSON: {{"verdict": "pass"|"fix", "issues": [{{"text": "...", "problem": "
 "script": <the corrected full script JSON with the same schema, unchanged if verdict is pass>}}"""
 
 
+def fmt_bounds(fmt: str) -> tuple[int, int]:
+    """'short' | 'long' | exact length like '30s' (target ±3 s)."""
+    if fmt in FORMATS:
+        return FORMATS[fmt]
+    m = re.fullmatch(r"(\d{2,3})s", str(fmt))
+    if m:
+        n = int(m.group(1))
+        return (max(10, n - 3), n + 2)
+    return FORMATS["short"]
+
+
 def target_words(fmt: str, lang: str) -> tuple[int, int]:
-    lo, hi = FORMATS[fmt]
+    lo, hi = fmt_bounds(fmt)
     wps = WPS.get(lang, 2.5)
     return int(lo * wps * 0.92), int(hi * wps * 0.9)
 
 
 def write(topic: str, niche: str, fmt: str, lang: str, research: dict, learnings: str = "") -> tuple[dict, str]:
-    lo, hi = FORMATS[fmt]
+    lo, hi = fmt_bounds(fmt)
     min_w, max_w = target_words(fmt, lang)
-    n_min, n_max = (9, 14) if fmt == "short" else (16, 26)
+    n_min, n_max = (9, 14) if fmt == "short" else (16, 26) if fmt == "long" else (max(5, hi // 4), max(7, hi // 3))
     prompt = PROMPT.format(format=fmt, topic=topic, niche=niche, language_name={"en": "English", "de": "German (Deutsch)"}.get(lang, lang),
                            min_s=lo, max_s=hi, min_w=min_w, max_w=max_w, n_min=n_min, n_max=n_max,
                            kinds=", ".join(sorted(set(KINDS))), cams=", ".join(CAMERA_MOVES),

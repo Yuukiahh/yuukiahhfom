@@ -71,7 +71,7 @@ def main(argv=None) -> int:
     for name in ("make", "queue", "video"):
         m = sub.add_parser(name)
         m.add_argument("topic", nargs="?")
-        m.add_argument("--format", default="short", choices=["short", "long"])
+        m.add_argument("--format", default="short", help="short (25-45 s) | long (60-90 s) | exakte Länge z.B. 30s")
         m.add_argument("--lang", default=None)
         m.add_argument("--niche", default=None)
         m.add_argument("--preset", default=None)

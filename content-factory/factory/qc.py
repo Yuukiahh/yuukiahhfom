@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 from .config import cfg
-from .scriptwriter import FORMATS
+from .scriptwriter import FORMATS, fmt_bounds
 
 
 def _probe(path: Path) -> dict:
@@ -63,7 +63,7 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("codec", v["codec_name"] == "h264" and v.get("pix_fmt") == "yuv420p", f"{v['codec_name']}/{v.get('pix_fmt')}")
     add("audio", a is not None and a["codec_name"] == "aac" and int(a.get("sample_rate", 0)) == 48000,
         f"{a and a['codec_name']} {a and a.get('sample_rate')}")
-    lo, hi = FORMATS[script.get("format", "short")]
+    lo, hi = fmt_bounds(script.get("format", "short"))
     add("duration", lo - 3 <= dur <= hi + 5, f"{dur:.1f}s (target {lo}-{hi})")
     br = int(info["format"].get("bit_rate", 0))
     add("bitrate", br > 4_000_000, f"{br/1e6:.1f} Mbit/s", "warn")
