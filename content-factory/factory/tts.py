@@ -134,13 +134,98 @@ def _kokoro():
     return kokoro_onnx.Kokoro(str(model), str(voices))
 
 
-def synth_kokoro(scenes, voice, speed, lang, out_wav):
-    k = _kokoro()
-    kl = "en-gb" if voice[:1] == "b" else "en-us"
+def _kokoro_voice(k, voice: str):
+    """'af_heart' or a blend like 'af_heart:0.7,af_nicole:0.3' (Kokoro style-vector mix)."""
+    if "," not in voice and ":" not in voice:
+        return voice
+    mix = None
+    for part in voice.split(","):
+        name, _, w = part.partition(":")
+        vec = k.get_voice_style(name.strip()) * float(w or 1)
+        mix = vec if mix is None else mix + vec
+    return mix
 
-    def run(phr):
-        return [k.create(p, voice=voice, speed=speed, lang=kl)[0].astype(np.float32) for p in phr]
-    return _assemble_phrase_audio(scenes, lang, run, out_wav)
+
+def _pauses(audio: np.ndarray, sr: int, min_len: float = 0.06) -> list[tuple[float, float]]:
+    hop = int(0.01 * sr)
+    env = np.array([np.abs(audio[i:i + hop]).mean() for i in range(0, len(audio) - hop, hop)])
+    if not len(env):
+        return []
+    thr = max(1e-4, env.max() * 0.04)
+    silent = env < thr
+    out, start = [], None
+    for i, sil in enumerate(silent):
+        if sil and start is None:
+            start = i
+        elif not sil and start is not None:
+            if (i - start) * 0.01 >= min_len and start > 0:
+                out.append((start * 0.01, i * 0.01))
+            start = None
+    return out
+
+
+def _align_scene(disp: list[str], lang: str, audio: np.ndarray, t0: float, si: int) -> list[Word]:
+    """Word timings for one fluently synthesised scene.
+
+    1. expected time of every punctuation boundary from syllable weights over the voiced span
+    2. each boundary snaps (in order) to the nearest detected speech pause within a tolerance
+    3. words between snapped boundaries are spread by syllable weight."""
+    dur = len(audio) / SR
+    spoken = textnorm.spoken_words(disp, lang)
+    wts = np.array([_syllables(x) for x in spoken])
+    idx = np.where(np.abs(audio) > 0.012)[0]
+    v0 = idx[0] / SR if len(idx) else 0.0
+    v1 = idx[-1] / SR if len(idx) else dur
+    cum = np.concatenate([[0], np.cumsum(wts)]) / max(wts.sum(), 1e-6)
+    pauses = _pauses(audio, SR, 0.045)
+    anchors = [(0, v0)]  # (word index where a segment starts, time)
+    last_t = v0
+    for i, w in enumerate(disp[:-1]):
+        if not re.search(r"[.,!?;:—…]$", w):
+            continue
+        exp = v0 + cum[i + 1] * (v1 - v0)
+        tol = 0.12 * (v1 - v0) + 0.2
+        cands = [p for p in pauses if p[0] > last_t + 0.05 and abs((p[0] + p[1]) / 2 - exp) < tol]
+        if not cands:
+            continue
+        ps, pe = min(cands, key=lambda p: abs((p[0] + p[1]) / 2 - exp) - 0.6 * (p[1] - p[0]))
+        anchors.append((i + 1, pe, ps))
+        last_t = pe
+    words = []
+    for k, a in enumerate(anchors):
+        a_idx, a_t = a[0], a[1]
+        if k + 1 < len(anchors):
+            b_idx, b_t = anchors[k + 1][0], anchors[k + 1][2]
+        else:
+            b_idx, b_t = len(disp), v1
+        if b_idx <= a_idx:
+            continue
+        seg = wts[a_idx:b_idx]
+        c = np.concatenate([[0], np.cumsum(seg)]) / max(seg.sum(), 1e-6) * max(0.05, b_t - a_t)
+        for j in range(b_idx - a_idx):
+            words.append(Word(disp[a_idx + j], round(t0 + a_t + c[j], 3), round(t0 + a_t + c[j + 1], 3), si))
+    return words
+
+
+def synth_kokoro(scenes, voice, speed, lang, out_wav):
+    """Fluent mode: each scene is synthesised in ONE pass (natural prosody across sentences)."""
+    k = _kokoro()
+    first = voice.split(",")[0]
+    kl = "en-gb" if first[:1] == "b" else "en-us"
+    v = _kokoro_voice(k, voice)
+    words, spans, pieces, t = [], [], [], 0.0
+    gap = float(cfg().get("tts.scene_gap", 0.14))
+    for si, sc in enumerate(scenes):
+        disp = sc.split()
+        text = " ".join(x for x in textnorm.spoken_words(disp, lang) if x)
+        audio, _ = k.create(text, voice=v, speed=speed, lang=kl, trim=True)
+        audio = _trim(audio.astype(np.float32), SR)
+        words += _align_scene(disp, lang, audio, t, si)
+        pieces += [audio, np.zeros(int(gap * SR), np.float32)]
+        spans.append((t, t + len(audio) / SR + gap))
+        t += len(audio) / SR + gap
+    sf.write(out_wav, np.concatenate(pieces), SR, subtype="PCM_16")
+    return words, spans
 
 
 # ------------------------------------------------------------------ coqui (de, offline)
@@ -298,7 +383,14 @@ def synthesize(scenes: list[str], out_wav: Path, lang: str | None = None, voice:
     chain = cfg().lang_value("tts.engine", lang)
     chain = [chain] if isinstance(chain, str) else list(chain)
     voices = cfg().get("tts.voices", {}) or {}
-    speed = float(cfg().get("tts.speed", 1.0))
+    speed = float(cfg().lang_value("tts.speed", lang) if isinstance(cfg().get("tts.speed"), dict) else cfg().get("tts.speed", 1.0))
+    if voice and "|" in voice:  # "engine|voice[|speed]" from a script/job -> force that engine first
+        parts = voice.split("|")
+        chain = [parts[0]] + [e for e in chain if e != parts[0]]
+        voice = parts[1]
+        if len(parts) > 2:
+            speed = float(parts[2])
+        cfg().data.setdefault("tts", {})["voice_engine_hint"] = parts[0]
     errors = []
     for engine in chain:
         fn = ENGINES.get(engine)

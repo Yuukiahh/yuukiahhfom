@@ -69,7 +69,7 @@ x = -0.04                        # Position links unten (Anteil der Bildbreite/-
 y = 0.60
 
 [brand]
-cta = "Folge für mehr!"
+cta = { de = "Folge für mehr!", en = "Follow for more!" }
 
 [subtitles]
 font = "Inter Display"

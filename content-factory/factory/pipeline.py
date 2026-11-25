@@ -150,7 +150,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         tspecs.append({"clip_a": specs[i]["out"], "clip_b": specs[i + 1]["out"], "kind": k, "dur": T, "fps": FPS,
                        "w": W, "h": H, "out": str(work / f"trans_{i:02d}.mp4"), "seed": seed0 + 100 + i})
         sfx_events.append((b - T / 2 - 0.08, SFX_FOR.get(k, "whoosh"), 0.6))
-    cta_text = cfg().get("brand.cta", "Folge für mehr!" if lang == "de" else "Follow for more!")
+    cta_text = cfg().lang_value("brand.cta", lang) or ("Folge für mehr!" if lang == "de" else "Follow for more!")
     cta = {"text": cta_text, "start": max(0.0, total - 2.1), "end": total}
     sfx_events.append((cta["start"], "notification", 0.45))
 
