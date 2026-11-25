@@ -278,7 +278,7 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
             sc["overlay"] = {"type": ov["type"], "data": {**ov["data"], "locale": lang}}
             used += 1
         if (pl or {}).get("source_label"):
-            sc["source_label"] = str(pl["source_label"])[:40]
+            sc["source_label"] = str(pl["source_label"])[:60]
         vis = str((pl or {}).get("visual") or "").strip()
         if vis in KINDS:
             sc["visual"] = vis

@@ -1,12 +1,12 @@
 {
   "title": "Some $30 Pony Card Boxes Now List for $3,000",
-  "hook": "One collector blog says some $30 pony card boxes now list for $3,000.",
+  "hook": "Some $30 pony card boxes now list for $3,000, says one collector blog.",
   "hook_text": "$30 → $3,000?!",
   "niche": "facts",
   "mood": "playful",
   "scenes": [
     {
-      "narration": "One collector blog says some $30 pony card boxes now list for $3,000.",
+      "narration": "Some $30 pony card boxes now list for $3,000, says one collector blog.",
       "visual": "holo_cards",
       "params": {
         "mode": "burst",
@@ -39,10 +39,10 @@
           "locale": "en"
         }
       },
-      "source_label": "One collector blog (Trading Card Archive"
+      "source_label": "Trading Card Archives (collector blog)"
     },
     {
-      "narration": "It starts with Kayou, making official cards with Hasbro.",
+      "narration": "Kayou makes the official cards with Hasbro.",
       "visual": "corporate",
       "params": {
         "accent": "#E83E8C"
@@ -70,7 +70,7 @@
       "source_label": "Comics Beat"
     },
     {
-      "narration": "Newest set: 162 unique cards, 10 rarity tiers.",
+      "narration": "Newest set: 162 cards, 10 rarity tiers.",
       "visual": "holo_cards",
       "params": {
         "mode": "fan",
@@ -110,7 +110,7 @@
       "source_label": "Comics Beat"
     },
     {
-      "narration": "On Etsy, rare singles are listed up to $269.",
+      "narration": "Rare singles on Etsy? Listed up to $269.",
       "visual": "stock_chart",
       "params": {
         "trend": "up",
@@ -143,10 +143,11 @@
       "source_label": "Etsy (asking prices)"
     },
     {
-      "narration": "But here's the twist: bootleg boxes skip the Kayou logo.",
-      "visual": "radar",
+      "narration": "The twist: bootleg boxes skip the Kayou logo.",
+      "visual": "holo_cards",
       "params": {
-        "accent": "#E83E8C"
+        "accent": "#E83E8C",
+        "mode": "burst"
       },
       "camera": "dolly_tilt",
       "stock_query": "magnifying glass inspection",
@@ -171,10 +172,10 @@
           "locale": "en"
         }
       },
-      "source_label": "One collector blog (Trading Card Archive"
+      "source_label": "Trading Card Archives (collector blog)"
     },
     {
-      "narration": "Next stop: Target, Walmart, GameStop, TikTok Shop.",
+      "narration": "Next stop: Target, Walmart, TikTok Shop.",
       "visual": "globe3d",
       "params": {
         "accent": "#E83E8C"
@@ -205,8 +206,8 @@
       "source_label": "Comics Beat"
     },
     {
-      "narration": "At New York Comic Con 2026, Kayou sold its first oversized card ever offered for purchase.",
-      "visual": "calendar",
+      "narration": "At Comic Con 2026, Kayou sold its first-ever oversized card.",
+      "visual": "newsroom",
       "params": {
         "accent": "#E83E8C"
       },
@@ -236,7 +237,7 @@
       "source_label": "Age of the Nerd"
     },
     {
-      "narration": "Eyeing a pricey listing? Check for the Kayou logo first.",
+      "narration": "Buying a pricey one? Check for the Kayou logo first.",
       "visual": "holo_cards",
       "params": {
         "mode": "float",
@@ -266,7 +267,7 @@
           "locale": "en"
         }
       },
-      "source_label": "One collector blog (Trading Card Archive"
+      "source_label": "Trading Card Archives (collector blog)"
     }
   ],
   "claims": [
@@ -395,5 +396,6 @@
   ],
   "llm_provider": "claude_cli",
   "topic": "Why are My Little Pony trading cards suddenly a big deal?",
-  "voice": "kokoro|af_heart:0.7,af_nicole:0.3|0.96"
+  "voice": "kokoro|af_heart:0.7,af_nicole:0.3|1.0",
+  "editor_note": "Tightened by Claude Code to ~30 s (same facts, same sources); bootleg scene -> holo_cards, Comic Con -> newsroom"
 }

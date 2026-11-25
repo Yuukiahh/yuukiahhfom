@@ -103,6 +103,23 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     narrations = [sc["narration"] for sc in script["scenes"]]
     words, spans, voice_info = tts.synthesize(narrations, voice_wav, lang, script.get("voice"))
     voice_dur = sf.info(voice_wav).duration
+    # length guard: if the voice overshoots the target length, re-synthesise up to 15 % faster
+    _lo, _hi = scriptwriter.fmt_bounds(script.get("format", "short"))
+    if voice_dur + 1.0 > _hi + 1.5 and not script.get("no_speed_fit"):
+        base_voice = script.get("voice") or ""
+        parts = base_voice.split("|") if "|" in base_voice else []
+        cur = float(parts[2]) if len(parts) > 2 else float(cfg().get("tts.speed", 1.0) if not isinstance(cfg().get("tts.speed"), dict) else 1.0)
+        factor = min(1.15, (voice_dur + 1.0) / (_hi + 0.5))
+        new_speed = round(cur * factor, 3)
+        if parts:
+            fitted = "|".join([parts[0], parts[1], str(new_speed)])
+        else:
+            fitted = None
+            cfg().data.setdefault("tts", {})["speed"] = new_speed
+        progress("voice_fit", 0.33)
+        words, spans, voice_info = tts.synthesize(narrations, voice_wav, lang, fitted or script.get("voice"))
+        voice_info["speed_fit"] = {"from": cur, "to": new_speed, "before_s": round(voice_dur, 2)}
+        voice_dur = sf.info(voice_wav).duration
     total = voice_dur + 1.0  # outro tail (CTA)
 
     # ---- timeline: scene i spans [b_{i-1}-T/2, b_i+T/2]; transition centred on each cut b_i
