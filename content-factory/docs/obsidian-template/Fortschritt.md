@@ -1,7 +1,7 @@
 <!-- cf:auto:start – dieser Block wird automatisch erzeugt -->
 # Fortschritt
 
-Stand: 2026-11-25 14:57
+Stand: 2026-11-25 15:00
 
 ## Phasen
 - [x] Phase 1: Grundgerüst, Config, DB, Secrets
@@ -14,5 +14,5 @@ Stand: 2026-11-25 14:57
 - [x] Phase 8: Obsidian-Doku + Windows-Installer
 
 ## Zahlen
-- Videos: 1 · Jobs: {'queued': 1} · Veröffentlichungen: {} · Metriken: 0
+- Videos: 6 · Jobs: {'queued': 1} · Veröffentlichungen: {} · Metriken: 0
 <!-- cf:auto:end -->

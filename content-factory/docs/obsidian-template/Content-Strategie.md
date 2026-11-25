@@ -1,9 +1,9 @@
 <!-- cf:auto:start – dieser Block wird automatisch erzeugt -->
 # Content-Strategie
 
-- Sprache: `de` · Videos pro Tag: 0
+- Sprache: `de` · Videos pro Tag: 4
 - Format-Mix: {'short': 0.7, 'long': 0.3}
-- Aktive Stunden: [0, 24]
+- Aktive Stunden: [9, 23]
 - Plattformen: youtube · Upload-Slots: 12:00, 17:30, 20:00
 - Trend-Quellen/Regionen: US, DE, GB
 
