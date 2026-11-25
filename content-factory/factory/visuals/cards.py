@@ -153,9 +153,9 @@ class HoloCards(Scene):
             sweep = ((t * 0.45 + self.phase[i][0] / 6.28) % 1.6) - 0.3   # moving foil sheen
             pos = (gx / max(ww, 1) + gy / max(hh, 1) * 0.6) / 1.6
             sheen = np.exp(-((pos - sweep) / 0.06) ** 2)[..., None] * np.array([255, 245, 255], np.float32) * 0.55
-            if z < 0.95:  # depth of field for cards further back
+            if float(z) < 0.95:  # depth of field for cards further back
                 warped = np.asarray(Image.fromarray(warped.astype(np.uint8), "RGBA").filter(
-                    ImageFilter.GaussianBlur(2.5 * (0.95 - z) / 0.15 + 0.5)), np.float32)
+                    ImageFilter.GaussianBlur(float(2.5 * (0.95 - float(z)) / 0.15 + 0.5))), np.float32)
             rgb, al = warped[..., :3] * shine + sheen * (warped[..., 3:4] > 0), warped[..., 3:4] / 255
             # clip to frame
             ax0, ay0, ax1, ay1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)

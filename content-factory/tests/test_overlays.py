@@ -37,3 +37,18 @@ def test_overlay_hidden_outside_window():
                                    "overlay_start": 1.0, "overlay_end": 2.0}, 1080, 1920)
     assert layer.apply(frame.copy(), 0.5).max() == 0
     assert layer.apply(frame.copy(), 1.6).max() > 0
+
+
+def test_holo_cards_all_modes_render():
+    from factory.visuals.procedural import make_scene
+    for mode in ("float", "fan", "burst"):
+        sc = make_scene("holo_cards", 216, 384, 4, {"accent": "#E83E8C", "mode": mode})
+        for t in (0.0, 0.7, 1.5, 3.1):
+            f = sc.render(t)
+            assert np.isfinite(f).all()
+
+
+def test_fmt_value():
+    assert overlays.fmt_value(2999, "$") == "$2,999"
+    assert overlays.fmt_value(31, "%", signed=True) == "+31%"
+    assert overlays.fmt_value(-5.86, "%", signed=True) == "-5.9%"
