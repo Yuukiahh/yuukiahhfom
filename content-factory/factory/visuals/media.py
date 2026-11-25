@@ -27,10 +27,29 @@ UA = {"User-Agent": "ai-content-factory/1.0 (local video tool)"}
 
 
 class MediaImage(Scene):
+    """Photo scene. Portrait photos fill the frame; landscape photos get the vertical-video layout:
+    blurred colour-matched backdrop + the complete photo floating with rounded corners and shadow."""
+
     def build(self):
-        img = Image.open(self.p["path"]).convert("RGB")
-        img = ImageOps.fit(img, (self.W, self.H), Image.LANCZOS, centering=(0.5, 0.45))
-        self.base = np.asarray(img, np.float32)
+        from PIL import ImageDraw, ImageFilter
+        img = ImageOps.exif_transpose(Image.open(self.p["path"])).convert("RGB")
+        if img.width / img.height <= 0.8:
+            self.base = np.asarray(ImageOps.fit(img, (self.W, self.H), Image.LANCZOS, centering=(0.5, 0.45)), np.float32)
+            return
+        bg = ImageOps.fit(img, (self.W // 4, self.H // 4), Image.BILINEAR).filter(ImageFilter.GaussianBlur(14))
+        bg = np.asarray(bg.resize((self.W, self.H), Image.BILINEAR), np.float32) * 0.55
+        fw = int(self.W * 0.94)
+        fh = int(fw * img.height / img.width)
+        photo = img.resize((fw, fh), Image.LANCZOS)
+        mask = Image.new("L", (fw, fh), 0)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, fw - 1, fh - 1], 36, fill=255)
+        canvas = Image.fromarray(bg.astype(np.uint8))
+        shadow = Image.new("L", (self.W, self.H), 0)
+        x, y = (self.W - fw) // 2, int(self.H * 0.5 - fh / 2)
+        shadow.paste(mask, (x + 10, y + 26))
+        canvas.paste((0, 0, 0), mask=shadow.filter(ImageFilter.GaussianBlur(28)).point(lambda v: int(v * 0.7)))
+        canvas.paste(photo, (x, y), mask)
+        self.base = np.asarray(canvas, np.float32)
 
 
 # ------------------------------------------------------------------ providers

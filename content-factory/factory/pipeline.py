@@ -142,8 +142,11 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         m = None
         if user_images and sc.get("visual") in ("holo_cards", "cards", "trading_cards", "tcg", "card_pack", "collectibles", "pack_opening"):
             sc = {**sc, "params": {**sc.get("params", {}), "images": user_images[i % len(user_images):] + user_images[:i % len(user_images)]}}
-        elif user_images and sc.get("photo"):  # scene explicitly showing one of the user's photos full-frame
-            m = {"path": user_images[i % len(user_images)], "type": "image", "source": "user", "license": "User-provided photo (own work)"}
+        elif user_images and (sc.get("photo") or (sc.get("photo") is None and i % 2 == 0)):
+            # user photos: explicit "photo" scenes, otherwise every other non-card scene shows one full-frame
+            k = sum(1 for j in range(i) if j % 2 == 0)
+            m = {"path": user_images[k % len(user_images)], "type": "image", "source": "user",
+                 "license": "User-provided image (own photo or own AI generation)"}
         if m is None and sc.get("visual_source", "auto") != "procedural":
             m = media_mod.fetch(sc, work / "media", script.get("niche", ""))
         media_items.append({**m, "scene": i} if m else {"scene": i, "source": "procedural-3d", "type": "generated",
