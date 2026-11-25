@@ -94,6 +94,17 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("subtitle_coverage", covered >= 0.6 * voice_dur, f"{covered:.1f}s of {voice_dur:.1f}s speech")
     mono = all(words[i]["start"] <= words[i + 1]["start"] for i in range(len(words) - 1))
     add("subtitle_monotonic", mono)
+    ass_path = Path(video).parent / "_work" / "subs.ass"
+    if not ass_path.exists():
+        ass_path = Path(video).parent / "subtitles.ass"
+    if ass_path.exists():
+        def _t(x):
+            h, m, sec = x.split(":")
+            return int(h) * 3600 + int(m) * 60 + float(sec)
+        evs = sorted((_t(l.split(",")[1]), _t(l.split(",")[2])) for l in ass_path.read_text("utf-8").splitlines()
+                     if l.startswith("Dialogue: 2,"))
+        overlaps = sum(1 for a, b in zip(evs, evs[1:]) if b[0] < a[1] - 0.005)
+        add("subtitle_no_overlap", overlaps == 0, f"{overlaps} overlapping caption events")
 
     # script / facts / rights
     hook = script.get("hook", "")

@@ -83,14 +83,18 @@ Style: StatSub,{font} Bold,{int(size*0.62)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H0
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     ev: list[str] = []
-    for g in group_words(words, maxw):
+    groups = group_words(words, maxw)
+    for gi, g in enumerate(groups):
         g_start, g_end = g[0]["start"], g[-1]["end"]
+        nxt = groups[gi + 1][0]["start"] if gi + 1 < len(groups) else g_end + 1.0
+        g_end = min(g_end + 0.06, nxt) - 0.06
         chars = sum(len(_clean(x["text"])) + 1 for x in g) - 1
         # Inter Black caps ~0.68em wide; leave room for the 118% active-word pop
         fit = min(100, int(100 * (width * 0.86) / max(1.0, chars * size * 0.68 + size * 0.5)))
         for i, w in enumerate(g):
             s = w["start"] if i else g_start
             e = g[i + 1]["start"] if i + 1 < len(g) else g_end + 0.06
+            e = min(e, nxt)
             parts = []
             base = f"\\fscx{fit}\\fscy{fit}"
             for j, x in enumerate(g):
