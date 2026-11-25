@@ -247,8 +247,7 @@ class Renderer:
                         for oy in (-1, 0, 1):
                             self._push(self._coarse, xl + ox * rl, yl + oy * rl, cl, self.Wc, self.Hc)
         if bloom:
-            st = len(x) // 25000 + 1  # the blurred 1/4-res glow does not need every particle
-            self._push(self._soft, x[::st] / ds, y[::st] / ds, col[::st] * (st * bloom / ds ** 2), self.Ws, self.Hs)
+            self._push(self._soft, x / ds, y / ds, col * (bloom / ds ** 2), self.Ws, self.Hs)
 
     def soft(self, x, y, col):
         """Deposit directly into the blurred quarter-res buffer (screen px coords, energy units)."""
@@ -276,17 +275,28 @@ class Renderer:
         self.points(x, y, col, r, layer, bloom)
         return z
 
-    @staticmethod
-    def sample_segments(x0, y0, x1, y1, spacing=0.8, maxn=400):
-        """Resample screen segments into points. Returns xs, ys, seg index, param s, step length (px)."""
+    def sample_segments(self, x0, y0, x1, y1, spacing=0.8, maxn=400, margin=4.0):
+        """Resample screen segments into points, clipped to the (slightly enlarged) screen rectangle.
+        Returns xs, ys, segment index, param s in [0,1] along the ORIGINAL segment, step length (px)."""
         dx, dy = x1 - x0, y1 - y0
-        L = np.sqrt(dx * dx + dy * dy)
-        n = np.clip(np.ceil(L / spacing), 1, maxn).astype(np.int64)
+        t0 = np.zeros(len(x0), np.float32)
+        t1 = np.ones(len(x0), np.float32)
+        ok = np.ones(len(x0), bool)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            for p, q in ((-dx, x0 + margin), (dx, self.W + margin - x0), (-dy, y0 + margin), (dy, self.H + margin - y0)):
+                par = p == 0
+                ok &= ~(par & (q < 0))
+                r = np.where(par, 0, q / np.where(par, 1, p))
+                t0 = np.where(~par & (p < 0), np.maximum(t0, r), t0)
+                t1 = np.where(~par & (p > 0), np.minimum(t1, r), t1)
+        ok &= t1 > t0
+        L = np.sqrt(dx * dx + dy * dy) * np.where(ok, t1 - t0, 0)
+        n = np.where(ok, np.clip(np.ceil(L / spacing), 1, maxn), 0).astype(np.int64)
         seg = np.repeat(np.arange(len(n)), n)
         start = np.cumsum(n) - n
-        s = ((np.arange(len(seg)) - start[seg]) + 0.5) / n[seg]
-        s = s.astype(np.float32)
-        return x0[seg] + dx[seg] * s, y0[seg] + dy[seg] * s, seg, s, (L / n)[seg].astype(np.float32)
+        s = ((np.arange(len(seg)) - start[seg]) + 0.5) / np.maximum(n[seg], 1)
+        s = (t0[seg] + (t1[seg] - t0[seg]) * s).astype(np.float32)
+        return x0[seg] + dx[seg] * s, y0[seg] + dy[seg] * s, seg, s, (L / np.maximum(n, 1))[seg].astype(np.float32)
 
     def lines(self, x0, y0, x1, y1, c0, c1=None, width=0.0, layer="back", bloom=0.35, spacing=1.0, maxn=400):
         """Anti-aliased additive screen-space lines. c0/c1 (N,3): colour (per px of length) at both ends."""
@@ -306,8 +316,14 @@ class Renderer:
         col = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * step[:, None]
         r = np.asarray(width, np.float32)
         r = r[seg] if r.ndim else np.broadcast_to(r, xs.shape)
-        # a bilinear-splatted line is already ~1.5 px wide; 1.4-3 px lines get two taps across the line,
-        # wider ones go through the point path (soft buffers)
+        ln = np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2) + 1e-6
+        self.line_samples(xs, ys, col, r, ((x1 - x0) / ln)[seg], ((y1 - y0) / ln)[seg], layer, bloom)
+
+    def line_samples(self, xs, ys, col, r, ux, uy, layer="back", bloom=0.35):
+        """Splat pre-sampled line points (col already scaled by step length). r = line width (px),
+        (ux, uy) = unit line direction. A bilinear-splatted line is already ~1.5 px wide; 1.4-3 px lines
+        get two taps across the line, wider ones go through the point path (soft buffers)."""
+        r = np.broadcast_to(np.asarray(r, np.float32), xs.shape)
         thin = r < 1.4
         wide = r >= 3.0
         thick = ~thin & ~wide
@@ -316,16 +332,15 @@ class Renderer:
         else:
             self.points(xs[thin], ys[thin], col[thin], None, layer, bloom=0)
             if thick.any():
-                sg = seg[thick]
-                ln = np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2) + 1e-6
-                ox, oy = (-(y1 - y0) / ln)[sg] * r[thick] * 0.5, ((x1 - x0) / ln)[sg] * r[thick] * 0.5
+                h = r[thick] * 0.5
+                ox, oy = -uy[thick] * h, ux[thick] * h
                 xt, yt, ct = xs[thick], ys[thick], col[thick] * 0.5
                 self.points(np.concatenate([xt + ox, xt - ox]), np.concatenate([yt + oy, yt - oy]),
                             np.concatenate([ct, ct]), None, layer, bloom=0)
             if wide.any():
                 self.points(xs[wide], ys[wide], col[wide], r[wide], layer, bloom=0)
-        if bloom and len(xs):  # glow from every 4th sample is plenty for the 1/4-res bloom buffer
-            self._push(self._soft, xs[::4] / self.ds, ys[::4] / self.ds, col[::4] * (4 * bloom / self.ds ** 2), self.Ws, self.Hs)
+        if bloom and len(xs):  # (no subsampling: a shifting subset would make the glow shimmer)
+            self._push(self._soft, xs / self.ds, ys / self.ds, col * (bloom / self.ds ** 2), self.Ws, self.Hs)
 
     def lines3d(self, A, B, c0, c1=None, width=0.0, width_world=0.0, near=0.05, layer="back", bloom=0.35):
         xa, ya, za, ia = self.project(A)
@@ -389,27 +404,31 @@ class Renderer:
             self.points(xs, ys, col, rr[seg] * 0.9, bloom=0)
 
     # ---------------------------------------------------------------- compositing
+    @staticmethod
+    def _scatter(store, flat):
+        """Add stored splats into a flat interleaved (H*W*3) float32 view (np.add.at is fast in numpy 2)."""
+        if not store:
+            return
+        idx = np.concatenate([s[0] for s in store]) * 3
+        wc = np.concatenate([s[1] for s in store], axis=1)
+        np.add.at(flat, np.concatenate([idx, idx + 1, idx + 2]), wc.ravel())
+
     def _accumulate(self, store, Wb, Hb, out=None):
         """Sum splats into an (Hb, Wb, 3) float32 image (added into ``out`` if given)."""
         if out is None:
             out = np.zeros((Hb, Wb, 3), np.float32)
-        if not store:
-            return out
-        idx = np.concatenate([s[0] for s in store])
-        wc = np.concatenate([s[1] for s in store], axis=1)
-        n = Wb * Hb
-        for c in range(3):
-            out[..., c] += np.bincount(idx, wc[c], minlength=n)[:n].reshape(Hb, Wb)
+        self._scatter(store, out.reshape(-1))
         return out
 
     def finish(self, base=None, canvas=None, bloom=(0.55, 0.45), radii=(1.6, 7.0), exposure=1.0,
                white=325.0, knee=260.0, soft_extra=None):
         """Resolve buffers -> float32 (H, W, 3) image in 0..~255.
 
-        Everything is additive, so order does not matter.  base: optional full-res float image (or a
-        (y0, x0, region) tuple) added in.  canvas: optional opaque uint8 RGB PIL image (painter's
-        geometry), also bloomed.  soft_extra: (Hs, Ws, 3) array added to the soft buffer.
-        Tone curve: Reinhard  y = white * x / (x + knee / exposure)  (never hard-clips)."""
+        Additive light (fine splats + bloom) is tone-mapped with a Reinhard curve
+        y = white * x / (x + knee / exposure) (never hard-clips, no white blobs); designed colours are
+        added after it: base = full-res float image, or a (list of) (y0, x0, region[, bloom_weight])
+        tuples; canvas = opaque uint8 RGB PIL image (painter's geometry). Both also feed the bloom.
+        soft_extra: (Hs, Ws, 3) array added to the soft buffer."""
         soft = self._accumulate(self._soft, self.Ws, self.Hs)
         if self._coarse:
             co = self._accumulate(self._coarse, self.Wc, self.Hc)
@@ -445,19 +464,10 @@ class Renderer:
         comb8 = np.clip(comb, 0, 255).astype(np.uint8)
         box = (0, 0, self.W / self.ds, self.H / self.ds)
         out = np.empty((self.H, self.W, 3), np.float32)
-        store = self._fine["back"] + self._fine["front"]
-        n = self.W * self.H
-        if store:
-            idx = np.concatenate([s[0] for s in store])
-            wc = np.concatenate([s[1] for s in store], axis=1)
-        for c in range(3):  # per-channel 'L' upsampling is faster than RGB and gives contiguous planes
-            up = np.asarray(Image.fromarray(np.ascontiguousarray(comb8[..., c])).resize((self.W, self.H), Image.BILINEAR, box=box))
-            if store:
-                acc = np.bincount(idx, wc[c], minlength=n)[:n].reshape(self.H, self.W)
-                acc += up
-                out[..., c] = acc
-            else:
-                out[..., c] = up
+        for c in range(3):  # per-channel 'L' upsampling is faster than RGB
+            out[..., c] = np.asarray(Image.fromarray(np.ascontiguousarray(comb8[..., c])).resize(
+                (self.W, self.H), Image.BILINEAR, box=box))
+        self._scatter(self._fine["back"] + self._fine["front"], out.reshape(-1))
         # tone-map the additive light only; designed base colours (sky, planet, canvas) are added after
         den = out  # in place: y = white - white*k/(x+k)
         den += knee / exposure
@@ -1051,7 +1061,8 @@ class Terrain3D(Scene3D):
             vis = ys <= occa[ri[seg], xi] + tol
             seg, s, step = seg[vis], s[vis], step[vis]
             cc = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * step[:, None]
-            R.points(xs[vis], ys[vis], cc, w[seg], bloom=0.5)
+            ln = np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2) + 1e-6
+            R.line_samples(xs[vis], ys[vis], cc, w[seg], ((x1 - x0) / ln)[seg], ((y1 - y0) / ln)[seg], bloom=0.5)
         sil = occ[-1]
         # sky above the highest silhouette point, ground below the lowest, per-pixel test only in between
         y_lo = int(np.clip(np.floor(sil.min()), 0, self.H))
@@ -1077,7 +1088,7 @@ class Atom3D(Scene3D):
                 pos.append(c)
         self.nuc = np.array(pos, np.float32)
         self.proton = rng.random(len(pos)) < 0.5
-        self.sph = fib_sphere(2200).astype(np.float32)
+        self.sph = fib_sphere(1800).astype(np.float32)
         self.nr = 0.115
         self.orbits = []
         for i, (rad, rx, rz, sp) in enumerate([(1.55, 0.25, 0.0, 1.3), (1.75, 1.15, 0.6, -1.05), (1.95, -1.0, -0.7, 0.9)]):
@@ -1101,7 +1112,7 @@ class Atom3D(Scene3D):
 
     def frame(self, t):
         R, a, b = self.R, self.ca, self.cb
-        cam = orbit((0, 0, 0), 5.4 - 0.4 * math.sin(t * 0.11), 0.2 + t * 0.19, 0.3 + 0.18 * math.sin(t * 0.14))
+        cam = orbit((0, 0, 0), 4.9 - 0.4 * math.sin(t * 0.11), 0.2 + t * 0.19, 0.3 + 0.18 * math.sin(t * 0.14))
         R.begin(Camera(cam, (0, 0, 0), fov=50, roll=0.12 * math.sin(t * 0.1)))
         view = cam.astype(np.float32)
         self.draw_sky()
@@ -1133,10 +1144,10 @@ class Atom3D(Scene3D):
         ao = np.clip(0.55 + 0.6 * np.sum(N * cdir, 1), 0.25, 1.0)
         base = np.where(self.proton[own][:, None], np.array([255, 85, 55], np.float32), np.array([80, 150, 255], np.float32))
         rim = (1 - fac) ** 3
-        sh = base * ((0.08 + 0.8 * diff) * ao)[:, None] + (spec * 255)[:, None] + base * (rim * 0.9)[:, None]
+        sh = base * ((0.14 + 1.0 * diff) * ao)[:, None] + (spec * 255)[:, None] + base * (rim * 0.45)[:, None]
         _, _, zc, invc = R.project(C[own])
         area = 2 * math.pi * (self.nr * invc) ** 2 / nS  # px^2 covered by each surface sample
-        R.points3d(P, sh * area[:, None] * 0.9, 0.0, 1.1, bloom=0.35)
+        R.points3d(P, sh * area[:, None] * 0.9, 0.0, 0.9, bloom=0.35)
         cx, cy, _, ci = R.project(np.zeros((1, 3)))
         R.points(np.repeat(cx, 2), np.repeat(cy, 2), np.array([[255, 140, 100], [140, 170, 255]]) * 2500,
                  [0.45 * ci[0], 0.9 * ci[0]], bloom=0)
@@ -1266,71 +1277,102 @@ class DataCity3D(Scene3D):
             pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in V]
             d.line(pts, fill=tuple(int(v) for v in np.clip(c * 1.1 + 25 * ff, 0, 255)),
                    width=int(np.clip(0.04 * f / V[0, 2], 1, 7 * self.k + 1)))
-        # towers, far to near
-        items = []
-        for row in range(k0 - 1, k0 + int(far)):
-            for ci in range(self.nx):
-                xc = (ci - self.nx / 2 + 0.5) * self.cell
-                if abs(xc) < 0.6:
-                    continue  # the street we fly down
-                pr = row % self.P
-                h = float(self.hgt[pr, ci])
-                fp = float(self.fp[pr, ci]) * 0.5
-                zc = row + 0.5
-                dz = zc - cz
-                if dz < -1.0:
-                    continue
-                items.append((math.hypot(xc - cpos[0], dz), xc, zc, h, fp, pr, ci))
-        items.sort(reverse=True)
-        for dist, xc, zc, h, fp, pr, ci in items:
-            x0, x1, z0, z1 = xc - fp, xc + fp, zc - fp, zc + fp
-            corners = np.array([[x0, 0, z0], [x1, 0, z0], [x1, 0, z1], [x0, 0, z1],
-                                [x0, h, z0], [x1, h, z0], [x1, h, z1], [x0, h, z1]], np.float64)
-            V = (corners - cpos) @ Rm.T
-            if (V[:, 2] < near).all():
+        # towers, far to near (geometry/colours vectorised, only the PIL drawing loops in Python)
+        rows = np.arange(k0 - 1, k0 + int(far))
+        rr, cc_ = np.meshgrid(rows, np.arange(self.nx), indexing="ij")
+        rr, cc_ = rr.ravel(), cc_.ravel()
+        xc = (cc_ - self.nx / 2 + 0.5) * self.cell
+        zc = rr + 0.5
+        keep = (np.abs(xc) >= 0.6) & (zc - cz >= -1.0)
+        rr, cc_, xc, zc = rr[keep], cc_[keep], xc[keep], zc[keep]
+        pr = rr % self.P
+        h = self.hgt[pr, cc_].astype(np.float64)
+        fp = self.fp[pr, cc_].astype(np.float64) * 0.5
+        dist = np.hypot(xc - cpos[0], zc - cz)
+        x0s, x1s, z0s, z1s = xc - fp, xc + fp, zc - fp, zc + fp
+        zeros = np.zeros_like(h)
+        cx_ = np.stack([x0s, x1s, x1s, x0s, x0s, x1s, x1s, x0s], 1)
+        cy_ = np.stack([zeros, zeros, zeros, zeros, h, h, h, h], 1)
+        cz_ = np.stack([z0s, z0s, z1s, z1s, z0s, z0s, z1s, z1s], 1)
+        px, py, pz = cx_ - cpos[0], cy_ - cpos[1], cz_ - cpos[2]
+        Vx = px * Rm[0, 0] + py * Rm[0, 1] + pz * Rm[0, 2]
+        Vy = px * Rm[1, 0] + py * Rm[1, 1] + pz * Rm[1, 2]
+        Vz = px * Rm[2, 0] + py * Rm[2, 1] + pz * Rm[2, 2]
+        izs = f / np.maximum(Vz, near)
+        SX, SY = W * 0.5 + Vx * izs, H * 0.5 - Vy * izs
+        behind = Vz < near
+        ff = np.exp(-np.maximum(0.0, dist - 2.0) / 11.0)[:, None]
+        hue = self.hue[pr, cc_][:, None]
+        emis = self.ca[None, :] * (1 - hue) + self.cb[None, :] * hue
+        pul = (0.5 + 0.5 * np.sin(t * 2.0 + self.pulse[pr, cc_] * TAU))[:, None]
+        body = np.array([5, 7, 16], np.float32)
+        fogm = fogc[None, :] * (1 - ff)
+        tint = lambda c: np.clip(c, 0, 255).astype(np.int64).tolist()
+        col_front = tint((body * 1.6 + emis * 0.05) * ff + fogm * 0.55)
+        col_side = tint((body * 1.0 + emis * 0.03) * ff + fogm * 0.55)
+        col_top = tint(emis * (0.55 + 0.35 * pul) * ff + fogm * 0.55)
+        col_edge = tint(emis * (0.5 + 0.5 * pul) * ff + fogm * 0.6)
+        lit_base = (self.pulse[pr, cc_] * 13).tolist()
+        front_vis = cpos[2] < z0s
+        left_vis = cpos[0] < x0s
+        right_vis = cpos[0] > x1s
+        top_vis = cpos[1] > h
+        FACES = ((0, 1, 5, 4), (3, 0, 4, 7), (1, 2, 6, 5), (4, 5, 6, 7))
+        sxl, syl = SX.tolist(), SY.tolist()
+        r0, r1, r2 = Rm[0], Rm[1], Rm[2]
+
+        def proj(x, y, z):
+            qx, qy, qz = x - cpos[0], y - cpos[1], z - cpos[2]
+            vz = qx * r2[0] + qy * r2[1] + qz * r2[2]
+            if vz < near:
+                return None
+            return (W * 0.5 + (qx * r0[0] + qy * r0[1] + qz * r0[2]) * f / vz,
+                    H * 0.5 - (qx * r1[0] + qy * r1[1] + qz * r1[2]) * f / vz), vz
+
+        for i in np.argsort(-dist).tolist():
+            if behind[i].all():
                 continue
-            ff = math.exp(-max(0.0, dist - 2.0) / 11.0)
-            hue = float(self.hue[pr, ci])
-            emis = self.ca * (1 - hue) + self.cb * hue
-            pul = 0.5 + 0.5 * math.sin(t * 2.0 + self.pulse[pr, ci] * TAU)
-            body = np.array([5, 7, 16], np.float32)
             faces = []
-            if cpos[2] < z0:
-                faces.append(([0, 1, 5, 4], body * 1.6 + emis * 0.05))  # front (-z)
-            if cpos[0] < x0:
-                faces.append(([3, 0, 4, 7], body * 1.0 + emis * 0.03))  # left side
-            elif cpos[0] > x1:
-                faces.append(([1, 2, 6, 5], body * 1.0 + emis * 0.03))  # right side
-            if cpos[1] > h:
-                faces.append(([4, 5, 6, 7], emis * (0.55 + 0.35 * pul)))  # emissive top
+            if front_vis[i]:
+                faces.append((FACES[0], col_front[i]))
+            if left_vis[i]:
+                faces.append((FACES[1], col_side[i]))
+            elif right_vis[i]:
+                faces.append((FACES[2], col_side[i]))
+            if top_vis[i]:
+                faces.append((FACES[3], col_top[i]))
+            edge = tuple(col_edge[i])
             for idx, c in faces:
-                pts = proj_poly(V[idx])
-                if pts is None:
-                    continue
-                cc = c * ff + fogc * (1 - ff) * 0.55
-                edge = emis * (0.5 + 0.5 * pul) * ff + fogc * (1 - ff) * 0.6
-                d.polygon(pts, fill=tuple(int(v) for v in np.clip(cc, 0, 255)),
-                          outline=tuple(int(v) for v in np.clip(edge, 0, 255)))
+                if behind[i, list(idx)].any():
+                    pts = proj_poly(np.stack([Vx[i, list(idx)], Vy[i, list(idx)], Vz[i, list(idx)]], 1))
+                    if pts is None:
+                        continue
+                else:
+                    pts = [(sxl[i][j], syl[i][j]) for j in idx]
+                d.polygon(pts, fill=tuple(c), outline=edge)
             # emissive window bands on the visible vertical faces (near towers only)
-            if dist < 14 and h > 0.8:
-                nb = int(h / 0.35)
-                for j in range(1, nb):
+            hi = float(h[i])
+            if dist[i] < 14 and hi > 0.8:
+                x0, x1, z0, z1 = float(x0s[i]), float(x1s[i]), float(z0s[i]), float(z1s[i])
+                e = emis[i]
+                fi = float(ff[i, 0])
+                fog_w = fogc * (1 - fi) * 0.4
+                for j in range(1, int(hi / 0.35)):
                     yb = j * 0.35
-                    lit = min(1.0, max(0.12, 0.45 + 0.8 * math.sin(t * 1.1 + j * 1.7 + float(self.pulse[pr, ci]) * 13)))
+                    lit = min(1.0, max(0.12, 0.45 + 0.8 * math.sin(t * 1.1 + j * 1.7 + lit_base[i])))
                     segs = []
-                    if cpos[2] < z0:
+                    if front_vis[i]:
                         segs.append(((x0 + 0.04, yb, z0), (x1 - 0.04, yb, z0)))
-                    if cpos[0] < x0:
+                    if left_vis[i]:
                         segs.append(((x0, yb, z1 - 0.04), (x0, yb, z0 + 0.04)))
-                    elif cpos[0] > x1:
+                    elif right_vis[i]:
                         segs.append(((x1, yb, z0 + 0.04), (x1, yb, z1 - 0.04)))
                     for A, B in segs:
-                        Vs = (np.array([A, B]) - cpos) @ Rm.T
-                        if (Vs[:, 2] < near).any():
+                        pa, pb = proj(*A), proj(*B)
+                        if pa is None or pb is None:
                             continue
-                        pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in Vs]
-                        cc = emis * (0.85 * lit) * ff + fogc * (1 - ff) * 0.4
-                        d.line(pts, fill=tuple(int(v) for v in cc), width=max(1, int(0.03 * f / max(0.3, Vs[0, 2]))))
+                        cc = e * (0.85 * lit) * fi + fog_w
+                        d.line([pa[0], pb[0]], fill=tuple(int(v) for v in cc), width=max(1, int(0.03 * f / max(0.3, pa[1]))))
         # stars above the skyline (additive, under the opaque canvas is fine: sky is dark)
         self.draw_sky()
         return R.finish(canvas=canvas, bloom=(0.7, 0.6), radii=(1.5, 8.0))
@@ -1376,8 +1418,8 @@ class RingPlanet3D(Scene3D):
         self.tex = colorize3(v, stops.get(pal, stops["saturn"])).reshape(-1, 3).astype(np.float32)
         self.tw, self.th_ = tw, th_
         self.tilt = (rot_z(0.25) @ rot_x(0.05)).astype(np.float64)  # planet/ring frame -> world
-        self.sun = _norm([-0.95, 0.45, 0.35])
-        self.make_sky(3000, bright=0.9)
+        self.sun = _norm([-0.95, 0.35, -0.25])
+        self.make_sky(3500, bright=1.6)
 
     def _surface(self, cam, sun_l, cam_l, t):
         """Per-pixel planet + ring plane at half resolution inside their screen bbox."""
@@ -1463,8 +1505,7 @@ class RingPlanet3D(Scene3D):
             img[ring] = base * (1 - op[:, None]) + self.ring_lut[ri] * (op * light * 0.85)[:, None]
         # upsample to full res
         h, w = y1 - y0, x1 - x0
-        reg = np.stack([np.asarray(Image.fromarray(np.ascontiguousarray(img[..., c]), "F").resize((w, h), Image.BILINEAR))
-                        for c in range(3)], -1)
+        reg = np.asarray(Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((w, h), Image.BILINEAR))
         return y0, x0, reg
 
     def frame(self, t):
