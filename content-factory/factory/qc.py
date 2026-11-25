@@ -132,6 +132,11 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     diffs = [np.abs(sheet_vals[i] - sheet_vals[i + 1]).mean() for i in range(len(sheet_vals) - 1)]
     add("visual_variety", all(d > 4 for d in diffs), "frame diffs " + ", ".join(f"{d:.0f}" for d in diffs), "warn")
 
+    title = (script.get("metadata", {}) or {}).get("title", "") or script.get("title", "")
+    nums = re.findall(r"(?:Nr\.|#|No\.|Platz)\s?(\d+)", title)
+    narr = " ".join(sc["narration"] for sc in script["scenes"])
+    fake = [n for n in nums if not re.search(rf"\b{n}\b", narr)]
+    add("title_honest", not fake, f"Titel verspricht Nr. {', '.join(fake)}, die im Video nicht vorkommt" if fake else "ok", "warn")
     extra = extra or {}
     if extra.get("shots"):
         n_cuts = extra["shots"]

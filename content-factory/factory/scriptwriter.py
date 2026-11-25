@@ -59,7 +59,7 @@ Return ONE JSON object with exactly these keys:
             use 2-4 stat cards per video on the most impressive numbers),
     "mascot" (optional reaction of our 3D mascot Nova: wow|think|happy|point|wave or null; use 1-3 times)
 - "claims": list of {{"claim": "...", "source": "<url from SOURCES>"}} for every factual statement
-- "metadata": {{"title": "<=90 chars incl. 1 emoji, in the video language", "description": "2-3 sentences + sources line",
+- "metadata": {{"title": "<=90 chars incl. 1 emoji, in the video language; must truthfully describe the video - no fake list numbers, no promises the video does not keep", "description": "2-3 sentences + sources line",
                 "hashtags": [8-12 tags without #, mix of the video language and English]}}
 """
 
