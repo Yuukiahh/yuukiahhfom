@@ -189,7 +189,9 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
 
     # ---- captions + mascot
     emphasis = [e for sc in script["scenes"] for e in sc.get("emphasis", [])]
-    ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta)
+    theme = _theme(script.get("accent"))
+    ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta,
+                              style=theme.get("subs"))
     mascot_track, cues = None, []
     if cfg().get("mascot.enabled", True) and mascot.available():
         cues = mascot.plan_cues(script, words, spans, total, stats)
@@ -204,7 +206,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     progress("assemble", 0.86)
     final = folder / f"{slug}.mp4"
     assemble(clips, [s["duration"] for s in specs], tnames, T, voice_wav, music_wav, sfx_wav, ass, final, total,
-             trans_clips=trans_clips, mascot_track=mascot_track)
+             trans_clips=trans_clips, mascot_track=mascot_track, progress_color=theme.get("progress", "#FFD60A"))
     (work / "render.json").write_text(json.dumps({"clips": clips, "durations": [s["duration"] for s in specs],
                                                    "transitions": tnames, "trans_dur": T, "total": total,
                                                    "trans_clips": trans_clips, "mascot_track": str(mascot_track or ""),
@@ -240,6 +242,17 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     progress("done", 1.0)
     return {"video_id": video_id, "path": str(final), "folder": str(folder), "qc": report, "metadata": meta,
             "render_seconds": round(time.time() - t_start, 1), "voice": voice_info}
+
+
+def _theme(accent: str | None) -> dict:
+    """Derive caption pill / progress-bar colours from the topic accent (keeps white text readable)."""
+    if not accent or not re.fullmatch(r"#[0-9a-fA-F]{6}", accent):
+        return {}
+    r, g, b = (int(accent[i:i + 2], 16) for i in (1, 3, 5))
+    lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    k = min(1.0, 105 / max(lum, 1))  # darken bright colours so white text stays readable on the pill
+    pill = "#{:02X}{:02X}{:02X}".format(int(r * k), int(g * k), int(b * k))
+    return {"subs": {"pill_color": pill}, "progress": accent}
 
 
 def _write_srt(words: list[dict], out: Path) -> None:
@@ -280,8 +293,9 @@ def rerender_subtitles(video_id: int) -> dict:
     script = json.loads((folder / "script.json").read_text("utf-8"))
     words = json.loads((folder / "words.json").read_text("utf-8"))
     W, H = cfg().get("render.width"), cfg().get("render.height")
+    theme = _theme(script.get("accent"))
     ass = subtitles.build_ass(words, work / "subs.ass", r["emphasis"], r["stats"], script.get("hook_text"), W, H,
-                              cta=r.get("cta"))
+                              cta=r.get("cta"), style=theme.get("subs"))
     final = Path(v["path"])
     tmp = final.with_suffix(".new.mp4")
     mascot_track = Path(r["mascot_track"]) if r.get("mascot_track") else None
@@ -297,7 +311,8 @@ def rerender_subtitles(video_id: int) -> dict:
     elif not cfg().get("mascot.enabled", True):
         mascot_track = None
     assemble(r["clips"], r["durations"], r["transitions"], r["trans_dur"], work / "voice.wav", work / "music.wav",
-             work / "sfx.wav", ass, tmp, r["total"], trans_clips=r.get("trans_clips"), mascot_track=mascot_track)
+             work / "sfx.wav", ass, tmp, r["total"], trans_clips=r.get("trans_clips"), mascot_track=mascot_track,
+             progress_color=theme.get("progress", "#FFD60A"))
     tmp.replace(final)
     shutil.copy(ass, folder / "subtitles.ass")
     _write_srt(words, folder / "subtitles.srt")

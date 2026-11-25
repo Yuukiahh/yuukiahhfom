@@ -171,6 +171,44 @@ def validate(s: dict) -> list[str]:
     return problems
 
 
+# ------------------------------------------------------------------ overlay + background planner
+VISUAL_CATALOG = {
+    "gpu_chip": "close-up GPU / semiconductor chip (chips, Nvidia, AMD, hardware, compute)",
+    "stock_chart": "3D candlestick stock chart; params.trend up|down|volatile (shares, markets, money, valuations)",
+    "ticker_wall": "stock-exchange ticker boards (Wall Street, trading, market reaction)",
+    "corporate": "night skyline of corporate glass towers (companies, CEOs, boards, business decisions)",
+    "newsroom": "TV news studio with world map wall (breaking news, announcements, reports)",
+    "radar": "intelligence radar sweep over world map (spies, security, investigations, threats)",
+    "capitol": "neoclassical government building at dusk (politics, presidents, laws, governments)",
+    "datacenter": "server hall aisle with blinking racks (AI compute, cloud, data, servers)",
+    "calendar": "3D flipping calendar day cards; params.highlight = day number (dates, deadlines, 'days later')",
+    "courtroom": "court bench and gavel (lawsuits, trials, judges)",
+    "blackhole": "black hole with lensed accretion disk (black holes, gravity, extreme physics)",
+    "galaxy3d": "rotating 3D spiral galaxy (galaxies, universe, cosmic scale)",
+    "nebula": "colourful nebula and stars (space, stars, cosmos)",
+    "planet": "shaded planet (planets, moons, solar system)",
+    "earth": "Earth-like planet (Earth, climate, our planet)",
+    "ringplanet3d": "ringed planet like Saturn",
+    "probe": "deep-space probe / satellite (spacecraft, telescopes, missions)",
+    "warp3d": "hyperspace star-streak flight (speed, rapid change, the future arriving)",
+    "wormhole": "glowing tunnel (time, journeys, mysteries, transitions)",
+    "globe3d": "holographic globe (global, worldwide, countries, geopolitics)",
+    "neural3d": "3D neural network of glowing nodes (AI, brains, learning, networks)",
+    "datacity3d": "flight over a glowing data city (digital economy, tech industry)",
+    "circuit": "circuit board with pulsing traces (electronics, generic tech)",
+    "atom3d": "atom with orbiting electrons (physics, quantum, particles)",
+    "dna3d": "3D DNA double helix (genes, biology, medicine)",
+    "fusion": "fusion plasma sphere (energy, reactors, power)",
+    "terrain3d": "retro wireframe landscape flyover (journeys, retro future, gaming)",
+    "fog": "foggy dark forest (mystery, horror, unknown)",
+    "abstract": "soft abstract gradients (psychology, emotions, ideas)",
+}
+
+
+def visual_catalog() -> dict:
+    return {k: v for k, v in VISUAL_CATALOG.items() if k in KINDS}
+
+
 # ------------------------------------------------------------------ overlay planner (motion graphics)
 OVERLAY_PROMPT = """You are a motion-graphics editor for viral explainer shorts. For the SCRIPT below, choose for EVERY
 scene one on-screen infographic overlay that illustrates exactly what is being said (concrete examples, dates, numbers,
@@ -188,7 +226,17 @@ Overlay types and their "data":
 - compare   {{"left": {{"label": "...", "value": "<= 12 chars"}}, "right": {{"label": "...", "value": "<= 12 chars"}}}}
 Use "overlay": null for a scene only if a big visual moment needs a clean frame (max 2 scenes).
 
-Return JSON: {{"tag": "<= 22 chars topic tag, e.g. NVIDIA · NOV 2026", "scenes": [{{"overlay": {{"type": "...", "data": {{...}}}} | null,
+ALSO choose for every scene the BACKGROUND "visual" that literally depicts the concrete subject of that sentence (a viewer
+must instantly see what it is about). Pick from this catalogue (key: what it shows):
+{catalog}
+Rules: stock/share-price sentences -> stock_chart (params.trend up/down) or ticker_wall; a company/CEO/board -> corporate;
+chips/GPUs -> gpu_chip; government/president/politics -> capitol; spies/intelligence/investigation -> radar;
+dates/"x days later" -> calendar (params.highlight = day); breaking news -> newsroom; AI/compute -> datacenter or neural3d.
+Avoid repeating the same visual in consecutive scenes. Also choose one "accent" hex colour that fits the topic/brand
+(e.g. Nvidia -> "#76B900", space -> "#7C3AED", finance red/green themes...).
+
+Return JSON: {{"tag": "<= 22 chars topic tag, e.g. NVIDIA · NOV 2026", "accent": "#RRGGBB", "scenes": [{{"visual": "<catalogue key>", "params": {{...}},
+"overlay": {{"type": "...", "data": {{...}}}} | null,
 "source_label": "short outlet name(s) backing this scene, or null"}}, ...]}} with exactly {n} scene entries in order.
 
 SOURCES:
@@ -217,7 +265,8 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
     lang = script.get("language", "de")
     n = len(script["scenes"])
     narr = "\n".join(f"{i + 1}. {sc['narration']}" for i, sc in enumerate(script["scenes"]))
-    prompt = OVERLAY_PROMPT.format(lang_name={"de": "German", "en": "English"}.get(lang, lang), n=n, script=narr,
+    cat = "\n".join(f"- {k}: {v}" for k, v in visual_catalog().items())
+    prompt = OVERLAY_PROMPT.format(lang_name={"de": "German", "en": "English"}.get(lang, lang), n=n, script=narr, catalog=cat,
                                    context=(research or {}).get("context") or json.dumps(script.get("claims", []), ensure_ascii=False))
     res, _ = llm.complete_json(prompt, "You design accurate, punchy infographic overlays. JSON only.")
     plans = res.get("scenes", []) if isinstance(res, dict) else []
@@ -229,7 +278,16 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
             used += 1
         if (pl or {}).get("source_label"):
             sc["source_label"] = str(pl["source_label"])[:40]
+        vis = str((pl or {}).get("visual") or "").strip()
+        if vis in KINDS:
+            sc["visual"] = vis
+            prm = (pl or {}).get("params")
+            sc["params"] = prm if isinstance(prm, dict) else {}
     if isinstance(res, dict) and res.get("tag"):
         script["tag"] = str(res["tag"])[:26].upper()
+    if isinstance(res, dict) and re.fullmatch(r"#[0-9a-fA-F]{6}", str(res.get("accent", ""))):
+        script["accent"] = res["accent"]
+        for sc in script["scenes"]:
+            sc.setdefault("params", {}).setdefault("accent", res["accent"])
     script["overlays_planned"] = used
     return script
