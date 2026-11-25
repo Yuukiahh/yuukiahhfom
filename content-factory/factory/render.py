@@ -275,7 +275,7 @@ def assemble(clips: list[str], durations: list[float], transitions: list[str], t
     fc.append(f"{cur}drawbox=x=0:y=ih-10:w=iw:h=10:color=black@0.35:t=fill[vbar]")
     fc.append(f"color=c=0x{pc}:s={w}x10:r={fps}:d={total:.3f}[bar]")
     fc.append(f"[vbar][bar]overlay=x='-W+W*t/{total:.3f}':y=H-10:eval=frame:shortest=1,format=yuv420p[vout]")
-    mv = cfg().get("render.music_volume_db", -19)
+    mv = cfg().get("render.music_volume_db", -20)
     fc.append(f"[{vi}:a]aformat=sample_rates=48000:channel_layouts=stereo,{VOICE_CHAIN},asplit=2[voice][key]")
     fc.append(f"[{vi + 1}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume={mv}dB[mus]")
     fc.append("[mus][key]sidechaincompress=threshold=0.025:ratio=7:attack=12:release=320[duck]")

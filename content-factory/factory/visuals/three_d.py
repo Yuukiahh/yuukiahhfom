@@ -317,43 +317,52 @@ class Renderer:
         self.lines(xa[m], ya[m], xb[m], yb[m], c0, c1, w, layer, bloom)
 
     def tubes(self, A, B, radius, c0, c1=None, core=0.25, rim=1.0, back_rim=0.45, spec=1.3, width=1.0,
-              light=(-0.55, -0.83), dof=None, near=0.05, bloom=0.35):
+              light=(-0.55, -0.83), dof=None, near=0.05, bloom=0.35, chain=False):
         """Glassy neon tubes along 3D segments A->B (world radius): soft glowing core, crisp
-        anti-aliased silhouette rims and a specular stripe on the light side. dof=(focus_z, px_per_rel)
-        blurs rims of tubes away from the focus distance (they migrate into the soft buffers)."""
+        anti-aliased silhouette rims and a specular stripe that slides towards the light side.
+        chain=True means B[i] == A[i+1] (a polyline): vertex normals are shared so rims stay continuous.
+        dof=(focus_z, px) widens rims away from the focus distance (they migrate into the soft buffers)."""
         xa, ya, za, ia = self.project(A)
         xb, yb, zb, ib = self.project(B)
-        m = (za > near) & (zb > near)
         n = len(xa)
-        c0 = np.broadcast_to(np.asarray(c0, np.float32), (n, 3))[m]
-        c1 = c0 if c1 is None else np.broadcast_to(np.asarray(c1, np.float32), (n, 3))[m]
-        xa, ya, za, ia, xb, yb, zb, ib = xa[m], ya[m], za[m], ia[m], xb[m], yb[m], zb[m], ib[m]
-        if len(xa) == 0:
-            return
+        c0 = np.broadcast_to(np.asarray(c0, np.float32), (n, 3))
+        c1 = c0 if c1 is None else np.broadcast_to(np.asarray(c1, np.float32), (n, 3))
         dx, dy = xb - xa, yb - ya
         L = np.sqrt(dx * dx + dy * dy) + 1e-6
         nx, ny = -dy / L, dx / L
-        flip = (nx * light[0] + ny * light[1]) < 0
-        nx, ny = np.where(flip, -nx, nx), np.where(flip, -ny, ny)
+        if chain and n > 1:
+            vx = np.concatenate([nx[:1], nx[:-1] + nx[1:], nx[-1:]])
+            vy = np.concatenate([ny[:1], ny[:-1] + ny[1:], ny[-1:]])
+            vl = np.sqrt(vx * vx + vy * vy) + 1e-6
+            vx, vy = vx / vl, vy / vl
+            nax, nay, nbx, nby = vx[:-1], vy[:-1], vx[1:], vy[1:]
+        else:
+            nax, nay, nbx, nby = nx, ny, nx, ny
+        m = (za > near) & (zb > near)
+        if not m.any():
+            return
+        sel = lambda *arrs: [q[m] for q in arrs]
+        xa, ya, za, ia, xb, yb, zb, ib, nax, nay, nbx, nby, c0, c1 = sel(xa, ya, za, ia, xb, yb, zb, ib, nax, nay, nbx, nby, c0, c1)
         ra, rb = radius * ia, radius * ib
+        sa = np.clip(nax * light[0] + nay * light[1], -1, 1)  # how much the +n side faces the light
+        sb = np.clip(nbx * light[0] + nby * light[1], -1, 1)
         w = np.full(len(xa), width * self.k, np.float32)
         if dof is not None:
-            zc = 0.5 * (za + zb)
-            w = w + np.abs(zc - dof[0]) / dof[0] * dof[1] * self.k
-        for off, gain, ww in ((1.0, rim, w), (-1.0, back_rim, w), (0.45, spec, w * 1.6 + 0.6 * self.k)):
-            if gain <= 0:
-                continue
-            col0, col1 = c0 * gain, c1 * gain
-            if off == 0.45:
-                col0 = col0 * 0.6 + 120 * gain
-                col1 = col1 * 0.6 + 120 * gain
-            self.lines(xa + nx * ra * off, ya + ny * ra * off, xb + nx * rb * off, yb + ny * rb * off,
-                       col0, col1, ww, bloom=bloom)
+            w = w + np.abs(0.5 * (za + zb) - dof[0]) / dof[0] * dof[1] * self.k
+        sm = 0.5 * (sa + sb)
+        for side in (1.0, -1.0):
+            g = (rim + back_rim) * 0.5 + (rim - back_rim) * 0.5 * side * sm
+            self.lines(xa + nax * ra * side, ya + nay * ra * side, xb + nbx * rb * side, yb + nby * rb * side,
+                       c0 * g[:, None], c1 * g[:, None], w, bloom=bloom)
+        if spec > 0:
+            oa, ob = 0.5 * sa, 0.5 * sb
+            g = (spec * (0.4 + 0.6 * np.abs(sm)))[:, None]
+            self.lines(xa + nax * ra * oa, ya + nay * ra * oa, xb + nbx * rb * ob, yb + nby * rb * ob,
+                       (c0 * 0.6 + 120) * g, (c1 * 0.6 + 120) * g, w * 1.6 + 0.6 * self.k, bloom=bloom)
         if core > 0:
             rr = 0.5 * (ra + rb)
             xs, ys, seg, s, step = self.sample_segments(xa, ya, xb, yb, 1.0, 400)
-            # resample the core more sparsely (blobs are big): keep every k-th sample per segment
-            stride = np.maximum(1, (rr[seg] * 0.5).astype(np.int64))
+            stride = np.maximum(1, (rr[seg] * 0.3).astype(np.int64))
             keep = (np.arange(len(seg)) % stride) == 0
             xs, ys, seg, s, step = xs[keep], ys[keep], seg[keep], s[keep], step[keep] * stride[keep]
             col = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * (core * step * 2 * rr[seg])[:, None]
@@ -600,9 +609,9 @@ class Warp3D(Scene3D):
         pick = rng.choice(4, n, p=[0.55, 0.2, 0.12, 0.13])
         self.col = tints[pick] * (0.4 + 0.8 * rng.random(n) ** 2)[:, None]
         # tunnel gas: big soft blobs on a wider cylinder
-        m = 900
+        m = 1400
         ga = rng.uniform(0, TAU, m)
-        gr = rng.uniform(2.5, 6.0, m)
+        gr = rng.uniform(2.2, 6.0, m)
         self.gx, self.gy = (gr * np.cos(ga)).astype(np.float32), (gr * np.sin(ga)).astype(np.float32)
         self.gz = rng.uniform(0, self.L, m).astype(np.float32)
         self.gcol = lerp_col(a, b, rng.random(m)) * (0.3 + 0.7 * rng.random(m))[:, None]
@@ -637,12 +646,15 @@ class Warp3D(Scene3D):
         width = np.clip(0.03 * ia, 0, 2.6)
         R.lines(xb, yb, xa, ya, self.col * per_len * 0.15, self.col * per_len, width, bloom=0.5)
         R.points(xa, ya, self.col * (fade * 60)[:, None], np.clip(0.04 * ia, 0.5, 6), bloom=0.6)
-        # tunnel gas + glow at the vanishing point
+        # tunnel gas: big dim blobs smeared along the flight direction + glow at the vanishing point
         gz = (self.gz - s * 0.9) % self.L + near
-        gfade = smoothstep(self.L, self.L * 0.5, gz) * smoothstep(near, 4.0, gz)
-        gx, gy, gzz, gi = R.project(np.stack([self.gx, self.gy, gz], 1))
-        gr = np.clip(0.6 * gi, 4, 160)
-        R.points(gx, gy, self.gcol * (gfade * (0.05 + 0.002 * v) * math.pi * gr * gr)[:, None], gr, bloom=0)
+        gfade = smoothstep(self.L * 0.65, self.L * 0.2, gz) * smoothstep(near + 1.0, 9.0, gz)
+        nsm = 6
+        for j in range(nsm):
+            off = j * 0.5 * (0.4 + v / self.v1)
+            gx, gy, gzz, gi = R.project(np.stack([self.gx, self.gy, gz + off], 1))
+            gr = np.clip(0.9 * gi, 6, 220)
+            R.points(gx, gy, self.gcol * (gfade * (0.004 + 0.0002 * v) / nsm * 3 * math.pi * gr * gr)[:, None], gr, bloom=0)
         cx, cy, _, _ = R.project(np.array([[0, 0, 60.0]]))
         R.soft(np.repeat(cx, 2), np.repeat(cy, 2), np.stack([self.ca * 30, np.array([255, 255, 255]) * (12 + v)]))
         return R.finish(bloom=(0.6, 0.6), radii=(1.5, 9.0))
@@ -786,7 +798,7 @@ class DNA3D(Scene3D):
         self.bok_c = lerp_col(self.ca, self.cb, rng.random(nb)) * (0.25 + rng.random(nb) ** 3)[:, None]
         self.bg = self.gradient((2, 16, 26), (1, 3, 9), 0.9)
         self.groove = math.pi * 0.78  # minor/major groove offset of the second strand
-        self.focus = 6.2
+        self.focus = 6.6
 
     def _helix(self, u, off):
         ang = u * (TAU / 10.0) + off
@@ -796,8 +808,8 @@ class DNA3D(Scene3D):
         R = self.R
         cy = t * 0.5
         azim = t * 0.2
-        cam = orbit((0, cy, 0), 6.2, azim, -0.3)
-        R.begin(Camera(cam, (0, cy + 1.9, 0), fov=50, roll=0.42))
+        cam = orbit((0, cy, 0), 6.6, azim, -0.16)
+        R.begin(Camera(cam, (0, cy + 0.9, 0), fov=52, roll=0.32))
         dof = (self.focus, 2.2)
         k0 = int(math.floor(cy / 0.34))
         ks = np.arange(k0 - 22, k0 + 52)
@@ -810,8 +822,8 @@ class DNA3D(Scene3D):
         for off, col in ((0.0, self.ca), (self.groove, self.cb)):
             C = self._helix(u, off)
             A, B = C[:-1], C[1:]
-            cc = col * fog((A + B) * 0.5) * 0.55
-            R.tubes(A, B, 0.15, cc, core=0.20, rim=0.9, back_rim=0.35, spec=1.1, dof=dof)
+            cc = col * fog((A + B) * 0.5) * 0.9
+            R.tubes(A, B, 0.15, cc, core=0.22, rim=1.0, back_rim=0.3, spec=1.0, dof=dof, chain=True)
             # phosphate beads at every base pair
             Pb = self._helix(ks.astype(np.float32), off)
             R.points3d(Pb, (col * 0.5 + 120) * fog(Pb) * 1.2, 0.0, 2.2, bloom=0.8, dof=dof)
@@ -821,8 +833,8 @@ class DNA3D(Scene3D):
         mid = (Pa + Pb) * 0.5
         bases = self.seq[ks % 4096]
         comp = 3 - bases
-        ca = self.base_cols[bases] * fog(mid) * 0.7
-        cb_ = self.base_cols[comp] * fog(mid) * 0.7
+        ca = self.base_cols[bases] * fog(mid) * 1.0
+        cb_ = self.base_cols[comp] * fog(mid) * 1.0
         Pa_in = Pa + (mid - Pa) * 0.12
         Pb_in = Pb + (mid - Pb) * 0.12
         R.tubes(np.concatenate([Pa_in, Pb_in]), np.concatenate([mid, mid]), 0.055,
@@ -1136,6 +1148,11 @@ class DataCity3D(Scene3D):
         self.fp = rng.uniform(0.55, 0.85, (self.P, self.nx)).astype(np.float32)  # footprint
         self.pulse = rng.random((self.P, self.nx)).astype(np.float32)
         self.cell = 1.0
+        npk = 26
+        self.pk_x = rng.integers(-3, 4, npk).astype(np.float64)
+        self.pk_z0 = rng.uniform(0, 30, npk)
+        self.pk_v = rng.uniform(3.0, 7.0, npk)
+        self.pk_h = rng.random(npk)
         W, H = self.W, self.H
         yy = np.linspace(0, 1, H, dtype=np.float32)
         self.bg = lerp_col((2, 4, 12), (30, 12, 60), np.clip(yy / 0.42, 0, 1) ** 2.2)
@@ -1190,7 +1207,7 @@ class DataCity3D(Scene3D):
         k0 = int(math.floor(cz))
         for zz in range(k0, k0 + int(far)):
             gl.append(((-8.0, 0.0, zz + 0.0), (8.0, 0.0, zz + 0.0)))
-        for xx in np.arange(-7.5, 8.0, 1.0):
+        for xx in np.arange(-7.0, 7.5, 1.0):
             gl.append(((xx, 0.0, cz + near + 0.01), (xx, 0.0, cz + far)))
         for A, B in gl:
             V = (np.array([A, B]) - cpos) @ Rm.T
@@ -1202,9 +1219,21 @@ class DataCity3D(Scene3D):
                 V[1] = V[1] + (V[0] - V[1]) * ((near - V[1, 2]) / (V[0, 2] - V[1, 2]))
             zc = float(V[:, 2].mean())
             ff = math.exp(-zc / 10.0)
-            c = tuple(int(v) for v in (self.ca * 0.35 * ff + fogc * (1 - ff) * 0.3))
+            c = tuple(int(v) for v in (self.ca * 0.5 * ff + fogc * (1 - ff) * 0.3))
             pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in V]
             d.line(pts, fill=c, width=1)
+        # data packets streaming along the streets towards the camera
+        Lp = 30.0
+        rel = Lp - ((self.pk_z0 + self.pk_v * t) % Lp) - 1.0
+        for px_, rz, hue in zip(self.pk_x, rel, self.pk_h):
+            if rz < near + 0.3:
+                continue
+            A = np.array([[px_, 0.01, cz + rz], [px_, 0.01, cz + rz + 0.7]])
+            V = (A - cpos) @ Rm.T
+            ff = math.exp(-max(0.0, rz - 2.0) / 9.0)
+            c = (self.ca * (1 - hue) + self.cb * hue) * ff + fogc * (1 - ff) * 0.3
+            pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in V]
+            d.line(pts, fill=tuple(int(v) for v in np.clip(c * 1.2 + 40 * ff, 0, 255)), width=max(1, int(0.05 * f / V[0, 2])))
         # towers, far to near
         items = []
         for row in range(k0 - 1, k0 + int(far)):
@@ -1270,7 +1299,7 @@ class DataCity3D(Scene3D):
                         if (Vs[:, 2] < near).any():
                             continue
                         pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in Vs]
-                        cc = emis * 0.45 * ff + fogc * (1 - ff) * 0.4
+                        cc = emis * 0.85 * ff + fogc * (1 - ff) * 0.4
                         d.line(pts, fill=tuple(int(v) for v in cc), width=max(1, int(0.03 * f / max(0.3, Vs[0, 2]))))
         # stars above the skyline (additive, under the opaque canvas is fine: sky is dark)
         self.draw_sky()

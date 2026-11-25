@@ -17,7 +17,7 @@ from PIL import Image
 INTERMEDIATE = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "14", "-pix_fmt", "yuv420p"]
 
 SFX_FOR = {"zoom_punch": "impact", "whip_left": "whoosh", "whip_right": "whoosh", "whip_up": "whoosh",
-           "glitch": "glitch", "flash": "riser_end", "spin": "whoosh", "luma": "sparkle", "dip": "sub_drop"}
+           "glitch": "glitch", "flash": "shimmer", "spin": "whoosh", "luma": "sparkle", "dip": "sub_drop"}
 SETS = {
     "cinematic": ["zoom_punch", "whip_left", "flash", "luma", "whip_up", "spin", "dip", "whip_right"],
     "energetic": ["zoom_punch", "whip_left", "glitch", "whip_right", "spin", "zoom_punch", "whip_up", "glitch"],

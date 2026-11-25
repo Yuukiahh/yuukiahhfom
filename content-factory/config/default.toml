@@ -58,7 +58,7 @@ audio_bitrate = "192k"
 encoder = "auto"                 # auto -> h264_nvenc wenn verfügbar, sonst libx264
 crf = 18
 loudness_lufs = -14
-music_volume_db = -20
+music_volume_db = -21
 preset = "cinematic"             # siehe factory/presets.py
 
 [subtitles]
