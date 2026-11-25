@@ -1,0 +1,235 @@
+{
+  "title": "Voyager 1 Is Now One Full Light-Day Away",
+  "hook": "Send a message to Voyager 1 right now, and it won't arrive until tomorrow.",
+  "hook_text": "ONE LIGHT-DAY AWAY",
+  "niche": "space",
+  "mood": "cosmic",
+  "scenes": [
+    {
+      "narration": "Send a message to Voyager 1 right now, and it won't arrive until tomorrow.",
+      "visual": "voyager",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "push_in",
+      "stock_query": "space probe deep space",
+      "image_prompt": "The Voyager 1 spacecraft with its large white dish antenna drifting alone in pitch-black deep space, a faint distant Sun as a tiny bright star behind it, cinematic lighting, ultra-detailed, vertical composition",
+      "emphasis": [
+        "tomorrow"
+      ],
+      "sfx": "whoosh",
+      "stat": null
+    },
+    {
+      "narration": "On November 18, 2026, it became the first spacecraft ever to reach one light-day from Earth.",
+      "visual": "spacecraft",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pull_out",
+      "stock_query": "spacecraft leaving Earth",
+      "image_prompt": "A glowing line of light stretching from a small blue Earth to a tiny spacecraft at the far edge of the frame, vast starfield, sense of enormous distance, cinematic, vertical",
+      "emphasis": [
+        "first spacecraft",
+        "one light-day"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "1 LIGHT-DAY",
+        "sub": "reached Nov 18, 2026"
+      }
+    },
+    {
+      "narration": "That's how far light travels in 24 hours. About 16.1 billion miles.",
+      "visual": "stars",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "drift",
+      "stock_query": "light speed stars",
+      "image_prompt": "Streaks of light racing through a dense starfield, motion blur conveying the speed of light, deep violet and blue tones, cinematic, vertical",
+      "emphasis": [
+        "24 hours",
+        "16.1 billion"
+      ],
+      "sfx": "riser",
+      "stat": {
+        "text": "16.1 BILLION MI",
+        "sub": "25.9 billion km"
+      }
+    },
+    {
+      "narration": "It launched in 1977. Roughly 49 years later, it's still out there.",
+      "visual": "time",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_up",
+      "stock_query": "rocket launch 1970s",
+      "image_prompt": "A vintage 1970s rocket launch at dawn with a thick plume of exhaust, film grain, warm amber tones, blending into a starry sky above, vertical composition",
+      "emphasis": [
+        "1977",
+        "49 years"
+      ],
+      "sfx": "whoosh",
+      "stat": {
+        "text": "~49 YEARS",
+        "sub": "in space"
+      }
+    },
+    {
+      "narration": "Past Jupiter. Past Saturn. Into interstellar space in 2012.",
+      "visual": "planet",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_right",
+      "stock_query": "Jupiter Saturn planets",
+      "image_prompt": "A small spacecraft passing a giant banded Jupiter, then ringed Saturn in the distance, then fading into the dark boundary of interstellar space, epic scale, cinematic, vertical",
+      "emphasis": [
+        "interstellar space"
+      ],
+      "sfx": "whoosh",
+      "stat": null
+    },
+    {
+      "narration": "But here's the twist: every reply it sends takes another full day to come back.",
+      "visual": "satellite",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "radio telescope dish night",
+      "image_prompt": "A giant radio telescope dish on Earth pointed at a starry night sky, a faint signal wave traveling back from deep space, moody teal lighting, cinematic, vertical",
+      "emphasis": [
+        "another full day"
+      ],
+      "sfx": "glitch",
+      "stat": {
+        "text": "~48 HOURS",
+        "sub": "round trip for one command"
+      }
+    },
+    {
+      "narration": "Its power fades every year, so instruments have been switched off to save it.",
+      "visual": "energy",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_down",
+      "stock_query": "fading light dark",
+      "image_prompt": "Close-up of an aging space probe with indicator lights dimming one by one in the dark, faint orange glow, lonely atmosphere, cinematic, vertical",
+      "emphasis": [
+        "power fades"
+      ],
+      "sfx": "none",
+      "stat": null
+    },
+    {
+      "narration": "So ask it a question today, and you'll hear back the day after tomorrow.",
+      "visual": "earth",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "pull_out",
+      "stock_query": "Earth from space",
+      "image_prompt": "A tiny pale blue dot of Earth suspended in a vast dark void, a thin beam of light reaching out toward deep space, contemplative mood, cinematic, vertical",
+      "emphasis": [
+        "day after tomorrow"
+      ],
+      "sfx": "ding",
+      "stat": null
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Voyager 1 reached one light-day from Earth on November 18, 2026, about 10:16 UTC.",
+      "source": "https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/"
+    },
+    {
+      "claim": "Voyager 1 is the first spacecraft ever to reach one light-day from Earth.",
+      "source": "https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/"
+    },
+    {
+      "claim": "A light-day is the distance light travels in 24 hours, about 16.1 billion miles (25.9 billion km).",
+      "source": "https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/"
+    },
+    {
+      "claim": "A command from Earth takes about 24 hours to reach Voyager 1, and the reply takes another 24 hours to return.",
+      "source": "https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/"
+    },
+    {
+      "claim": "Voyager 1 reached one light-day after roughly 49 years in space.",
+      "source": "https://www.npr.org/2026/11/17/nx-s1-6043115/nasas-voyager-1-spacecraft-reaches-a-distance-of-1-light-day-from-earth"
+    },
+    {
+      "claim": "Voyager 1 launched on September 5, 1977.",
+      "source": "https://science.nasa.gov/mission/voyager/voyager-1/"
+    },
+    {
+      "claim": "Voyager 1 flew past Jupiter (1979) and Saturn (1980).",
+      "source": "https://science.nasa.gov/mission/voyager/voyager-1/"
+    },
+    {
+      "claim": "In August 2012 Voyager 1 became the first human-made object to enter interstellar space.",
+      "source": "https://science.nasa.gov/mission/voyager/voyager-1/"
+    },
+    {
+      "claim": "Voyager 1's power output declines every year, so instruments have been switched off over time to save power.",
+      "source": "https://science.nasa.gov/mission/voyager/voyager-1/"
+    }
+  ],
+  "metadata": {
+    "title": "Voyager 1 Is Now So Far Away, a Message Takes a Full Day 🚀",
+    "description": "On November 18, 2026, NASA's Voyager 1 became the first spacecraft ever to reach one light-day from Earth, about 16.1 billion miles away. Launched in 1977, it now needs about 24 hours to receive a command and another 24 to answer. Sources: nasa.gov, npr.org, earthsky.org, science.nasa.gov",
+    "hashtags": [
+      "voyager1",
+      "nasa",
+      "space",
+      "lightday",
+      "interstellar",
+      "astronomy",
+      "spaceexploration",
+      "science",
+      "deepspace",
+      "shorts",
+      "spacefacts"
+    ]
+  },
+  "format": "short",
+  "language": "en",
+  "fact_check": {
+    "verdict": "fix",
+    "issues": [
+      {
+        "text": "stat: {\"text\": \"48 HOURS\", \"sub\": \"round trip for one command\"}",
+        "problem": "Source [1] gives approximate times: a command takes 'about 24 hours' and the reply 'another 24 hours'. Showing an exact '48 HOURS' overstates precision.",
+        "fix": "Change stat text to \"~48 HOURS\"."
+      }
+    ]
+  },
+  "research_sources": [
+    {
+      "title": "NASA: Voyager 1 Makes History Reaching One Light-Day From Earth",
+      "url": "https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/"
+    },
+    {
+      "title": "NPR: Voyager 1 reaches a distance of 1 light-day from Earth",
+      "url": "https://www.npr.org/2026/11/17/nx-s1-6043115/nasas-voyager-1-spacecraft-reaches-a-distance-of-1-light-day-from-earth"
+    },
+    {
+      "title": "EarthSky: Voyager 1 reaches 1 light-day from Earth",
+      "url": "https://earthsky.org/space/voyager-1-1-light-day-from-earth-november-17-18-2026/"
+    },
+    {
+      "title": "Space.com: Voyager 1 hits huge milestone",
+      "url": "https://www.space.com/space-exploration/voyager/1-light-day-from-earth-nasas-voyager-1-probe-hits-huge-milestone-in-interstellar-space"
+    },
+    {
+      "title": "NASA Science: Voyager 1 mission page",
+      "url": "https://science.nasa.gov/mission/voyager/voyager-1/"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Voyager 1 just became the first spacecraft one light-day from Earth"
+}

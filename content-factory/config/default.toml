@@ -1,0 +1,86 @@
+# ContentFactory – Standardkonfiguration
+# Eigene Anpassungen gehören in config/local.toml (wird nicht committet).
+# API-Keys gehören NIEMALS hierher -> `python -m factory secrets set <name>`
+
+[general]
+output_dir = "output"            # fertige Videos: output/<YYYY-MM-DD>/<slug>/
+data_dir = "data"                # SQLite-DB, Cache, Logs
+language = "en"                  # en | de  (Stimme + Skriptsprache)
+timezone = "Europe/Berlin"
+
+[schedule]
+videos_per_day = 4               # 3-5 empfohlen
+active_hours = [9, 23]           # nur in diesem Zeitfenster produzieren
+format_mix = { short = 0.7, long = 0.3 }   # short = 25-45 s, long = 60-90 s
+max_retries = 3
+retry_backoff_seconds = 120
+
+[llm]
+# Reihenfolge der Provider; der erste verfügbare wird genutzt.
+#  claude_cli : nutzt dein Claude-Code-Abo (claude -p), keine API-Kosten
+#  ollama     : lokal auf der RTX 5070 Ti, kostenlos
+#  anthropic  : Claude API (kostenpflichtig -> nur mit Freigabe)
+providers = ["claude_cli", "ollama"]
+ollama_model = "qwen3:14b"
+ollama_url = "http://127.0.0.1:11434"
+anthropic_model = "claude-sonnet-5-5"
+timeout_seconds = 300
+
+[tts]
+# kokoro: lokal (ONNX, GPU via onnxruntime-gpu), Englisch
+# edge  : Microsoft Edge Online-TTS, kostenlos, viele Sprachen inkl. Deutsch
+engine = { en = "kokoro", de = "edge" }
+kokoro_model = "models/kokoro-v1.0.onnx"
+kokoro_voices = "models/voices-v1.0.bin"
+voice = { en = "am_michael", de = "de-DE-ConradNeural" }
+speed = 1.08
+
+[visuals]
+# Reihenfolge: procedural (eigene Original-Renders), nasa (Public Domain),
+# pexels/pixabay (lizenzfrei, API-Key nötig), comfyui (lokale KI-Bilder auf der GPU)
+providers = ["comfyui", "pexels", "nasa", "procedural"]
+comfyui_url = "http://127.0.0.1:8188"
+render_scale = 1.0
+
+[render]
+width = 1080
+height = 1920
+fps = 30
+video_bitrate = "12M"
+audio_bitrate = "192k"
+encoder = "auto"                 # auto -> h264_nvenc wenn verfügbar, sonst libx264
+crf = 18
+loudness_lufs = -14
+music_volume_db = -20
+preset = "cinematic"             # siehe factory/presets.py
+
+[subtitles]
+font = "Inter Display"
+font_weight = "Black"
+size = 92
+words_per_group = 3
+highlight_colors = ["#FFD60A", "#38E1FF", "#FF4D6D"]
+position_y = 0.66                # Anteil der Bildhöhe
+
+[trends]
+geos = ["US", "DE", "GB"]
+subreddits = ["space", "technology", "Futurology", "todayilearned", "artificial",
+              "psychology", "gaming", "UnresolvedMysteries", "AskScience", "interestingasfuck"]
+min_score = 0.35
+lookback_days = 3
+
+[publish]
+# Veröffentlichung ist standardmäßig AUS. Erst nach deiner ausdrücklichen Freigabe
+# (`python -m factory publish enable`) und erfolgreicher OAuth-Kontoanbindung aktiv.
+enabled = false
+require_manual_approval = true
+default_privacy = "private"      # private | unlisted | public
+platforms = ["youtube"]
+slots = ["12:00", "17:30", "20:00"]
+
+[obsidian]
+vault_path = ""                  # z.B. "C:/Users/<du>/Documents/ObsidianVault"
+project_folder = "AI Content Factory"
+
+[costs]
+monthly_budget_eur = 0.0         # 0 = nur kostenlose Dienste erlaubt

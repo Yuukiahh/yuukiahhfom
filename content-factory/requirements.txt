@@ -1,0 +1,17 @@
+# ContentFactory – Python-Abhängigkeiten (Python 3.12)
+# Installation: install/windows/install.ps1 (oder: pip install -r requirements.txt)
+numpy>=1.26
+pillow>=10.3
+soundfile>=0.12
+requests>=2.31
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.6
+cryptography>=42
+keyring>=25
+tzdata>=2024.1            # Zeitzonen für zoneinfo unter Windows
+edge-tts>=6.1
+kokoro-onnx>=0.4
+# GPU-Inferenz für Kokoro. Der Installer prüft CUDA und fällt bei Problemen auf
+# das CPU-Paket "onnxruntime" zurück (beide Pakete dürfen nicht gleichzeitig installiert sein).
+onnxruntime-gpu>=1.20

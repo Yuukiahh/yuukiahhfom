@@ -1,0 +1,135 @@
+"""Script + storyboard generation and fact-checking via the LLM layer.
+
+Output schema (also used for hand-written / Claude-Code-written scripts):
+{
+  "title": str, "hook": str, "hook_text": str (<=5 words on screen), "niche": str, "mood": str,
+  "format": "short"|"long", "language": "en"|"de",
+  "scenes": [{
+      "narration": str, "visual": str (procedural kind), "params": {},
+      "camera": str, "stock_query": str, "image_prompt": str,
+      "emphasis": [str], "sfx": "whoosh|impact|riser|pop|glitch|ding|none",
+      "stat": {"text": str, "sub": str} | null
+  }],
+  "claims": [{"claim": str, "source": url}],
+  "metadata": {"title": str, "description": str, "hashtags": [str]}
+}
+"""
+from __future__ import annotations
+
+import json
+import re
+
+from . import llm
+from .render import CAMERA_MOVES
+from .visuals.procedural import KINDS
+
+WPS = {"en": 2.65, "de": 2.35}  # words per second at speed ~1.08
+FORMATS = {"short": (25, 45), "long": (60, 90)}
+
+SYSTEM = """You are a top-tier short-form video scriptwriter (TikTok / YouTube Shorts / Reels) and a rigorous science
+journalist. You write ORIGINAL scripts: never copy text from sources, never invent facts, numbers or quotes.
+Every factual claim must be supported by the provided SOURCES; if the sources do not support something, leave it out.
+Style: hook in the first 2 seconds (question, shocking stat or bold claim), open loops, short punchy sentences,
+second person ("you"), concrete images, one surprising twist, a satisfying payoff and a loop-friendly last line.
+No filler like "In this video", no "Did you know" opener, no emojis in narration. Output JSON only."""
+
+PROMPT = """Write a {format} vertical video script about: "{topic}"
+Niche: {niche}. Language: {language_name}. Target length: {min_s}-{max_s} seconds = {min_w}-{max_w} words of narration TOTAL.
+{learnings}
+SOURCES (only facts from here are allowed, cite by URL):
+{context}
+
+Return ONE JSON object with exactly these keys:
+- "title": catchy, <= 60 chars
+- "hook": the first spoken sentence (<= 14 words, must create curiosity instantly)
+- "hook_text": 2-5 word on-screen hook caption
+- "niche": one of space, ai, technology, future, facts, mystery, psychology, gaming
+- "mood": one of cosmic, mystery, pulse, epic, playful
+- "scenes": {n_min}-{n_max} scenes. The first scene's narration starts with the hook. Each scene:
+    "narration" (1-3 short sentences), "visual" (one of: {kinds}),
+    "params" (optional, e.g. {{"palette":"ember|violet|teal|ice"}}), "camera" (one of: {cams}),
+    "stock_query" (2-4 word English stock-footage search), "image_prompt" (detailed English image prompt for an AI image),
+    "emphasis" (1-3 key words from this narration to colour-highlight), "sfx" (whoosh|impact|riser|pop|glitch|ding|none),
+    "stat" (optional big on-screen number card: {{"text":"10^12 K","sub":"core temperature"}} or null)
+- "claims": list of {{"claim": "...", "source": "<url from SOURCES>"}} for every factual statement
+- "metadata": {{"title": "<=90 chars incl. 1 emoji", "description": "2-3 sentences + sources line", "hashtags": [8-12 tags without #]}}
+"""
+
+VERIFY = """You are a strict fact-checker. Check every factual statement in the SCRIPT against the SOURCES.
+SOURCES:
+{context}
+
+SCRIPT (JSON):
+{script}
+
+Return JSON: {{"verdict": "pass"|"fix", "issues": [{{"text": "...", "problem": "...", "fix": "..."}}],
+"script": <the corrected full script JSON with the same schema, unchanged if verdict is pass>}}"""
+
+
+def target_words(fmt: str, lang: str) -> tuple[int, int]:
+    lo, hi = FORMATS[fmt]
+    wps = WPS.get(lang, 2.5)
+    return int(lo * wps * 0.92), int(hi * wps * 0.9)
+
+
+def write(topic: str, niche: str, fmt: str, lang: str, research: dict, learnings: str = "") -> tuple[dict, str]:
+    lo, hi = FORMATS[fmt]
+    min_w, max_w = target_words(fmt, lang)
+    n_min, n_max = (6, 9) if fmt == "short" else (10, 15)
+    prompt = PROMPT.format(format=fmt, topic=topic, niche=niche, language_name={"en": "English", "de": "German"}.get(lang, lang),
+                           min_s=lo, max_s=hi, min_w=min_w, max_w=max_w, n_min=n_min, n_max=n_max,
+                           kinds=", ".join(sorted(set(KINDS))), cams=", ".join(CAMERA_MOVES),
+                           context=research.get("context") or "(offline – use only well-established textbook facts and keep numbers conservative)",
+                           learnings=("WHAT WORKED BEFORE (performance learnings):\n" + learnings) if learnings else "")
+    script, provider = llm.complete_json(prompt, SYSTEM)
+    return normalise(script, fmt, lang), provider
+
+
+def fact_check(script: dict, research: dict) -> tuple[dict, dict]:
+    if not research.get("context"):
+        return script, {"verdict": "skipped", "reason": "no sources available"}
+    res, _ = llm.complete_json(VERIFY.format(context=research["context"], script=json.dumps(script, ensure_ascii=False)),
+                               "You are a meticulous fact-checker. Output JSON only.")
+    fixed = res.get("script") if isinstance(res.get("script"), dict) and res.get("verdict") == "fix" else script
+    return normalise(fixed, script.get("format", "short"), script.get("language", "en")), {
+        "verdict": res.get("verdict"), "issues": res.get("issues", [])}
+
+
+def normalise(s: dict, fmt: str, lang: str) -> dict:
+    s.setdefault("format", fmt)
+    s.setdefault("language", lang)
+    s.setdefault("mood", "cosmic")
+    s.setdefault("claims", [])
+    s.setdefault("metadata", {})
+    for i, sc in enumerate(s.get("scenes", [])):
+        if sc.get("visual") not in KINDS:
+            sc["visual"] = {"space": "nebula", "ai": "neural", "technology": "circuit", "future": "grid",
+                            "mystery": "fog"}.get(s.get("niche"), "abstract")
+        if sc.get("camera") not in CAMERA_MOVES:
+            sc["camera"] = CAMERA_MOVES[i % len(CAMERA_MOVES)]
+        sc.setdefault("emphasis", [])
+        sc.setdefault("sfx", "whoosh" if i else "impact")
+        sc["narration"] = re.sub(r"\s+", " ", sc.get("narration", "")).strip()
+    return s
+
+
+def word_count(s: dict) -> int:
+    return sum(len(sc["narration"].split()) for sc in s["scenes"])
+
+
+def validate(s: dict) -> list[str]:
+    problems = []
+    if not s.get("scenes"):
+        return ["no scenes"]
+    lo, hi = target_words(s["format"], s.get("language", "en"))
+    wc = word_count(s)
+    if wc < lo * 0.85 or wc > hi * 1.15:
+        problems.append(f"word count {wc} outside {lo}-{hi}")
+    if len(s.get("hook", "").split()) > 16:
+        problems.append("hook too long")
+    if not s["scenes"][0]["narration"].lower().startswith(s.get("hook", "")[:20].lower()):
+        problems.append("first scene does not start with hook")
+    for sc in s["scenes"]:
+        if not sc["narration"]:
+            problems.append("empty narration")
+    return problems

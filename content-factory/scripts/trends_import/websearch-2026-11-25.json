@@ -1,0 +1,9 @@
+[
+ {"source":"websearch","title":"NASA's Voyager 1 Makes History Reaching One Light-Day From Earth","url":"https://www.nasa.gov/news-release/nasas-voyager-1-makes-history-reaching-one-light-day-from-earth/","metric_name":"outlets_covering","metric_value":6,"extra":{"note":"also NPR, Space.com, EarthSky, JPL, NASA SVS; milestone 2026-11-18"}},
+ {"source":"websearch","title":"Voyager 1 reaches 1 light-day from Earth","url":"https://www.npr.org/2026/11/17/nx-s1-6043115/nasas-voyager-1-spacecraft-reaches-a-distance-of-1-light-day-from-earth","metric_name":"outlets_covering","metric_value":6},
+ {"source":"websearch","title":"Euclid space telescope discovers its first comet","url":"https://www.space.com/astronomy/comets/euclid-discovers-its-1st-comet-space-photo-of-the-day-for-nov-16-2026","metric_name":"outlets_covering","metric_value":2},
+ {"source":"websearch","title":"Little Red Dot galaxies may be remnants of supermassive primordial stars (JWST)","url":"https://www.sciencedaily.com/news/space_time/astronomy/","metric_name":"outlets_covering","metric_value":1},
+ {"source":"websearch","title":"Even the best AI agents struggle with everyday life (ShellBench)","url":"https://techcrunch.com/2026/11/24/even-the-best-ai-agents-struggle-with-everyday-life/","metric_name":"outlets_covering","metric_value":1},
+ {"source":"websearch","title":"Tidal to ban millions of AI-generated music tracks","url":"https://aiweekly.co/ai-news-today","metric_name":"outlets_covering","metric_value":1},
+ {"source":"websearch","title":"Europa's sodium cloud may come from its hidden ocean","url":"https://www.sciencedaily.com/news/space_time/","metric_name":"outlets_covering","metric_value":1}
+]

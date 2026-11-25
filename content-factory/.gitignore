@@ -1,0 +1,13 @@
+# local data & outputs
+output/
+data/
+models/
+.venv/
+__pycache__/
+*.pyc
+config/local.toml
+# never commit secrets
+*.enc
+*.key
+client_secret*.json
+.env

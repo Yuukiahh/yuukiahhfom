@@ -1,0 +1,41 @@
+{
+  "topic": "What happens if you fall into a black hole",
+  "title": "What Happens If You Fall Into a Black Hole?",
+  "hook": "If you fell into a black hole, you'd die in the strangest way possible.",
+  "hook_text": "YOU FALL IN…",
+  "niche": "space", "mood": "cosmic", "format": "short", "language": "en", "preset": "cinematic",
+  "scenes": [
+    {"narration": "If you fell into a black hole, you'd die in the strangest way possible.",
+     "visual": "blackhole", "params": {"palette": "ember", "size": 0.17}, "camera": "push_in", "sfx": "impact",
+     "emphasis": ["strangest"], "stock_query": "black hole space", "image_prompt": "supermassive black hole with glowing accretion disk"},
+    {"narration": "Falling feet first, gravity pulls on your feet much harder than on your head.",
+     "visual": "nebula", "params": {"palette": "ember"}, "camera": "pan_down", "sfx": "whoosh",
+     "emphasis": ["feet", "harder"], "stock_query": "astronaut falling space"},
+    {"narration": "That difference stretches you thinner and thinner. Stephen Hawking called it spaghettification.",
+     "visual": "wormhole", "params": {"palette": "ember"}, "camera": "push_in", "sfx": "riser",
+     "emphasis": ["spaghettification", "Hawking"], "stock_query": "space tunnel"},
+    {"narration": "But here's the twist. Near a supermassive black hole, you could cross the edge in one piece.",
+     "visual": "blackhole", "params": {"palette": "violet", "size": 0.12, "tilt": 0.28}, "camera": "orbit", "sfx": "glitch",
+     "emphasis": ["twist", "supermassive"], "stock_query": "galaxy center"},
+    {"narration": "Our galaxy's center hides one. Sagittarius A star weighs about four million Suns.",
+     "visual": "nebula", "params": {"palette": "violet"}, "camera": "pull_out", "sfx": "pop",
+     "emphasis": ["Sagittarius", "million"], "stat": {"text": "4,000,000×", "sub": "the mass of our Sun"},
+     "stock_query": "milky way galaxy"},
+    {"narration": "From far away, a friend would see you slow down, turn red, and fade, never quite falling in.",
+     "visual": "blackhole", "params": {"palette": "ember", "size": 0.2, "tilt": 0.16}, "camera": "drift", "sfx": "whoosh",
+     "emphasis": ["slow", "red", "fade"], "stock_query": "red light fading"},
+    {"narration": "So the scariest part isn't the fall. It's that the universe would never see you land.",
+     "visual": "blackhole", "params": {"palette": "ice", "size": 0.1}, "camera": "pull_out", "sfx": "ding",
+     "emphasis": ["never", "land"], "stock_query": "dark space stars"}
+  ],
+  "claims": [
+    {"claim": "Tidal forces stretch an infalling object (spaghettification); Hawking popularised the term in A Brief History of Time", "source": "https://en.wikipedia.org/wiki/Spaghettification"},
+    {"claim": "At a supermassive black hole you can cross the event horizon before being torn apart (NASA Goddard simulation, J. Schnittman 2024)", "source": "https://www.livescience.com/space/black-holes/epic-nasa-video-takes-you-to-the-heart-of-a-black-hole-and-destroys-you-in-seconds"},
+    {"claim": "Sagittarius A* has a mass of about 4.3 million solar masses", "source": "https://en.wikipedia.org/wiki/Sagittarius_A*"},
+    {"claim": "A distant observer sees an infalling object redden, dim and never cross the horizon", "source": "https://www.astronomy.com/science/ask-astro-can-an-observer-ever-see-something-fall-into-a-black-hole/"}
+  ],
+  "fact_check": {"verdict": "manual", "by": "Claude Code (web search verification)", "issues": []},
+  "metadata": {"title": "What happens if you fall into a black hole? 🕳️",
+    "description": "Spaghettification, frozen time and the monster at the centre of our galaxy – what would really happen if you fell into a black hole.",
+    "hashtags": ["blackhole", "space", "astronomy", "physics", "science", "universe", "spaghettification", "sagittariusa"]}
+}

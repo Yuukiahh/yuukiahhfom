@@ -1,0 +1,389 @@
+{
+  "title": "Future Tech That Already Exists Right Now",
+  "hook": "A chip solved in under five minutes what would take ten septillion years.",
+  "hook_text": "THE FUTURE IS HERE",
+  "niche": "future",
+  "mood": "epic",
+  "scenes": [
+    {
+      "narration": "A chip solved in under five minutes what would take ten septillion years.",
+      "visual": "chip",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "push_in",
+      "stock_query": "quantum computer chip",
+      "image_prompt": "Extreme macro shot of a glowing square quantum processor chip suspended inside a golden dilution refrigerator, icy blue light, frost particles, cinematic depth of field, ultra detailed, vertical 9:16",
+      "emphasis": [
+        "five minutes",
+        "ten septillion"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "10²⁵ YEARS",
+        "sub": "vs. under 5 minutes"
+      }
+    },
+    {
+      "narration": "It's Google's Willow, a 105-qubit quantum chip unveiled in December 2024.",
+      "visual": "circuit",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "quantum computing lab",
+      "image_prompt": "Futuristic superconducting quantum chip with 105 tiny glowing nodes arranged in a grid, teal circuitry traces, dark clean-room background, hyperreal product photography, vertical 9:16",
+      "emphasis": [
+        "Willow",
+        "105-qubit"
+      ],
+      "sfx": "whoosh",
+      "stat": {
+        "text": "105",
+        "sub": "qubits"
+      }
+    },
+    {
+      "narration": "Google estimates Frontier, one of today's fastest supercomputers, would need longer than the age of the universe.",
+      "visual": "galaxy",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "pull_out",
+      "stock_query": "supercomputer server room",
+      "image_prompt": "Endless rows of supercomputer server racks dissolving into a swirling spiral galaxy, violet and blue light, sense of immense time, cinematic wide shot, vertical 9:16",
+      "emphasis": [
+        "age of the universe"
+      ],
+      "sfx": "riser",
+      "stat": null
+    },
+    {
+      "narration": "The twist? That test has no practical use. The real win: errors dropped exponentially as qubits were added.",
+      "visual": "grid",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "drift",
+      "stock_query": "glitch digital error",
+      "image_prompt": "A grid of glowing qubits where red error sparks fade away as more blue qubits light up, clean abstract data visualization, dark background, vertical 9:16",
+      "emphasis": [
+        "no practical use",
+        "exponentially"
+      ],
+      "sfx": "glitch",
+      "stat": null
+    },
+    {
+      "narration": "Now picture a star, ignited inside a lab.",
+      "visual": "fusion",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "laser lab beams",
+      "image_prompt": "A tiny blazing miniature sun hovering inside a dark metal target chamber, hundreds of laser beams converging on it, ember orange glow, cinematic sci-fi realism, vertical 9:16",
+      "emphasis": [
+        "star",
+        "lab"
+      ],
+      "sfx": "whoosh",
+      "stat": null
+    },
+    {
+      "narration": "In December 2022, the National Ignition Facility hit a tiny fuel target with 2.05 megajoules of laser energy. It got 3.15 back.",
+      "visual": "fusion",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pan_right",
+      "stock_query": "high power laser",
+      "image_prompt": "Interior of a massive laser facility with long blue beam tubes leading to a spherical target chamber, a pea-sized fuel capsule flashing bright, ultra detailed, vertical 9:16",
+      "emphasis": [
+        "2.05",
+        "3.15"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "3.15 MJ",
+        "sub": "out from 2.05 MJ in"
+      }
+    },
+    {
+      "narration": "More fusion energy out than the lasers put in. A first. Scientists call it ignition.",
+      "visual": "fusion",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "fusion energy explosion",
+      "image_prompt": "Brilliant fusion flash erupting from a tiny capsule, shockwave of golden plasma, dark chamber, dramatic high-contrast cinematic lighting, vertical 9:16",
+      "emphasis": [
+        "ignition"
+      ],
+      "sfx": "ding",
+      "stat": null
+    },
+    {
+      "narration": "The catch: the lasers drew about 300 megajoules from the grid. So no net electricity yet.",
+      "visual": "grid",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_down",
+      "stock_query": "power grid lines",
+      "image_prompt": "Power lines at night feeding a glowing research facility, energy meter showing a huge draw, moody teal and orange tones, cinematic, vertical 9:16",
+      "emphasis": [
+        "300 megajoules",
+        "yet"
+      ],
+      "sfx": "pop",
+      "stat": {
+        "text": "~300 MJ",
+        "sub": "pulled from the grid"
+      }
+    },
+    {
+      "narration": "Next: rewriting the code of life. In December 2023, the FDA approved Casgevy, the first CRISPR therapy approved in the US, for sickle cell disease.",
+      "visual": "dna",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "orbit",
+      "stock_query": "DNA double helix",
+      "image_prompt": "Glowing DNA double helix being precisely cut and rewritten by a luminous molecular tool, violet and cyan bioluminescent light, microscopic cinematic render, vertical 9:16",
+      "emphasis": [
+        "CRISPR",
+        "Casgevy"
+      ],
+      "sfx": "whoosh",
+      "stat": null
+    },
+    {
+      "narration": "Doctors edit a patient's own blood stem cells outside the body, then infuse them back.",
+      "visual": "dna",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "drift",
+      "stock_query": "blood cells microscope",
+      "image_prompt": "Red blood stem cells floating in a lab dish under a microscope, one cell glowing as it is edited, then flowing back into a vein, warm cinematic macro, vertical 9:16",
+      "emphasis": [
+        "own",
+        "outside the body"
+      ],
+      "sfx": "pop",
+      "stat": null
+    },
+    {
+      "narration": "Now the wildest one. Imagine you can't move from the shoulders down.",
+      "visual": "fog",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "push_in",
+      "stock_query": "dark moody hospital",
+      "image_prompt": "Silhouette of a person in a wheelchair facing a softly glowing window, drifting fog, quiet emotional atmosphere, cool blue tones, cinematic, vertical 9:16",
+      "emphasis": [
+        "wildest",
+        "shoulders down"
+      ],
+      "sfx": "riser",
+      "stat": null
+    },
+    {
+      "narration": "That was Noland Arbaugh after a diving accident. In January 2024, Neuralink implanted its brain-computer interface in him.",
+      "visual": "brain",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "orbit",
+      "stock_query": "brain neurons glowing",
+      "image_prompt": "Translucent human brain with a small coin-sized implant glowing on top, ultra-thin threads lighting up neural pathways, teal sci-fi medical visualization, vertical 9:16",
+      "emphasis": [
+        "Neuralink",
+        "brain-computer interface"
+      ],
+      "sfx": "glitch",
+      "stat": null
+    },
+    {
+      "narration": "He moved a cursor just by thinking. He played chess with only his thoughts.",
+      "visual": "neural",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_left",
+      "stock_query": "chess on computer",
+      "image_prompt": "A digital chessboard on a monitor with a piece moving on its own, glowing thought waves flowing from a person's head to the screen, teal and white light, cinematic, vertical 9:16",
+      "emphasis": [
+        "thinking",
+        "chess"
+      ],
+      "sfx": "ding",
+      "stat": null
+    },
+    {
+      "narration": "The future already exists. You're just watching its first five minutes.",
+      "visual": "tunnel",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "push_in",
+      "stock_query": "futuristic light tunnel",
+      "image_prompt": "Endless neon light tunnel rushing toward a bright horizon, fragments of a quantum chip, a laser star, DNA and a brain floating along the walls, violet synthwave glow, vertical 9:16",
+      "emphasis": [
+        "already exists",
+        "five minutes"
+      ],
+      "sfx": "whoosh",
+      "stat": null
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Google announced Willow, a 105-qubit superconducting quantum chip, in December 2024.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "Willow performed a random circuit sampling benchmark in under five minutes.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "Google estimates the same task would take the Frontier supercomputer about 10 septillion years, longer than the age of the universe.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "The benchmark has no practical use by itself.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "Willow showed errors can be reduced exponentially as more qubits are added.",
+      "source": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "claim": "On December 5, 2022, the National Ignition Facility delivered 2.05 MJ of laser energy to a fuel target and got 3.15 MJ of fusion energy out.",
+      "source": "https://www.aip.org/fyi/2022/national-ignition-facility-achieves-long-sought-fusion-goal"
+    },
+    {
+      "claim": "It was the first controlled fusion experiment to produce more energy from the target than the lasers put in, called ignition.",
+      "source": "https://www.aip.org/fyi/2022/national-ignition-facility-achieves-long-sought-fusion-goal"
+    },
+    {
+      "claim": "The lasers needed about 300 MJ of grid electricity, so it was not net electricity gain.",
+      "source": "https://www.aip.org/fyi/2022/national-ignition-facility-achieves-long-sought-fusion-goal"
+    },
+    {
+      "claim": "On December 8, 2023, the FDA approved Casgevy, the first approved US therapy using CRISPR gene editing, for sickle cell disease.",
+      "source": "https://www.statnews.com/2023/12/08/fda-approves-casgevy-crispr-based-medicine-for-treatment-of-sickle-cell-disease/"
+    },
+    {
+      "claim": "Patients' own blood stem cells are edited outside the body with CRISPR-Cas9 and infused back.",
+      "source": "https://www.statnews.com/2023/12/08/fda-approves-casgevy-crispr-based-medicine-for-treatment-of-sickle-cell-disease/"
+    },
+    {
+      "claim": "Noland Arbaugh was paralyzed from the shoulders down after a diving accident.",
+      "source": "https://www.cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse"
+    },
+    {
+      "claim": "Neuralink implanted its brain-computer interface in its first human patient in January 2024.",
+      "source": "https://www.cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse"
+    },
+    {
+      "claim": "Neuralink said the patient could move a computer cursor just by thinking.",
+      "source": "https://www.cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse"
+    },
+    {
+      "claim": "A company demo showed him playing chess on a computer using only his thoughts.",
+      "source": "https://www.cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse"
+    }
+  ],
+  "metadata": {
+    "title": "4 Sci-Fi Technologies That Already Exist Right Now 🚀",
+    "description": "A quantum chip that beats supercomputers, a lab-made fusion burst, CRISPR medicine and a man controlling a computer with his mind. These aren't predictions — they already happened. Sources: blog.google/technology/research/google-willow-quantum-chip/ | aip.org/fyi/2022/national-ignition-facility-achieves-long-sought-fusion-goal | statnews.com/2023/12/08/fda-approves-casgevy-crispr-based-medicine-for-treatment-of-sickle-cell-disease/ | cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse",
+    "hashtags": [
+      "futuretech",
+      "quantumcomputing",
+      "googlewillow",
+      "fusionenergy",
+      "crispr",
+      "neuralink",
+      "science",
+      "technology",
+      "innovation",
+      "shorts",
+      "sciencefacts"
+    ]
+  },
+  "format": "long",
+  "language": "en",
+  "fact_check": {
+    "verdict": "fix",
+    "issues": [
+      {
+        "text": "A chip solved in five minutes what would take ten septillion years.",
+        "problem": "Source [1] says Willow did the benchmark in 'under five minutes', not in five minutes. The figure should not be stated more precisely than the source gives it. This appears in both the hook and the scene 1 narration.",
+        "fix": "A chip solved in under five minutes what would take ten septillion years."
+      },
+      {
+        "text": "In December 2023, the FDA approved Casgevy, the first US therapy using CRISPR, for sickle cell disease.",
+        "problem": "Source [3] says Casgevy is the first *approved* therapy in the US that uses CRISPR. 'First US therapy using CRISPR' could be read as the first CRISPR therapy ever developed or tested in the US, which the source does not support. Source [3] also says the UK approved it first, so it was not the first approval anywhere.",
+        "fix": "In December 2023, the FDA approved Casgevy, the first CRISPR therapy approved in the US, for sickle cell disease."
+      }
+    ]
+  },
+  "research_sources": [
+    {
+      "title": "Google: Meet Willow, our state-of-the-art quantum chip",
+      "url": "https://blog.google/technology/research/google-willow-quantum-chip/"
+    },
+    {
+      "title": "LLNL / AIP: National Ignition Facility achieves fusion ignition",
+      "url": "https://www.aip.org/fyi/2022/national-ignition-facility-achieves-long-sought-fusion-goal"
+    },
+    {
+      "title": "STAT: FDA approves Casgevy, CRISPR-based medicine for sickle cell disease",
+      "url": "https://www.statnews.com/2023/12/08/fda-approves-casgevy-crispr-based-medicine-for-treatment-of-sickle-cell-disease/"
+    },
+    {
+      "title": "CBS News: First Neuralink patient controls computer mouse with thoughts",
+      "url": "https://www.cbsnews.com/amp/news/elon-musk-neuralink-human-trials-mouse"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Incredible future technologies that already exist today",
+  "storyboard_edits": {
+    "by": "Claude Code (art direction, new scene kinds)",
+    "edits": [
+      {
+        "scene": 0,
+        "stat": "superscript"
+      },
+      {
+        "scene": 4,
+        "from": "nebula",
+        "to": "fusion"
+      },
+      {
+        "scene": 5,
+        "from": "technology",
+        "to": "fusion"
+      },
+      {
+        "scene": 6,
+        "from": "future",
+        "to": "fusion"
+      },
+      {
+        "scene": 8,
+        "from": "neural",
+        "to": "dna"
+      },
+      {
+        "scene": 9,
+        "from": "abstract",
+        "to": "dna"
+      }
+    ]
+  }
+}
