@@ -13,5 +13,7 @@
 | Ollama nicht erreichbar | Dienst läuft nicht | `ollama serve` starten bzw. Ollama-App öffnen. |
 
 ## Letzte Fehler aus dem Log (max. 50)
-_Keine Fehler protokolliert._
+| Zeit | Job | Meldung |
+|---|---|---|
+| 2026-11-25 14:57 | 1 | Job #1 Fehler (Versuch 1/3): RuntimeError: QC fehlgeschlagen: visual_brightness Traceback (most recent call last):   File "/home/user/yuukiahhfom/content-factory/factory/worker.py", line 146, in process     raise RuntimeError("QC fehlgeschlagen: " + ", ".join(c["check"] for c in res["qc"]["checks"]  |
 <!-- cf:auto:end -->
