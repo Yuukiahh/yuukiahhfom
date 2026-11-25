@@ -583,3 +583,7 @@ from . import three_d as _three_d  # noqa: E402,F401
 # after three_d because topical.py builds on its renderer.
 from . import topical as _topical  # noqa: E402,F401
 from . import cards as _cards  # noqa: E402,F401  (trading-card scene)
+# Creator-economy / social / AI-video scenes (subclass topical's base, so only once topical is fully
+# initialised; when the entry point is topical.py itself, importing creator later self-registers).
+if hasattr(_topical, "KINDS_TOPICAL"):
+    from . import creator as _creator  # noqa: E402,F401

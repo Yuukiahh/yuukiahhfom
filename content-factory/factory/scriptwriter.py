@@ -204,6 +204,12 @@ VISUAL_CATALOG = {
     "terrain3d": "retro wireframe landscape flyover (journeys, retro future, gaming)",
     "fog": "foggy dark forest (mystery, horror, unknown)",
     "abstract": "soft abstract gradients (psychology, emotions, ideas)",
+    "phone_feed": "smartphone in 3D playing a vertical short-video feed with likes ticking up; params.count (social media, TikTok/Reels/Shorts, going viral, views)",
+    "edit_timeline": "video-editor workspace: preview monitor + timeline, playhead, clips being cut (editing, clipping, making videos)",
+    "money_rain": "gold coins and banknotes raining onto piles; params.intensity 0..1 (money, income, payouts, getting rich)",
+    "analytics_dash": "creator analytics dashboard with growing graph, KPI tiles; params.trend up|down|volatile (views, followers, stats, growth, RPM)",
+    "ai_studio": "AI generator UI: prompt box typing, image tiles materialising (AI tools, generating images/videos, prompts)",
+    "creator_desk": "creator setup: ring light, phone on tripod, mic, editing monitor (UGC, filming, content creators, setup)",
 }
 
 
