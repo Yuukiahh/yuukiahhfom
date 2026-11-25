@@ -26,7 +26,8 @@ from .config import ROOT
 FONT_DIR = ROOT / "assets" / "fonts"
 GREEN, RED, ACCENT, ACCENT2, WHITE = (52, 211, 153), (248, 81, 104), (124, 58, 237), (56, 225, 255), (255, 255, 255)
 CARD = (12, 14, 24, 150)
-TYPES = ["headline", "timeline", "bars", "counter", "quote", "person", "checklist", "compare"]
+TYPES = ["headline", "timeline", "bars", "counter", "quote", "person", "checklist", "compare",
+         "steps", "notify", "calc", "prompt", "stack", "meter"]
 
 
 @lru_cache(maxsize=32)
@@ -324,8 +325,260 @@ def r_compare(d: dict, t: float, dur: float, W: int) -> Image.Image:
     return im
 
 
+# ------------------------------------------------------------------ v3 creator / how-to overlays
+GOLD, PINK = (255, 214, 10), (255, 92, 170)
+
+
+def _monogram(label: str, size: int, col) -> Image.Image:
+    """Rounded app-tile with the first letters of a tool name (no real logos)."""
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    top = tuple(min(255, int(c * 1.15) + 20) for c in col)
+    for y in range(size):
+        k = y / size
+        dr.line([(0, y), (size, y)], fill=(*[int(top[i] * (1 - k) + col[i] * 0.55 * k) for i in range(3)], 255))
+    m = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, size - 1, size - 1], size // 4, fill=255)
+    im.putalpha(m)
+    letters = "".join(w[0] for w in str(label).split()[:2]).upper() or "?"
+    f = F(int(size * 0.42))
+    ImageDraw.Draw(im).text(((size - f.getlength(letters)) / 2, size * 0.24), letters, font=f, fill=WHITE)
+    return im
+
+
+_PALETTE = [(56, 225, 255), (255, 92, 170), (255, 214, 10), (52, 211, 153), (124, 58, 237), (255, 140, 60)]
+
+
+def r_steps(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """Numbered how-to step: big index badge, title, detail line, step dots."""
+    w = int(W * 0.88)
+    n, total = int(d.get("n", 1)), int(d.get("total", 0) or 0)
+    ft, fd = F(60), F(36, "bold")
+    tl = _wrap(str(d.get("title", "")), ft, w - 250)[:2]
+    dl = _wrap(str(d.get("detail", "")), fd, w - 250)[:2]
+    h = max(250, 84 + 70 * len(tl) + 46 * len(dl) + (56 if total else 20))
+    im = _card(w, h, GOLD)
+    dr = ImageDraw.Draw(im)
+    s = back_out((t - 0.05) / 0.4)
+    if s > 0.02:
+        r = 78 * s
+        cx, cy = 120, 120
+        dr.ellipse([cx - r - 10, cy - r - 10, cx + r + 10, cy + r + 10], fill=(*GOLD, 60))
+        dr.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(*GOLD, 255))
+        fn = F(int(96 * s) or 1)
+        dr.text((cx - fn.getlength(str(n)) / 2, cy - 58 * s), str(n), font=fn, fill=(14, 14, 22))
+    y = 40
+    lab = (f"STEP {n}/{total}" if total else f"STEP {n}") if d.get("locale") != "de" else (f"SCHRITT {n}/{total}" if total else f"SCHRITT {n}")
+    dr.text((230, y), lab, font=F(30, "bold"), fill=(*GOLD, 255))
+    y += 44
+    for ln in tl:
+        dr.text((230, y), ln, font=ft, fill=(*WHITE, int(255 * ease_out((t - 0.15) / 0.35))))
+        y += 70
+    for ln in dl:
+        dr.text((230, y), ln, font=fd, fill=(200, 206, 222, int(255 * ease_out((t - 0.45) / 0.4))))
+        y += 46
+    if total:
+        for i in range(total):
+            x = 230 + i * 46
+            on = i < n
+            dr.rounded_rectangle([x, h - 40, x + (34 if i == n - 1 else 20), h - 26], 7, fill=(*(GOLD if on else (90, 96, 120)), 255))
+    return im
+
+
+def r_notify(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """Stack of phone push notifications dropping in one after another."""
+    items = d.get("items", [])[:3]
+    w = int(W * 0.86)
+    rowh, gap = 150, 22
+    h = max(1, len(items)) * (rowh + gap)
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    for i, it in enumerate(items):
+        s = ease_out((t - 0.1 - i * 0.45) / 0.35)
+        if s <= 0.02:
+            continue
+        col = _PALETTE[i % len(_PALETTE)]
+        c = Image.new("RGBA", (w, rowh), (0, 0, 0, 0))
+        cd = ImageDraw.Draw(c)
+        cd.rounded_rectangle([0, 0, w - 1, rowh - 1], 38, fill=(236, 238, 246, 235))
+        c.alpha_composite(_monogram(it.get("app", "App"), 92, col), (28, 29))
+        cd.text((142, 24), str(it.get("app", "")).upper(), font=F(26, "bold"), fill=(110, 115, 135))
+        cd.text((w - 40 - F(26, "bold").getlength(str(it.get("time", "now"))), 24), str(it.get("time", "now")), font=F(26, "bold"), fill=(130, 135, 150))
+        title = str(it.get("title", ""))
+        ft = F(40)
+        while ft.size > 24 and ft.getlength(title) > w - 180:
+            ft = F(ft.size - 2)
+        cd.text((142, 58), title, font=ft, fill=(16, 18, 28))
+        body = str(it.get("text", ""))
+        fb = F(30, "bold")
+        cd.text((142, 104), _wrap(body, fb, w - 180)[0] if body else "", font=fb, fill=(70, 75, 95))
+        im.alpha_composite(_fade(c, s), (0, int(i * (rowh + gap) - (1 - s) * 80)))
+    return im
+
+
+def r_calc(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """Worked example: a × b = result with labels (only numbers from the script/sources)."""
+    terms = d.get("terms", [])[:3]
+    w, h = int(W * 0.9), 420
+    im = _card(w, h, GREEN)
+    dr = ImageDraw.Draw(im)
+    if d.get("title"):
+        dr.text((40, 28), str(d["title"]).upper(), font=F(34), fill=(*GREEN, 255))
+    ops = d.get("ops") or ["×"] * max(0, len(terms) - 1)
+    parts = []
+    for i, tm in enumerate(terms):
+        parts.append(("v", str(tm.get("value", "")), str(tm.get("label", ""))))
+        if i < len(terms) - 1:
+            parts.append(("o", str(ops[i] if i < len(ops) else "×"), ""))
+    fv, fo, fl = F(64), F(56), F(26, "bold")
+    widths = [(fv if k == "v" else fo).getlength(v) + (24 if k == "v" else 40) for k, v, _ in parts]
+    sc = min(1.0, (w - 80) / max(1, sum(widths)))
+    if sc < 1:
+        fv, fo = F(int(64 * sc)), F(int(56 * sc))
+        widths = [(fv if k == "v" else fo).getlength(v) + (24 if k == "v" else 40) * sc for k, v, _ in parts]
+    x = (w - sum(widths)) / 2
+    for i, ((k, v, lab), wd) in enumerate(zip(parts, widths)):
+        a = int(255 * ease_out((t - 0.1 - i * 0.18) / 0.3))
+        if k == "v":
+            dr.text((x + 12, 110), v, font=fv, fill=(*WHITE, a))
+            for j, ln in enumerate(_wrap(lab.upper(), fl, wd + 20)[:2]):
+                dr.text((x + wd / 2 - fl.getlength(ln) / 2, 192 + j * 30), ln, font=fl, fill=(180, 188, 210, a))
+        else:
+            dr.text((x + 20, 116), v, font=fo, fill=(*GOLD, a))
+        x += wd
+    res = str(d.get("result", ""))
+    s = back_out((t - 0.25 - len(parts) * 0.18) / 0.4)
+    if res and s > 0.02:
+        fr = F(int(96 * max(0.2, s)))
+        while fr.size > 30 and fr.getlength("= " + res) > w - 80:
+            fr = F(fr.size - 4)
+        txt = "= " + res
+        glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        ImageDraw.Draw(glow).text(((w - fr.getlength(txt)) / 2, 270), txt, font=fr, fill=(*GREEN, 255))
+        im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14)))
+        dr.text(((w - fr.getlength(txt)) / 2, 270), txt, font=fr, fill=WHITE, stroke_width=2, stroke_fill=(*GREEN, 255))
+    return im
+
+
+def r_prompt(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """AI tool prompt box: tool chip, typed prompt with cursor, pulsing generate button."""
+    w = int(W * 0.9)
+    fp = F(40, "bold")
+    text = str(d.get("text", ""))
+    lines = _wrap(text, fp, w - 90)[:4]
+    h = 210 + 52 * len(lines)
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    dr.rounded_rectangle([0, 0, w - 1, h - 1], 30, fill=(16, 18, 30, 215), outline=(*PINK, 190), width=3)
+    tool = str(d.get("tool", "AI"))
+    im.alpha_composite(_monogram(tool, 60, PINK), (30, 24))
+    dr.text((106, 36), tool, font=F(34), fill=WHITE)
+    dr.text((w - 40 - F(26, "bold").getlength("PROMPT"), 42), "PROMPT", font=F(26, "bold"), fill=(*PINK, 255))
+    n_chars = sum(len(x) for x in lines)
+    shown = int(n_chars * min(1.0, max(0.0, (t - 0.2) / max(0.6, min(2.0, dur * 0.5)))))
+    y = 108
+    cur = None
+    for ln in lines:
+        part = ln[:max(0, shown)]
+        shown -= len(ln)
+        dr.text((40, y), part, font=fp, fill=(230, 234, 245))
+        if part and (cur is None or len(part) < len(ln)):
+            cur = (40 + fp.getlength(part) + 4, y)
+            if len(part) < len(ln):
+                break
+        y += 52
+    if cur and int(t * 2.5) % 2 == 0:
+        dr.rectangle([cur[0], cur[1] + 4, cur[0] + 5, cur[1] + 46], fill=(*PINK, 255))
+    btn = "Generate" if d.get("locale") != "de" else "Generieren"
+    fb = F(32)
+    bw = fb.getlength(btn) + 60
+    pulse = 0.5 + 0.5 * math.sin(t * 5)
+    bx, by = w - 40 - bw, h - 78
+    dr.rounded_rectangle([bx - 6 * pulse, by - 6 * pulse, bx + bw + 6 * pulse, by + 56 + 6 * pulse], 22, fill=(*PINK, int(60 + 40 * pulse)))
+    dr.rounded_rectangle([bx, by, bx + bw, by + 56], 18, fill=(*PINK, 255))
+    dr.text((bx + 30, by + 9), btn, font=fb, fill=WHITE)
+    return im
+
+
+def r_stack(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """Tool stack: app tiles (monograms) with name + role, popping in."""
+    items = d.get("items", [])[:4]
+    w = int(W * 0.88)
+    h = 110 + 122 * max(1, len(items))
+    im = _card(w, h, PINK)
+    dr = ImageDraw.Draw(im)
+    if d.get("title"):
+        dr.text((40, 30), str(d["title"]).upper(), font=F(36), fill=(*PINK, 255))
+    for i, it in enumerate(items):
+        s = back_out((t - 0.15 - i * 0.3) / 0.35)
+        if s <= 0.02:
+            continue
+        y = 96 + i * 122
+        tile = _monogram(it.get("name", "?"), 96, _PALETTE[i % len(_PALETTE)])
+        ts = max(1, int(96 * s))
+        im.alpha_composite(tile.resize((ts, ts)), (40 + (96 - ts) // 2, y + (96 - ts) // 2))
+        a = int(255 * min(1, s))
+        dr.text((160, y + 6), str(it.get("name", "")), font=F(46), fill=(*WHITE, a))
+        dr.text((160, y + 60), str(it.get("role", "")), font=F(30, "bold"), fill=(190, 196, 215, a))
+        if it.get("price"):
+            fp = F(34)
+            pr = str(it["price"])
+            dr.rounded_rectangle([w - 60 - fp.getlength(pr) - 24, y + 22, w - 40, y + 76], 16, fill=(*GREEN, int(a * 0.9)))
+            dr.text((w - 48 - fp.getlength(pr) - 12, y + 28), pr, font=fp, fill=(10, 14, 20, a))
+    return im
+
+
+def r_meter(d: dict, t: float, dur: float, W: int) -> Image.Image:
+    """Progress toward a threshold (e.g. 10,000 followers needed): bar + marker + labels."""
+    w, h = int(W * 0.88), 300
+    im = _card(w, h, ACCENT2)
+    dr = ImageDraw.Draw(im)
+    lab = str(d.get("label", ""))
+    dr.text((40, 30), lab.upper(), font=F(36), fill=(*ACCENT2, 255))
+    v, mx = float(d.get("value", 0)), float(d.get("max", 1) or 1)
+    unit = str(d.get("unit", ""))
+    p = ease_out((t - 0.15) / 1.0) * min(1.0, v / mx)
+    x0, x1, y = 40, w - 40, 150
+    dr.rounded_rectangle([x0, y, x1, y + 44], 22, fill=(40, 44, 66, 255))
+    if p > 0.01:
+        dr.rounded_rectangle([x0, y, x0 + (x1 - x0) * p, y + 44], 22, fill=(*GREEN, 255))
+    cur = fmt_value(v * ease_out((t - 0.15) / 1.0), unit, ref=v, locale=d.get("locale", "en"))
+    fm = F(56)
+    dr.text((x0, 212), cur, font=fm, fill=WHITE)
+    goal = fmt_value(mx, unit, locale=d.get("locale", "en"))
+    gl = (d.get("goal_label") or "GOAL").upper()
+    fg = F(30, "bold")
+    dr.text((x1 - fg.getlength(f"{gl}: {goal}"), 228), f"{gl}: {goal}", font=fg, fill=(200, 206, 222))
+    return im
+
+
+def chips(items: list, t: float, W: int) -> Image.Image | None:
+    """Row of small detail chips under the main card (extra facts / examples)."""
+    items = [str(x)[:26] for x in (items or [])[:3] if str(x).strip()]
+    if not items:
+        return None
+    f = F(30, "bold")
+    ws = [f.getlength(x) + 44 for x in items]
+    total = sum(ws) + 16 * (len(ws) - 1)
+    if total > W * 0.92:
+        f = F(24, "bold")
+        ws = [f.getlength(x) + 36 for x in items]
+        total = sum(ws) + 16 * (len(ws) - 1)
+    im = Image.new("RGBA", (int(total) + 4, 60), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(im)
+    x = 0
+    for i, (txt, wd) in enumerate(zip(items, ws)):
+        a = int(255 * ease_out((t - 0.6 - i * 0.2) / 0.3))
+        if a > 4:
+            col = _PALETTE[i % len(_PALETTE)]
+            dr.rounded_rectangle([x, 4, x + wd, 56], 26, fill=(14, 16, 28, int(a * 0.85)), outline=(*col, a), width=3)
+            dr.text((x + (wd - f.getlength(txt)) / 2, 14 if f.size > 26 else 17), txt, font=f, fill=(*WHITE, a))
+        x += wd + 16
+    return im
+
+
 RENDER = {"headline": r_headline, "timeline": r_timeline, "bars": r_bars, "counter": r_counter, "quote": r_quote,
-          "person": r_person, "checklist": r_checklist, "compare": r_compare}
+          "person": r_person, "checklist": r_checklist, "compare": r_compare, "steps": r_steps, "notify": r_notify,
+          "calc": r_calc, "prompt": r_prompt, "stack": r_stack, "meter": r_meter}
 
 
 def chrome_tag(text: str, W: int) -> Image.Image:
@@ -435,7 +688,12 @@ class OverlayLayer:
                 slide = (1 - ease_out(lt / 0.35)) * 60
                 x = (self.W - im.width) // 2
                 y = int(self.H * self.y_center - im.height / 2 + slide)
+                extra = 84 if self.ov.get("chips") else 0
+                y = max(int(self.H * 0.085), min(y, int(self.H * 0.555) - im.height - extra))
                 self._glass(frame, im, x, y, env, lt)
-                im = _fade(self._shine(im, lt), env)
-                self._comp(frame, im, x, y)
+                im2 = _fade(self._shine(im, lt), env)
+                self._comp(frame, im2, x, y)
+                ch = chips(self.ov.get("chips") or [], lt, self.W)
+                if ch is not None:
+                    self._comp(frame, _fade(ch, env), (self.W - ch.width) // 2, y + im.height + 24)
         return frame

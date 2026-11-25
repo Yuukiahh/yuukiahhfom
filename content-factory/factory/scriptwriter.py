@@ -226,6 +226,16 @@ Overlay types and their "data":
 - person    {{"name": "...", "role": "...", "status": "<= 16 chars", "status_color": "green|red|yellow"}}
 - checklist {{"title": "...", "items": ["<= 28 chars", ...] (2-4)}}
 - compare   {{"left": {{"label": "...", "value": "<= 12 chars"}}, "right": {{"label": "...", "value": "<= 12 chars"}}}}
+- steps     {{"n": step number, "total": total steps, "title": "<= 32 chars", "detail": "<= 60 chars concrete how-to detail"}} (how-to / tutorial scenes)
+- notify    {{"items": [{{"app": "generic name e.g. Creator Fund", "title": "<= 30 chars", "text": "<= 40 chars", "time": "now|2m"}}] (1-3)}}
+            phone notifications illustrating a sourced fact (e.g. a payout rate) - never fake personal income claims
+- calc      {{"title": "...", "terms": [{{"value": "1,000,000", "label": "views"}}, {{"value": "$0.40", "label": "per 1K views"}}], "ops": ["×"], "result": "$400"}}
+            worked example; the arithmetic must be correct and rates must come from the SOURCES
+- prompt    {{"tool": "tool or model name", "text": "<= 110 chars example prompt"}} (AI tools, prompting, generating)
+- stack     {{"title": "...", "items": [{{"name": "real tool name", "role": "<= 22 chars", "price": "FREE|$X/mo|null"}}] (2-4)}}
+- meter     {{"label": "...", "value": number, "max": number (threshold), "goal_label": "MINIMUM|GOAL", "unit": ""}}
+Every overlay MAY add "chips": ["<= 24 chars", ...] (max 3) - small extra detail tags under the card (examples, tips,
+numbers); use them often to pack in more detail, but only with facts from the script/SOURCES.
 Use "overlay": null for a scene only if a big visual moment needs a clean frame (max 2 scenes).
 
 ALSO choose for every scene the BACKGROUND "visual" that literally depicts the concrete subject of that sentence (a viewer
@@ -234,6 +244,8 @@ must instantly see what it is about). Pick from this catalogue (key: what it sho
 Rules: stock/share-price sentences -> stock_chart (params.trend up/down) or ticker_wall; a company/CEO/board -> corporate;
 chips/GPUs -> gpu_chip; government/president/politics -> capitol; spies/intelligence/investigation -> radar;
 dates/"x days later" -> calendar (params.highlight = day); breaking news -> newsroom; AI/compute -> datacenter or neural3d.
+Creator economy: phones/feeds/going viral -> phone_feed; editing/clipping -> edit_timeline; money/payouts -> money_rain;
+views/followers/stats -> analytics_dash; AI tools/generating -> ai_studio; filming/UGC/setup -> creator_desk (when available).
 Avoid repeating the same visual in consecutive scenes. Also choose one "accent" hex colour that fits the topic/brand
 (e.g. Nvidia -> "#76B900", space -> "#7C3AED", finance red/green themes...).
 
@@ -253,13 +265,20 @@ def _valid_overlay(o) -> bool:
         return False
     t, d = o.get("type"), o["data"]
     need = {"headline": ["text"], "timeline": ["events"], "bars": ["items"], "counter": ["value"], "quote": ["text"],
-            "person": ["name"], "checklist": ["items"], "compare": ["left", "right"]}
+            "person": ["name"], "checklist": ["items"], "compare": ["left", "right"], "steps": ["title"],
+            "notify": ["items"], "calc": ["terms", "result"], "prompt": ["text"], "stack": ["items"], "meter": ["value", "max"]}
     if t not in need or not all(d.get(k) not in (None, "", []) for k in need[t]):
         return False
     if t == "bars":
         return all(isinstance(i.get("value"), (int, float)) for i in d["items"])
     if t == "counter":
         return isinstance(d["value"], (int, float))
+    if t == "meter":
+        return isinstance(d["value"], (int, float)) and isinstance(d["max"], (int, float)) and d["max"] > 0
+    if t in ("notify", "stack"):
+        return all(isinstance(i, dict) for i in d["items"])
+    if t == "calc":
+        return isinstance(d["terms"], list) and all(isinstance(i, dict) for i in d["terms"])
     return True
 
 
@@ -277,6 +296,9 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
         ov = (pl or {}).get("overlay")
         if _valid_overlay(ov):
             sc["overlay"] = {"type": ov["type"], "data": {**ov["data"], "locale": lang}}
+            ch = ov.get("chips") or ov["data"].get("chips")
+            if isinstance(ch, list) and ch:
+                sc["overlay"]["chips"] = [str(x)[:26] for x in ch[:3]]
             used += 1
         if (pl or {}).get("source_label"):
             sc["source_label"] = str(pl["source_label"])[:60]
