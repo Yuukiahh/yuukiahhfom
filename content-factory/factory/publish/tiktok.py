@@ -4,7 +4,7 @@ Setup:
   1. developers.tiktok.com -> create an app, add products "Login Kit" and
      "Content Posting API" (enable "Direct Post" if you want direct posting).
   2. Register the redirect URI exactly as used here:
-     http://127.0.0.1:<publish.tiktok_redirect_port, default 8765>/callback/
+     http://127.0.0.1:<publish.tiktok_redirect_port, default 8766>/callback/
   3. `python -m factory secrets set tiktok_client_key` / `tiktok_client_secret`
   4. `python -m factory publish connect tiktok` (OAuth + PKCE in the browser).
 
@@ -86,7 +86,7 @@ def granted_scopes() -> set[str]:
 
 
 def _redirect_port() -> int:
-    return int(cfg().get("publish.tiktok_redirect_port", 8765))
+    return int(cfg().get("publish.tiktok_redirect_port", 8766))
 
 
 def build_auth_url(client_key: str, redirect_uri: str, state: str, challenge: str) -> str:

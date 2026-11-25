@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Installiert die AI Content Factory unter Windows 11 (idempotent – beliebig oft ausführbar).
 

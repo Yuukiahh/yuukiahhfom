@@ -77,6 +77,9 @@ require_manual_approval = true
 default_privacy = "private"      # private | unlisted | public
 platforms = ["youtube"]
 slots = ["12:00", "17:30", "20:00"]
+tiktok_mode = "direct"           # direct (privat bis App-Audit) | draft (Inbox/Entwurf)
+tiktok_redirect_port = 8766  # nicht 8765 (Dashboard)
+instagram_public_base_url = ""   # öffentliche HTTPS-Basis-URL, unter der Meta das Video abrufen kann
 
 [obsidian]
 vault_path = ""                  # z.B. "C:/Users/<du>/Documents/ObsidianVault"

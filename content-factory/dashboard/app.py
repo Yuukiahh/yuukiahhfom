@@ -88,21 +88,22 @@ def _func(module: str, fn: str) -> Callable:
     return f
 
 
-def _call(module: str, fn: str, *args: Any, **kwargs: Any) -> Any:
+def _call(module: str, fn: str, *args: Any, _log: bool = True, **kwargs: Any) -> Any:
     f = _func(module, fn)
     try:
         return f(*args, **kwargs)
     except HTTPException:
         raise
     except Exception as e:
-        db_log(f"Dashboard: {module}.{fn} fehlgeschlagen: {e}", "error")
+        if _log:
+            db_log(f"Dashboard: {module}.{fn} fehlgeschlagen: {e}", "error")
         raise _err(500, f"{module}.{fn}() fehlgeschlagen: {e}", trace=traceback.format_exc()[-1500:])
 
 
 def _try(module: str, fn: str, *args: Any, **kwargs: Any) -> tuple[Any, str | None]:
     """Like _call but never raises: returns (result, error_message)."""
     try:
-        return _call(module, fn, *args, **kwargs), None
+        return _call(module, fn, *args, _log=False, **kwargs), None
     except HTTPException as e:
         d = e.detail if isinstance(e.detail, dict) else {"error": str(e.detail)}
         return None, d.get("error")

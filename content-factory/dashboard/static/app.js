@@ -314,7 +314,7 @@ async function renderOverview(view, ctx) {
     const kpis = h("div.grid.g-4",
       h("div.card.kpi.accent", h("div.label", icon("target"), "Heute produziert"),
         h("div.value", st.produced_today, h("small", ` / ${target}`)), h("div", { style: { marginTop: "12px" } }, progressBar(target ? st.produced_today / target : 0, { lg: true })),
-        h("div.foot", target ? (st.produced_today >= target ? "Tagesziel erreicht 🎉" : `noch ${target - st.produced_today} bis zum Tagesziel`) : "Kein Tagesziel gesetzt")),
+        h("div.foot", target ? (st.produced_today >= target ? "Tagesziel erreicht" : `noch ${target - st.produced_today} bis zum Tagesziel`) : "Kein Tagesziel gesetzt")),
       h("div.card.kpi", h("div.label", icon("queue"), "Warteschlange"),
         h("div.value", (q.queued || 0) + (q.running || 0), h("small", " aktiv")),
         h("div.foot", `${q.running || 0} läuft · ${q.queued || 0} wartend · ${q.failed || 0} Fehler`)),
@@ -425,12 +425,15 @@ async function renderTrends(view, ctx) {
     const detail = t.score_detail && typeof t.score_detail === "object" ? Object.entries(t.score_detail).filter(([, v]) => typeof v === "number").slice(0, 4) : [];
     const btn = button("In Warteschlange", { size: "sm", ic: "plus", kind: t.status === "queued" ? "" : "primary", disabled: t.status === "queued" });
     if (t.status === "queued") btn.lastChild.textContent = "Eingereiht";
-    btn.addEventListener("click", () => withBusy(btn, async () => {
-      const [r, err] = await safe(apiPost(`/api/topics/${t.id}/enqueue`, {}));
-      if (err) return errToast(err);
-      toast(`Job #${r.job_id} eingereiht: ${t.title}`, "ok");
-      btn.disabled = true; btn.lastChild.textContent = "Eingereiht";
-    }));
+    btn.addEventListener("click", async () => {
+      const ok = await withBusy(btn, async () => {
+        const [r, err] = await safe(apiPost(`/api/topics/${t.id}/enqueue`, {}));
+        if (err) { errToast(err); return false; }
+        toast(`Job #${r.job_id} eingereiht: ${t.title}`, "ok");
+        return true;
+      });
+      if (ok) { btn.disabled = true; btn.classList.remove("primary"); btn.lastChild.textContent = "Eingereiht"; }
+    });
     return h("div.topic", scoreRing(t.score),
       h("div", { style: { minWidth: 0 } }, h("div.title", t.title),
         h("div.ev", t.niche ? h("span.badge.violet", t.niche) : null,
@@ -762,7 +765,7 @@ function pubTable(pubs) {
       h("td", p.title ? h("a", { href: "#", onclick: (e) => { e.preventDefault(); openVideo(p.video_id, "publish"); } }, p.title) : `#${p.video_id}`),
       h("td", p.platform), h("td", statusBadge(p.status), p.error ? h("div.small", { style: { color: "var(--red)" } }, p.error) : null),
       h("td.nowrap", fmt.short(p.scheduled_for)), h("td.nowrap", fmt.short(p.published_at)),
-      h("td", p.url ? h("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, "öffnen") : "–")))))));
+      h("td", p.url ? h("a", { href: p.url, target: "_blank", rel: "noopener noreferrer" }, "öffnen") : "–"))))));
 }
 
 /* ================================================================== Untertitel-Editor */
@@ -931,7 +934,7 @@ async function renderPublishing(view, ctx) {
         card("Freigegeben, noch nicht geplant", approved.length ? h("div", approved.map((v) => h("div.row", { style: { padding: "8px 0", borderBottom: "1px solid var(--border)" } },
           h("span.ellipsis", { style: { flex: 1, minWidth: 0 } }, v.title), button("Planen", { size: "sm", ic: "calendar", onclick: () => openVideo(v.id, "publish") })))) : empty("Keine offenen Freigaben", null, "check")),
         card("Posting-Slots", h("div.slot-list", (d.slots || []).map((s) => h("span.badge.violet", { style: { paddingRight: "12px" } }, s))),
-          h("div.small.muted.mt", "Änderbar unter Einstellungen.")))));
+          h("div.small.muted.mt", "Änderbar unter Einstellungen."))))));
 }
 
 /* ================================================================== Performance */
