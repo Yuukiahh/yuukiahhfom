@@ -142,6 +142,14 @@ def render_scene_clip(spec: dict) -> str:
     grains = [rng.normal(0, spec.get("grain", 4.0), (h // 2, w // 2)).astype(np.int16) for _ in range(8)]
     grains = [np.kron(g, np.ones((2, 2), np.int16))[:h, :w, None] for g in grains]
     static = None if scene.dynamic else np.clip(scene.render(0), 0, 255).astype(np.uint8)
+    # auto exposure: lift shadows of very dark scenes (measured once -> no flicker)
+    probe = static if static is not None else np.clip(scene.render(dur / 2 + spec.get("time_offset", 0.0)), 0, 255).astype(np.uint8)
+    luma = float(probe[::8, ::8].mean())
+    target = float(spec.get("target_luma", 34.0))
+    if 1.0 < luma < target:
+        gamma = max(0.55, min(1.0, math.log(target / 255) / math.log(luma / 255)))
+        lift = (np.linspace(0, 1, 256) ** gamma * 255).astype(np.uint8)
+        lut = lift[lut]
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}",
            "-r", str(fps), "-i", "-", *INTERMEDIATE, out]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)

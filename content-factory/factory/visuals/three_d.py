@@ -960,7 +960,14 @@ class Neural3D(Scene3D):
         hr = 0.09 * self.nsize * ninv
         R.points3d(self.nodes, (a * 0.8 + b * 0.2) * ((0.04 + 0.3 * fire) * math.pi * hr * hr)[:, None] * fn,
                    0.09 * self.nsize, 0.0, bloom=0)
-        return R.finish(bloom=(0.75, 0.65), radii=(1.5, 8.0))
+        if not hasattr(self, '_backdrop'):  # atmospheric depth so the scene is never a black void
+            from .procedural import colorize, fbm
+            rng = np.random.default_rng(7)
+            n = fbm(self.W, self.H, rng, 5, 2) ** 1.6
+            yy = np.linspace(-1, 1, self.H)[:, None]; xx = np.linspace(-1, 1, self.W)[None, :]
+            core = np.exp(-(xx ** 2 * 1.2 + (yy * 0.8) ** 2))
+            self._backdrop = colorize(np.clip(n * 0.6 + core * 0.45, 0, 1), [(0, (4, 3, 14)), (0.5, (22, 12, 52)), (0.8, (48, 26, 96)), (1, (90, 60, 160))]).astype(np.float32)
+        return R.finish(base=self._backdrop, bloom=(0.75, 0.65), radii=(1.5, 8.0))
 
 
 # ======================================================================== 6. terrain
