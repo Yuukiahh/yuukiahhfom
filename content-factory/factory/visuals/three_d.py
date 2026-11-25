@@ -423,7 +423,8 @@ class Renderer:
         else:
             out[:] = up
         # tone-map the additive light only; designed base colours (sky, planet, canvas) are added after
-        den = out + knee / exposure
+        den = out  # in place: y = white - white*k/(x+k)
+        den += knee / exposure
         np.divide(-white * knee / exposure, den, out=den)
         den += white
         if canvas is not None:

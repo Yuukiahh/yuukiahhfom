@@ -423,8 +423,12 @@ LIBRARY: dict[str, list] = {
 PUNCH = {"impact": 7, "braam": 4, "heartbeat": 4, "typing": 8, "shutter": 5, "zap": 3, "glitch": 2, "pop": 2}
 
 
+# loudness ceiling per sound family (variants of one name should feel equally loud)
+MAX_LUFS = {"glitch": -12.0}
+
+
 def finish(x: np.ndarray, sr: int, peak_db: float = PEAK_DB, tail_db: float = -60, fade_out: float = 0.015,
-           limit_db: float = 0.0) -> np.ndarray:
+           limit_db: float = 0.0, max_lufs: float = -10.0) -> np.ndarray:
     """DC/rumble already removed by the recipes' high-pass; trim lead/tail, fade, peak-normalise."""
     x = _st(np.asarray(x, float))
     x = x - x.mean(0)
@@ -439,14 +443,18 @@ def finish(x: np.ndarray, sr: int, peak_db: float = PEAK_DB, tail_db: float = -6
     e = np.nonzero(a > pk * d.db(tail_db))[0][-1] + 1
     x = x[:e]
     x = d.fade(x, sr, 0.0005, fade_out)
-    # normalise the *true* peak (4x oversampled) to peak_db, so no inter-sample overs
-    return x * d.db(peak_db - d.true_peak_db(x))
+    # normalise the *true* peak (4x oversampled) to peak_db, so no inter-sample overs ...
+    x = x * d.db(peak_db - d.true_peak_db(x))
+    # ... but keep dense variants from being much louder than their siblings
+    loud = d.lufs(x, sr)
+    return x * d.db(min(0.0, max_lufs - loud))
 
 
 def render(name: str, variant: int = 0, sr: int = SR, seed: int | None = None) -> np.ndarray:
     recipes = LIBRARY[name]
     rng = np.random.default_rng(seed if seed is not None else _seed(name, variant))
-    return finish(recipes[variant % len(recipes)](rng, sr), sr, limit_db=PUNCH.get(name, 0.0))
+    return finish(recipes[variant % len(recipes)](rng, sr), sr, limit_db=PUNCH.get(name, 0.0),
+                  max_lufs=MAX_LUFS.get(name, -10.0))
 
 
 def _seed(name: str, variant: int) -> int:
