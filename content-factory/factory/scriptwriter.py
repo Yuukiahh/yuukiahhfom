@@ -34,7 +34,8 @@ RETENTION RULES: (1) the first sentence is the hook and must land in < 1.5 s: sh
 "du"-question or visual promise - no greeting, no "In diesem Video", no "Wusstest du". (2) open a loop in the first
 5 s that is only closed near the end. (3) a new visual/idea every 2-3 seconds -> many short scenes. (4) one
 "Aber hier kommt der Twist / Doch dann ..." pattern interrupt around the middle. (5) concrete images, comparisons
-and numbers. (6) satisfying payoff, and a last line that loops back to the hook so the video rewatches seamlessly.
+and numbers. (6) satisfying payoff, and a last line that loops back to the hook so the video rewatches seamlessly -
+but the last line must still be a complete sentence (never end on a dangling "Remember:" / "Denk dran:").
 Write numbers as digits (they are spoken correctly by the TTS). No emojis in narration. Output JSON only."""
 
 PROMPT = """Write a {format} vertical video script about: "{topic}"
