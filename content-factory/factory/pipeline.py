@@ -142,7 +142,10 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         m = None
         if user_images and sc.get("visual") in ("holo_cards", "cards", "trading_cards", "tcg", "card_pack", "collectibles", "pack_opening"):
             sc = {**sc, "params": {**sc.get("params", {}), "images": user_images[i % len(user_images):] + user_images[:i % len(user_images)]}}
-        elif user_images and (sc.get("photo") or (sc.get("photo") is None and i % 2 == 0)):
+        if m is None and isinstance(sc.get("photo"), str) and Path(sc["photo"]).exists():  # explicit image for this scene
+            m = {"path": sc["photo"], "type": "image", "source": "user",
+                 "license": "User-provided image (own photo or own AI generation)"}
+        elif m is None and user_images and (sc.get("photo") is True or (sc.get("photo") is None and i % 2 == 0)):
             # user photos: explicit "photo" scenes, otherwise every other non-card scene shows one full-frame
             k = sum(1 for j in range(i) if j % 2 == 0)
             m = {"path": user_images[k % len(user_images)], "type": "image", "source": "user",
