@@ -35,7 +35,7 @@ NICHE_MOOD = {"space": "cosmic", "mystery": "mystery", "ai": "pulse", "technolog
 
 def _env(n: int, a: float, r: float) -> np.ndarray:
     e = np.ones(n)
-    na, nr = int(a * SR), int(r * SR)
+    na, nr = min(int(a * SR), n), min(int(r * SR), n)
     if na:
         e[:na] = np.linspace(0, 1, na)
     if nr:

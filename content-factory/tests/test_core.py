@@ -51,6 +51,8 @@ def test_subtitles_fit_and_groups(tmp_path):
 
 
 def test_audio_lengths(tmp_path):
+    for d, mood in ((0.3, "cosmic"), (2.77, "pulse"), (6.1, "mystery")):  # remainders shorter than the pad attack
+        assert len(audio.music(d, mood)) == int(d * audio.SR)
     m = audio.music(3.0, "pulse")
     assert abs(len(m) / audio.SR - 3.0) < 0.01 and np.abs(m).max() <= 0.81
     lib = audio.build_sfx_library(tmp_path / "sfx")
