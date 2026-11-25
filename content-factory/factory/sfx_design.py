@@ -185,7 +185,7 @@ def glitch(rng, sr=SR, dur=0.4, n_seg=11):
     pos = 0
     while pos < n:
         seg = int(rng.uniform(0.012, 0.05) * sr)
-        kind = rng.integers(0, 4)
+        kind = rng.integers(0, 4 if pos else 3)  # never open with a dropout
         if kind == 0:  # square buzz
             f = rng.uniform(80, 900)
             s = np.sign(np.sin(2 * np.pi * f * tt[:seg]))
@@ -420,8 +420,7 @@ LIBRARY: dict[str, list] = {
 
 
 # dB of transient limiting before peak normalisation (more body / perceived loudness for spiky hits)
-PUNCH = {"impact": 7, "braam": 4, "heartbeat": 4, "typing": 8, "shutter": 5, "zap": 3, "glitch": 2, "pop": 2,
-         "sub_drop": 2}
+PUNCH = {"impact": 7, "braam": 4, "heartbeat": 4, "typing": 8, "shutter": 5, "zap": 3, "glitch": 2, "pop": 2}
 
 
 def finish(x: np.ndarray, sr: int, peak_db: float = PEAK_DB, tail_db: float = -60, fade_out: float = 0.015,

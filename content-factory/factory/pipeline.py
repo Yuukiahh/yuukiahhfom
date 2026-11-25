@@ -39,12 +39,10 @@ def prepare_script(topic: str, niche: str, fmt: str, lang: str, progress: Progre
     from . import learning
 
     progress("research", 0.05)
-    res = research.gather_auto(topic, lang)
-    if research_override and (res.get("offline") or not res.get("context")):
-        res = research_override
-    elif research_override:
-        res["context"] = research_override["context"] + "\n\n" + res["context"]
-        res["sources"] = research_override["sources"] + res["sources"]
+    if research_override and research_override.get("context"):
+        res = research_override  # research already done (e.g. by the trend engine or a previous run)
+    else:
+        res = research.gather_auto(topic, lang)
     progress("script", 0.12)
     script, provider = scriptwriter.write(topic, niche, fmt, lang, res, learning.prompt_hints(niche))
     problems = scriptwriter.validate(script)

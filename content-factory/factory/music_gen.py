@@ -514,6 +514,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
         return _place_range(_midi(key_pc, mode, prog[ci], 24), lo)
 
     tail_t = P.end_hit
+    drop_idx = min(range(len(P.bars)), key=lambda i: abs(P.bars[i].t - P.drop))
     # ---------------------------------------------------------------- per bar
     for bi, b in enumerate(P.bars):
         e = b.energy
@@ -629,7 +630,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
         # ---- lead hook
         lead_on = (b.kind in ("intro", "drop") and e >= 0.45) or (b.kind == "breakdown")
         if lead_on and not (b.roll and b.kind != "intro"):
-            half = (bi - P.bars.index(next(x for x in P.bars if x.kind != "tail"))) % 2
+            half = (bi - drop_idx) % 2  # 2-bar phrase aligned to the drop
             for st, dg, ln in motif:
                 if st // 8 != half:
                     continue

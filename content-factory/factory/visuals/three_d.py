@@ -500,7 +500,7 @@ class Galaxy3D(Scene3D):
         rng = self.rng
         n = int(self.p.get("particles", 150000) * min(1.0, self.k * 1.2 + 0.05))
         arms = int(self.p.get("arms", 2))
-        pitch = math.radians(self.p.get("pitch", 13.0))
+        pitch = math.radians(self.p.get("pitch", 17.0))
         tanp = math.tan(pitch)
         armw = TAU / arms
         # ---- disk
@@ -509,25 +509,30 @@ class Galaxy3D(Scene3D):
         bad = r > 1.35
         r[bad] = rng.uniform(0.1, 1.35, bad.sum())
         arm = rng.integers(0, arms, nd)
-        base = np.log(np.maximum(r, 0.06) / 0.06) / tanp + arm * armw
+        second = rng.random(nd) < 0.3  # fainter secondary arms between the main ones
+        base = np.log(np.maximum(r, 0.06) / 0.06) / tanp + arm * armw + second * armw * 0.5
         in_arm = rng.random(nd) < 0.75
-        th = np.where(in_arm, base + rng.normal(0, 1, nd) * (0.16 + 0.10 * r), rng.uniform(0, TAU, nd))
+        th = np.where(in_arm, base + rng.normal(0, 1, nd) * (0.2 + 0.12 * r), rng.uniform(0, TAU, nd))
         phase = th - np.log(np.maximum(r, 0.06) / 0.06) / tanp
         d = ((phase / armw + 0.5) % 1.0 - 0.5) * armw  # angular offset to nearest arm centre
-        armness = np.exp(-(d / (0.14 + 0.1 * r)) ** 2)
+        d2 = ((phase / armw) % 1.0 - 0.5) * armw  # ... to nearest secondary arm
+        armness = np.maximum(np.exp(-(d / (0.14 + 0.1 * r)) ** 2), 0.45 * np.exp(-(d2 / (0.12 + 0.08 * r)) ** 2))
         y = rng.normal(0, 1, nd) * (0.012 + 0.05 * np.exp(-r / 0.14))
         dust = 1 - 0.8 * np.exp(-((d + 0.13 + 0.05 * r) / 0.055) ** 2) * smoothstep(0.12, 0.3, r)
         core = np.exp(-r / 0.22)
         col = lerp_col((255, 214, 165), (165, 195, 255), np.clip(armness * 1.1 - core * 0.6, 0, 1))
         col = lerp_col(col, (255, 196, 140), np.clip(core * 1.2, 0, 1))
-        L = (0.25 + 1.2 * armness) * (np.exp(-r / 0.55) + 0.05) * dust * (0.55 + 0.9 * rng.random(nd) ** 2)
-        dcol = col * L[:, None] * 40
+        clump_tex = periodic_noise((arms, 256), rng, beta=1.6)
+        along = (np.log(np.maximum(r, 0.06) / 0.06) * 40).astype(np.int64) % 256
+        clump = 0.35 + 1.3 * clump_tex[arm, along] ** 2
+        L = (0.22 + 1.1 * armness * clump) * (np.exp(-r / 0.5) + 0.04) * dust * (0.55 + 0.9 * rng.random(nd) ** 2)
+        dcol = col * L[:, None] * 13
         # ---- bulge
         nb = int(n * 0.16)
         rb = rng.gamma(1.3, 0.075, nb)
         vb = random_dirs(rng, nb) * rb[:, None] * np.array([1, 0.62, 1])
         rbx = np.sqrt(vb[:, 0] ** 2 + vb[:, 2] ** 2)
-        bcol = lerp_col((255, 236, 205), (255, 180, 110), np.clip(rb / 0.3, 0, 1)) * (34 * np.exp(-rb / 0.25))[:, None]
+        bcol = lerp_col((255, 236, 205), (255, 180, 110), np.clip(rb / 0.3, 0, 1)) * (11 * np.exp(-rb / 0.25))[:, None]
         # ---- knots (HII regions pink, young clusters blue)
         nk = 90
         kr = rng.uniform(0.28, 1.15, nk)
@@ -540,7 +545,7 @@ class Galaxy3D(Scene3D):
         ky = rng.normal(0, 0.008, len(kidx))
         pink = (np.arange(nk) % 2 == 0)[kidx]
         kcol = np.where(pink[:, None], np.array([255, 85, 165], np.float32), np.array([120, 165, 255], np.float32))
-        kcol = kcol * (rng.random(len(kidx)) ** 2 * 55 + 10)[:, None]
+        kcol = kcol * (rng.random(len(kidx)) ** 2 * 30 + 6)[:, None]
         # ---- combine into polar arrays (radius in the plane, angle, height)
         self.r = np.concatenate([r, rbx, np.sqrt(kx ** 2 + kz ** 2)]).astype(np.float32)
         self.th = np.concatenate([th, np.arctan2(vb[:, 2], vb[:, 0]), np.arctan2(kz, kx)]).astype(np.float32)
@@ -548,8 +553,8 @@ class Galaxy3D(Scene3D):
         self.col = np.concatenate([dcol, bcol, kcol]).astype(np.float32)
         self.size = np.concatenate([np.full(nd, 0.0004), np.full(nb, 0.0005), np.full(len(kidx), 0.0011)]).astype(np.float32)
         # flat-ish rotation curve, mild differential so arms keep their shape over a clip
-        self.omega = (-(0.05 + 0.035 / (self.r + 0.25))).astype(np.float32)
-        self.make_sky(3200)
+        self.omega = (-(0.035 + 0.025 / (self.r + 0.25))).astype(np.float32)
+        self.make_sky(4000, bright=1.6)
         # faint nebular puffs on the sky sphere
         npf = 260
         self.puff_dir = random_dirs(rng, npf).astype(np.float32)
@@ -557,19 +562,19 @@ class Galaxy3D(Scene3D):
 
     def frame(self, t):
         R = self.R
-        dist = 2.25 - 0.35 * (1 - math.exp(-t / 14.0))
-        elev = 0.52 + 0.2 * math.sin(t * 0.11 + 0.4)
+        dist = 1.95 - 0.3 * (1 - math.exp(-t / 14.0))
+        elev = 0.82 + 0.16 * math.sin(t * 0.11 + 0.4)
         azim = 0.9 + t * 0.07
         R.begin(Camera(orbit((0, 0, 0), dist, azim, elev), (0, -0.03, 0), fov=56, roll=0.42 + 0.05 * math.sin(t * 0.09)))
         x, y, vis = R.project_dirs(self.puff_dir)
-        R.soft(x[vis], y[vis], self.puff_col[vis] * 40)
+        R.soft(x[vis], y[vis], self.puff_col[vis] * 160)
         self.draw_sky()
         th = self.th + self.omega * t
         P = np.stack([self.r * np.cos(th), self.y, self.r * np.sin(th)], 1)
         R.points3d(P, self.col, self.size, 0.0, bloom=0.5)
         # galactic core glow
         cx, cy, cz, _ = R.project(np.zeros((1, 3)))
-        R.soft(np.repeat(cx, 3), np.repeat(cy, 3), np.array([[255, 200, 140], [255, 170, 110], [255, 220, 180]]) * 70)
+        R.points(np.repeat(cx, 2), np.repeat(cy, 2), np.array([[255, 190, 130], [255, 210, 160]]) * 900, [60 * self.k, 14 * self.k], bloom=0)
         return R.finish(bloom=(0.7, 0.55), radii=(1.4, 8.0))
 
 
