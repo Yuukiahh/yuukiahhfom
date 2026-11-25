@@ -439,7 +439,8 @@ def finish(x: np.ndarray, sr: int, peak_db: float = PEAK_DB, tail_db: float = -6
     e = np.nonzero(a > pk * d.db(tail_db))[0][-1] + 1
     x = x[:e]
     x = d.fade(x, sr, 0.0005, fade_out)
-    return x * (d.db(peak_db) / np.abs(x).max())
+    # normalise the *true* peak (4x oversampled) to peak_db, so no inter-sample overs
+    return x * d.db(peak_db - d.true_peak_db(x))
 
 
 def render(name: str, variant: int = 0, sr: int = SR, seed: int | None = None) -> np.ndarray:

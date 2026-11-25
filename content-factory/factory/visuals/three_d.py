@@ -1278,27 +1278,31 @@ class DataCity3D(Scene3D):
 
 # ======================================================================== 9. ringed planet
 class RingPlanet3D(Scene3D):
-    """Banded gas giant with a 3D particle ring system, correct occlusion and planet shadow on rings."""
+    """Banded gas giant with a ring system: per-pixel ray-cast planet + ring plane (ring gaps, planet
+    shadow on the rings, ring shadow on the planet, rings in front partially covering the planet)
+    plus a 3D particle layer on the rings for sparkle/parallax, all correctly occluded."""
 
     def setup(self):
         rng = self.rng
-        n = int(self.p.get("particles", 170000) * min(1.0, self.k * 1.2 + 0.05))
-        # radial ring profile with gaps
-        rr = np.linspace(1.3, 2.45, 600)
-        prof = 0.35 + 0.65 * periodic_noise((600,), rng, beta=1.2)
-        prof *= smoothstep(1.3, 1.42, rr) * smoothstep(2.45, 2.3, rr)
-        prof *= 1 - 0.95 * np.exp(-((rr - 1.93) / 0.035) ** 2)  # Cassini-like division
-        prof *= 1 - 0.6 * np.exp(-((rr - 2.22) / 0.012) ** 2)
-        prof /= prof.sum()
-        r = rng.choice(rr, n, p=prof) + rng.uniform(-0.001, 0.001, n)
+        self.ring_in, self.ring_out = 1.3, 2.45
+        rr = np.linspace(self.ring_in, self.ring_out, 1200)
+        prof = 0.3 + 0.7 * periodic_noise((1200,), rng, beta=1.1)
+        prof *= smoothstep(1.3, 1.36, rr) * smoothstep(2.45, 2.4, rr)
+        prof *= 0.45 + 0.55 * smoothstep(1.3, 1.55, rr)  # faint inner C-ring
+        prof *= 1 - 0.95 * np.exp(-((rr - 1.95) / 0.03) ** 2)  # Cassini-like division
+        prof *= 1 - 0.7 * np.exp(-((rr - 2.27) / 0.01) ** 2)  # Encke-like gap
+        self.prof_r, self.prof = rr.astype(np.float32), (prof / prof.max()).astype(np.float32)
+        tone = periodic_noise((1200,), rng, beta=1.0)
+        self.ring_lut = lerp_col((150, 118, 92), (240, 222, 190), tone).astype(np.float32)
+        # sparkle particles
+        n = int(self.p.get("particles", 50000) * min(1.0, self.k * 1.2 + 0.05))
+        pr = self.prof / self.prof.sum()
+        r = rng.choice(rr, n, p=pr) + rng.uniform(-0.001, 0.001, n)
         self.r = r.astype(np.float32)
         self.th = rng.uniform(0, TAU, n).astype(np.float32)
-        self.yy = rng.normal(0, 0.004, n).astype(np.float32)
-        tone = np.interp(r, rr, periodic_noise((600,), rng, beta=1.0))
-        self.rcol = (lerp_col((150, 120, 95), (245, 225, 190), tone) * (0.5 + 0.7 * rng.random(n) ** 2)[:, None] * 0.55)
+        self.yy = rng.normal(0, 0.006, n).astype(np.float32)
+        self.rcol = (lerp_col((170, 140, 110), (255, 240, 210), rng.random(n)) * (0.4 + rng.random(n) ** 3 * 1.5)[:, None]).astype(np.float32)
         self.omega = (0.12 * r ** -1.5).astype(np.float32)
-        self.ring_in, self.ring_out = 1.3, 2.45
-        self.prof_r, self.prof = rr, prof / prof.max()
         # planet texture (latitude bands + turbulence), tiles in longitude
         tw, th_ = 1024, 512
         lat = np.linspace(-1, 1, th_)[:, None]
@@ -1306,117 +1310,137 @@ class RingPlanet3D(Scene3D):
         bands = np.sin(lat * 23 + turb * 2.2) * 0.5 + 0.5
         bands2 = np.sin(lat * 61 + turb * 4.0) * 0.5 + 0.5
         v = np.clip(bands * 0.65 + bands2 * 0.25 + turb * 0.3, 0, 1.2) / 1.2
-        self.tex = colorize3(v, [(0, (95, 60, 40)), (0.35, (190, 140, 95)), (0.6, (235, 205, 160)),
-                                 (0.8, (200, 160, 120)), (1, (250, 235, 205))]).astype(np.float32)
+        pal = self.p.get("planet", "saturn")
+        stops = {"saturn": [(0, (95, 60, 40)), (0.35, (190, 140, 95)), (0.6, (235, 205, 160)), (0.8, (200, 160, 120)), (1, (250, 235, 205))],
+                 "ice": [(0, (30, 60, 110)), (0.35, (70, 120, 180)), (0.6, (140, 190, 230)), (0.8, (100, 150, 210)), (1, (220, 240, 255))]}
+        self.tex = colorize3(v, stops.get(pal, stops["saturn"])).reshape(-1, 3).astype(np.float32)
         self.tw, self.th_ = tw, th_
-        self.tilt = (rot_z(0.42) @ rot_x(0.12)).astype(np.float64)  # planet/ring frame -> world
+        self.tilt = (rot_z(0.25) @ rot_x(0.05)).astype(np.float64)  # planet/ring frame -> world
         self.sun = _norm([-0.95, 0.45, 0.35])
-        self.make_sky(3000, bright=0.8)
+        self.make_sky(3000, bright=0.9)
+
+    def _surface(self, cam, sun_l, cam_l, t):
+        """Per-pixel planet + ring plane at half resolution inside their screen bbox."""
+        R = self.R
+        T = self.tilt
+        # bbox from the projected ring rim and the planet limb
+        th = np.linspace(0, TAU, 72, endpoint=False)
+        rim = np.stack([np.cos(th), np.zeros_like(th), np.sin(th)], 1) * self.ring_out
+        pts = np.concatenate([rim, fib_sphere(64) * 1.05]) @ T.T
+        x, y, z, _ = R.project(pts)
+        if (z <= 0.05).any():
+            x0, x1, y0, y1 = 0, self.W, 0, self.H
+        else:
+            x0, x1 = int(max(0, x.min() - 4)), int(min(self.W, x.max() + 4))
+            y0, y1 = int(max(0, y.min() - 4)), int(min(self.H, y.max() + 4))
+        hs = 2
+        x0, y0 = x0 // hs * hs, y0 // hs * hs
+        x1, y1 = min(self.W, -(-x1 // hs) * hs), min(self.H, -(-y1 // hs) * hs)
+        if x1 - x0 < 8 or y1 - y0 < 8:
+            return None
+        gx = (np.arange(x0, x1, hs, dtype=np.float32) + hs * 0.5 - self.W * 0.5) / R.f
+        gy = -(np.arange(y0, y1, hs, dtype=np.float32) + hs * 0.5 - self.H * 0.5) / R.f
+        Tf = T.astype(np.float32)
+        right, up, fwd = (cam.R[i].astype(np.float32) @ Tf for i in range(3))
+        Dx = gx[None, :] * right[0] + gy[:, None] * up[0] + fwd[0]
+        Dy = gx[None, :] * right[1] + gy[:, None] * up[1] + fwd[1]
+        Dz = gx[None, :] * right[2] + gy[:, None] * up[2] + fwd[2]
+        inv = 1.0 / np.sqrt(Dx * Dx + Dy * Dy + Dz * Dz)
+        Dx *= inv
+        Dy *= inv
+        Dz *= inv
+        o = cam_l.astype(np.float32)
+        sl = sun_l.astype(np.float32)
+        b = Dx * o[0] + Dy * o[1] + Dz * o[2]
+        disc = b * b - (float(o @ o) - 1.0)
+        pxw = R.f / float(np.linalg.norm(o)) / hs
+        alpha = np.clip(disc * pxw * 0.5 + 0.5, 0, 1)
+        img = np.zeros(Dx.shape + (3,), np.float32)
+        hit = alpha > 0
+        s_hit = np.full(Dx.shape, np.inf, np.float32)
+        if hit.any():
+            dxh, dyh, dzh, bh = Dx[hit], Dy[hit], Dz[hit], b[hit]
+            sh = -bh - np.sqrt(np.maximum(disc[hit], 0))
+            s_hit[hit] = sh
+            px, py, pz = o[0] + dxh * sh, o[1] + dyh * sh, o[2] + dzh * sh
+            nrm = 1.0 / np.maximum(np.sqrt(px * px + py * py + pz * pz), 1e-6)
+            px, py, pz = px * nrm, py * nrm, pz * nrm
+            lat = np.arcsin(np.clip(py, -1, 1))
+            lon = np.arctan2(pz, px) + t * 0.05
+            u = ((lon * (1 / TAU)) % 1.0 * self.tw).astype(np.int32) % self.tw
+            v = ((lat * (1 / math.pi) + 0.5) * (self.th_ - 1)).astype(np.int32)
+            col = self.tex[v * self.tw + u]
+            lam = np.clip(px * sl[0] + py * sl[1] + pz * sl[2], 0, 1)
+            lit = 0.025 + 0.975 * lam ** 0.85
+            # ring shadow on the planet
+            sd = -py / (sl[1] if abs(sl[1]) > 1e-4 else 1e-4)
+            qx, qz = px + sd * sl[0], pz + sd * sl[2]
+            dens = np.interp(np.sqrt(qx * qx + qz * qz), self.prof_r, self.prof) * (sd > 0)
+            lit *= 1 - 0.7 * dens
+            mu = np.clip(-(dxh * px + dyh * py + dzh * pz), 0, 1)
+            lit *= 0.5 + 0.5 * np.sqrt(mu)
+            rimv = np.exp(-mu / 0.07) * (0.2 + lam) * 70
+            img[hit] = (col * lit[:, None] + rimv[:, None] * np.array([1.0, 0.86, 0.66], np.float32)) * alpha[hit][:, None]
+        # ring plane
+        dys = np.where(np.abs(Dy) > 1e-6, Dy, 1e-6)
+        sr = -o[1] / dys
+        qx, qz = o[0] + Dx * sr, o[2] + Dz * sr
+        qr = np.sqrt(qx * qx + qz * qz)
+        ring = (sr > 0) & (qr > self.ring_in) & (qr < self.ring_out)
+        if ring.any():
+            qrr = qr[ring]
+            ri = np.clip(((qrr - self.ring_in) / (self.ring_out - self.ring_in) * (len(self.prof) - 1)).astype(np.int32), 0, len(self.prof) - 1)
+            dens = self.prof[ri]
+            qxa, qza = qx[ring], qz[ring]
+            along = qxa * sl[0] + qza * sl[2]
+            shadow = (along < 0) & ((qrr * qrr - along * along) < 1.0)
+            lit_face = 1.0 if (o[1] * sl[1]) > 0 else 0.45  # unlit face of the rings is dimmer
+            light = np.where(shadow, 0.06, 1.0) * lit_face
+            behind = sr[ring] > s_hit[ring]  # ring behind the planet: hidden where the planet is opaque
+            cover = np.where(behind, alpha[ring], 0.0)
+            op = np.clip(dens * 0.92, 0, 0.92) * (1 - cover)
+            base = img[ring]
+            img[ring] = base * (1 - op[:, None]) + self.ring_lut[ri] * (op * light * 0.85)[:, None]
+        # upsample to full res
+        h, w = y1 - y0, x1 - x0
+        reg = np.stack([np.asarray(Image.fromarray(np.ascontiguousarray(img[..., c]), "F").resize((w, h), Image.BILINEAR))
+                        for c in range(3)], -1)
+        return y0, x0, reg
 
     def frame(self, t):
         R = self.R
         azim = 2.2 + t * 0.09
-        elev = 0.2 + 0.08 * math.sin(t * 0.13)
-        cam_pos = orbit((0, 0, 0), 6.2 - 0.5 * (1 - math.exp(-t / 12)), azim, elev)
+        elev = 0.08 + 0.08 * math.sin(t * 0.13)
+        cam_pos = orbit((0, 0, 0), 6.4 - 0.5 * (1 - math.exp(-t / 12)), azim, elev)
         cam = Camera(cam_pos, (0, -0.1, 0), fov=50, roll=0.18)
         R.begin(cam)
         T = self.tilt
         sun_l = self.sun @ T  # sun direction in planet frame
         cam_l = cam_pos @ T
-
-        def occluded(Pl):  # segment camera->P hits the unit sphere (planet frame)
-            D = Pl - cam_l
-            dd = np.sum(D * D, 1)
-            s = -np.sum(cam_l * D, 1) / dd
-            s = np.clip(s, 0, 1)
-            closest = cam_l + D * s[:, None]
-            return (np.sum(closest * closest, 1) < 1.0) & (s > 0) & (s < 1)
-
         # stars (drop those behind the planet)
         x, y, vis = R.project_dirs(self.sky_dir)
         dl = self.sky_dir @ T
-        b_ = np.sum(cam_l[None, :] * dl, 1)
-        c_ = np.dot(cam_l, cam_l) - 1
-        hit = (b_ ** 2 - c_ > 0) & (b_ < 0)
+        b_ = dl @ cam_l
+        hit = (b_ ** 2 - (np.dot(cam_l, cam_l) - 1) > 0) & (b_ < 0)
         vis &= ~hit
         R.points(x[vis], y[vis], self.sky_col[vis], self.sky_r[vis] * self.k, bloom=0.5)
-        # rings
+        # sparkle particles on the ring plane (hidden behind the planet / in its shadow)
         th = self.th + self.omega * t
-        Pl = np.stack([self.r * np.cos(th), self.yy, self.r * np.sin(th)], 1)
-        occ = occluded(Pl)
-        # planet shadow on rings: behind the planet w.r.t. the sun
-        along = Pl @ sun_l
-        perp2 = np.sum(Pl * Pl, 1) - along ** 2
-        shadow = (along < 0) & (perp2 < 1.0)
-        lit_side = 1.0 if (cam_l[1] * sun_l[1]) > 0 else 0.55  # seeing the unlit face of the rings
-        bri = np.where(shadow, 0.06, 1.0) * lit_side
-        keep = ~occ
-        Pw = Pl[keep] @ T.T
-        R.points3d(Pw.astype(np.float32), self.rcol[keep] * bri[keep, None] * 5.0, 0.0, 1.0, bloom=0.3)
-        # planet: per-pixel ray cast at half resolution inside its screen bbox
-        cx, cy, cz, cinv = R.project(np.zeros((1, 3)))
-        rad = float(cinv[0]) * 1.08 + 4
-        hs = 2
-        x0, x1 = int(max(0, cx[0] - rad)) // hs * hs, int(min(self.W, cx[0] + rad + hs)) // hs * hs
-        y0, y1 = int(max(0, cy[0] - rad)) // hs * hs, int(min(self.H, cy[0] + rad + hs)) // hs * hs
-        base = None
-        if x1 - x0 > 4 and y1 - y0 > 4:
-            gx = (np.arange(x0, x1, hs, dtype=np.float32) + hs * 0.5 - self.W * 0.5) / R.f
-            gy = -(np.arange(y0, y1, hs, dtype=np.float32) + hs * 0.5 - self.H * 0.5) / R.f
-            Rm = cam.R.astype(np.float32)
-            Tf = T.astype(np.float32)
-            # ray directions in planet frame: d = (gx*right + gy*up + fwd) @ T
-            right, up, fwd = (Rm[i] @ Tf for i in range(3))
-            D = gx[None, :, None] * right + gy[:, None, None] * up + fwd
-            D /= np.linalg.norm(D, axis=2, keepdims=True)
-            o = cam_l.astype(np.float32)
-            b = D @ o
-            c = float(o @ o) - 1.0
-            disc = b * b - c
-            pxw = R.f / float(np.linalg.norm(o)) / hs  # half-res px per unit at planet distance
-            alpha = np.clip(disc * pxw * 0.5 + 0.5, 0, 1)  # analytic edge AA (approx.)
-            s = -b - np.sqrt(np.maximum(disc, 0))
-            Pp = o + D * s[..., None]
-            Pp /= np.maximum(np.linalg.norm(Pp, axis=2, keepdims=True), 1e-6)
-            lat = np.arcsin(np.clip(Pp[..., 1], -1, 1))
-            lon = np.arctan2(Pp[..., 2], Pp[..., 0]) + t * 0.05
-            u = ((lon / TAU) % 1.0 * self.tw).astype(np.int32) % self.tw
-            v = ((lat / math.pi + 0.5) * (self.th_ - 1)).astype(np.int32)
-            col = self.tex[v, u]
-            lam = np.clip(Pp @ sun_l.astype(np.float32), 0, 1)
-            lit = 0.03 + 0.97 * lam ** 0.85
-            # ring shadow on the planet
-            sl = sun_l.astype(np.float32)
-            sd = -Pp[..., 1] / (sl[1] if abs(sl[1]) > 1e-4 else 1e-4)
-            q = Pp + sd[..., None] * sl
-            qr = np.sqrt(q[..., 0] ** 2 + q[..., 2] ** 2)
-            dens = np.interp(qr, self.prof_r, self.prof).astype(np.float32) * (sd > 0)
-            lit = lit * (1 - 0.75 * dens)
-            # limb darkening + thin atmospheric rim
-            mu = np.clip(-(np.sum(D * Pp, 2)), 0, 1)
-            lit = lit * (0.55 + 0.45 * mu ** 0.5)
-            rimv = np.exp(-mu / 0.08) * (0.25 + lam) * 60
-            img = col * lit[..., None] + rimv[..., None] * np.array([1.0, 0.85, 0.65], np.float32)
-            # rings crossing in front of the planet: partially opaque, lit (or in the planet's shadow)
-            dy_ = np.where(np.abs(D[..., 1]) > 1e-5, D[..., 1], 1e-5)
-            sr = -o[1] / dy_
-            q = o + D * sr[..., None]
-            qr = np.sqrt(q[..., 0] ** 2 + q[..., 2] ** 2)
-            front = (sr > 0) & (sr < s) & (qr > self.ring_in) & (qr < self.ring_out)
-            if front.any():
-                rd = np.interp(qr[front], self.prof_r, self.prof).astype(np.float32)
-                qa = q[front] @ sl
-                qsh = (qa < 0) & ((qr[front] ** 2 - qa ** 2) < 1.0)
-                rl = np.where(qsh, 0.08, 1.0) * (1.0 if (o[1] * sl[1]) > 0 else 0.55)
-                op = np.clip(rd * 0.9, 0, 0.85)[:, None]
-                img[front] = img[front] * (1 - op) + np.array([215, 192, 160], np.float32) * (op * rl[:, None] * 0.75)
-            img *= alpha[..., None]
-            pil = [Image.fromarray(img[..., ch].astype(np.float32), "F").resize((x1 - x0, y1 - y0), Image.BILINEAR)
-                   for ch in range(3)]
-            base_reg = np.stack([np.asarray(p) for p in pil], -1)
-            base = (y0, x0, base_reg)
-        R.soft(np.repeat(cx, 1), np.repeat(cy, 1), np.array([[255, 200, 150]]) * 20)
-        return R.finish(base=base, bloom=(0.55, 0.45), radii=(1.4, 7.0))
+        Pl = np.stack([self.r * np.cos(th), self.yy, self.r * np.sin(th)], 1).astype(np.float32)
+        cl = cam_l.astype(np.float32)
+        D = Pl - cl
+        dd = np.sum(D * D, 1)
+        sc = np.clip(-(D @ cl) / dd, 0, 1)
+        cpt = cl + D * sc[:, None]
+        occ = np.sum(cpt * cpt, 1) < 1.0
+        along = Pl @ sun_l.astype(np.float32)
+        shadow = (along < 0) & ((np.sum(Pl * Pl, 1) - along ** 2) < 1.0)
+        keep = ~occ & ~shadow
+        Pw = Pl[keep] @ T.T.astype(np.float32)
+        lit_face = 1.0 if (cam_l[1] * sun_l[1]) > 0 else 0.45
+        R.points3d(Pw, self.rcol[keep] * (0.6 * lit_face), 0.0, 0.0, bloom=0.4)
+        base = self._surface(cam, sun_l, cam_l, t)
+        return R.finish(base=base, bloom=(0.5, 0.45), radii=(1.4, 7.0))
 
 
 def colorize3(v, stops):

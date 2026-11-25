@@ -1,0 +1,338 @@
+{
+  "title": "Das Monster vom Anfang der Zeit",
+  "hook": "Ein schwarzes Loch, rund 360 Millionen Sonnen schwer – kurz nach dem Urknall.",
+  "hook_text": "Zu groß, zu früh?",
+  "niche": "space",
+  "mood": "cosmic",
+  "scenes": [
+    {
+      "narration": "Ein schwarzes Loch, rund 360 Millionen Sonnen schwer – kurz nach dem Urknall.",
+      "visual": "black_hole",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "black hole accretion disk",
+      "image_prompt": "A colossal supermassive black hole with a blazing orange accretion disk in the young, dark early universe, few scattered primordial galaxies, cinematic, ultra detailed, vertical 9:16",
+      "emphasis": [
+        "360 Millionen Sonnen"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "~360 Mio.",
+        "sub": "Sonnenmassen"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Sein Licht zeigt es so, wie es 630 Millionen Jahre nach dem Urknall war.",
+      "visual": "warp3d",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "pull_out",
+      "stock_query": "light traveling through space",
+      "image_prompt": "A single beam of ancient light streaking across a vast starfield from a distant glowing point toward the viewer, deep cosmic blues and violets, sense of immense time and distance, vertical 9:16",
+      "emphasis": [
+        "630 Millionen Jahre"
+      ],
+      "sfx": "whoosh",
+      "stat": {
+        "text": "630 Mio. J",
+        "sub": "nach dem Urknall"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Wie wurde es so schnell so riesig?",
+      "visual": "mystery",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "drift",
+      "stock_query": "mysterious cosmic fog",
+      "image_prompt": "A dark cosmic void with a faint glowing question-mark-shaped nebula, mysterious atmosphere, purple haze, cinematic lighting, vertical 9:16",
+      "emphasis": [
+        "so schnell",
+        "riesig"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": "think"
+    },
+    {
+      "narration": "Das Weltraumteleskop Euclid fand es zwischen Millionen von Lichtpunkten.",
+      "visual": "probe",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "orbit",
+      "stock_query": "space telescope orbit",
+      "image_prompt": "A sleek white space telescope floating in deep space, scanning a dense field of millions of tiny glowing dots, one dot subtly highlighted in red, photorealistic, vertical 9:16",
+      "emphasis": [
+        "Euclid",
+        "Millionen"
+      ],
+      "sfx": "pop",
+      "stat": null,
+      "mascot": "point"
+    },
+    {
+      "narration": "Sein Name: Dún Aonghasa – wie eine uralte Klippenfestung in Irland.",
+      "visual": "earth",
+      "params": {
+        "palette": "teal"
+      },
+      "camera": "pan_right",
+      "stock_query": "cliff fort Ireland ocean",
+      "image_prompt": "A prehistoric semicircular stone fort on the edge of a towering sea cliff above the Atlantic Ocean, dramatic clouds, waves crashing below, cinematic, vertical 9:16",
+      "emphasis": [
+        "Dún Aonghasa"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Der erste Quasar überhaupt jenseits von Rotverschiebung 8.",
+      "visual": "galaxy3d",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "bright quasar galaxy",
+      "image_prompt": "An extremely bright quasar blazing at the heart of a young galaxy, twin jets, light shifted to deep red tones, cosmic background, vertical 9:16",
+      "emphasis": [
+        "erste Quasar"
+      ],
+      "sfx": "ding",
+      "stat": {
+        "text": "z = 8,13",
+        "sub": "Rotverschiebung"
+      },
+      "mascot": "wow"
+    },
+    {
+      "narration": "Euclids eigener Rekord vom Juli? Um 40 Millionen Jahre geschlagen.",
+      "visual": "time",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "dolly_tilt",
+      "stock_query": "timeline clock universe",
+      "image_prompt": "A glowing cosmic timeline stretching into darkness, a marker jumping further back in time past an older record marker, futuristic holographic style, vertical 9:16",
+      "emphasis": [
+        "Rekord",
+        "40 Millionen Jahre"
+      ],
+      "sfx": "impact",
+      "stat": {
+        "text": "+40 Mio. J",
+        "sub": "neuer Rekord"
+      },
+      "mascot": null
+    },
+    {
+      "narration": "Doch dann der Twist: Damals frisst das Monster nur relativ langsam.",
+      "visual": "blackhole",
+      "params": {
+        "palette": "violet"
+      },
+      "camera": "orbit",
+      "stock_query": "black hole slow swirl",
+      "image_prompt": "A massive black hole with a thin, dim, slowly swirling accretion disk, calm but menacing, dark violet tones, cinematic, vertical 9:16",
+      "emphasis": [
+        "Twist",
+        "langsam"
+      ],
+      "sfx": "glitch",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Also muss es früher rasend schnell gewachsen sein.",
+      "visual": "energy",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "push_in",
+      "stock_query": "explosive cosmic energy",
+      "image_prompt": "A young black hole violently devouring huge streams of gas, blinding bright accretion disk, explosive energy, fiery orange and white, cinematic, vertical 9:16",
+      "emphasis": [
+        "rasend schnell"
+      ],
+      "sfx": "riser",
+      "stat": null,
+      "mascot": "wow"
+    },
+    {
+      "narration": "Quasare jenseits von Rotverschiebung 8? Die ESA erwartet in Euclids gesamter Durchmusterung höchstens ein paar Dutzend.",
+      "visual": "stars",
+      "params": {
+        "palette": "ice"
+      },
+      "camera": "pan_up",
+      "stock_query": "deep field stars",
+      "image_prompt": "A deep space field with countless faint galaxies and only a handful of rare bright red points glowing, sense of rarity, cold blue tones, vertical 9:16",
+      "emphasis": [
+        "paar Dutzend"
+      ],
+      "sfx": "pop",
+      "stat": null,
+      "mascot": null
+    },
+    {
+      "narration": "Rund 360 Millionen Sonnen – kurz nach dem Urknall.",
+      "visual": "black_hole",
+      "params": {
+        "palette": "ember"
+      },
+      "camera": "pull_out",
+      "stock_query": "black hole accretion disk",
+      "image_prompt": "A colossal supermassive black hole with a blazing orange accretion disk in the young, dark early universe, few scattered primordial galaxies, cinematic, ultra detailed, vertical 9:16",
+      "emphasis": [
+        "kurz nach dem Urknall"
+      ],
+      "sfx": "whoosh",
+      "stat": null,
+      "mascot": null
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Das schwarze Loch des Quasars hat eine Referenzmasse von etwa 360 Millionen Sonnenmassen.",
+      "source": "https://arxiv.org/html/2611.31385"
+    },
+    {
+      "claim": "Die Masse liegt zwischen etwa 210 und 780 Millionen Sonnenmassen, mit 360 Millionen als Referenzwert.",
+      "source": "https://phys.org/news/2026-11-quasar-tightens-constraints-black-hole.html"
+    },
+    {
+      "claim": "Der Quasar wird so gesehen, wie er 630 Millionen Jahre nach dem Urknall war.",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "claim": "Das Weltraumteleskop Euclid entdeckte den Quasar J1504+6252 (Dún Aonghasa).",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "claim": "Das Team fand den Quasar unter Millionen von Objekten in rund 18 Monaten Euclid-Daten.",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "claim": "Der Name stammt von Dún Aonghasa, einer prähistorischen Klippenfestung auf Inis Mór vor der Westküste Irlands.",
+      "source": "https://en.wikipedia.org/wiki/D%C3%BAn_Aonghasa"
+    },
+    {
+      "claim": "Dún Aonghasa ist der erste Quasar jenseits einer Rotverschiebung von 8; seine Rotverschiebung beträgt 8,13.",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "claim": "Im Juli 2026 meldete Euclid mit EUCL J1729 bei z ≈ 7,77 den damals entferntesten Quasar.",
+      "source": "https://www.aanda.org/articles/aa/full_html/2026/07/aa58883-26/aa58883-26.html"
+    },
+    {
+      "claim": "Die Entdeckung bricht Euclids eigenen Rekord, indem sie 40 Millionen Jahre weiter in die Vergangenheit blickt.",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "claim": "Das schwarze Loch frisst relativ langsam, muss also früher schnell gewachsen sein.",
+      "source": "https://www.techtimes.com/articles/331465/20261124/most-distant-quasar-found-euclid-telescope-slow-feeding-black-hole-needed-rapid-early-growth.htm"
+    },
+    {
+      "claim": "Die ESA erwartet in Euclids gesamter Durchmusterung höchstens einige Dutzend Quasare jenseits von Rotverschiebung 8.",
+      "source": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    }
+  ],
+  "metadata": {
+    "title": "Euclid findet den ältesten bekannten Quasar – rund 360 Mio. Sonnen schwer 🕳️",
+    "description": "Nur 630 Millionen Jahre nach dem Urknall wog dieses schwarze Loch schon rund 360 Millionen Sonnen – und Euclid hat damit seinen eigenen Rekord gebrochen. Doch es frisst nur relativ langsam. Wie wurde es so schnell so riesig? Quellen: esa.int, arxiv.org/html/2611.31385, phys.org, techtimes.com, aanda.org, en.wikipedia.org",
+    "hashtags": [
+      "Weltraum",
+      "Astronomie",
+      "SchwarzesLoch",
+      "Quasar",
+      "Euclid",
+      "Urknall",
+      "Wissenschaft",
+      "space",
+      "blackhole",
+      "astronomy",
+      "ESA",
+      "sciencetok"
+    ]
+  },
+  "format": "short",
+  "language": "de",
+  "fact_check": {
+    "verdict": "fix",
+    "issues": [
+      {
+        "text": "Doch dann der Twist: Heute frisst das Monster nur langsam.",
+        "problem": "Temporal error. The slow feeding was observed in light emitted 630 million years after the Big Bang, so it describes that epoch, not today. The source (techtimes) also says 'relatively slowly', not just 'slowly'.",
+        "fix": "Doch dann der Twist: Damals frisst das Monster nur relativ langsam."
+      },
+      {
+        "text": "Doch heute frisst es langsam. (metadata.description)",
+        "problem": "Same temporal error as the scene narration. The feeding rate refers to the observed epoch, not the present.",
+        "fix": "Doch es frisst nur relativ langsam."
+      },
+      {
+        "text": "Quasare jenseits von 8? Euclid erwartet insgesamt höchstens ein paar Dutzend.",
+        "problem": "Wrong actor. The expectation comes from ESA, not the telescope, and it covers Euclid's entire survey. 'Jenseits von 8' is also unclear without the word 'Rotverschiebung'.",
+        "fix": "Quasare jenseits von Rotverschiebung 8? Die ESA erwartet in Euclids gesamter Durchmusterung höchstens ein paar Dutzend."
+      },
+      {
+        "text": "Ein schwarzes Loch, 360 Millionen Sonnen schwer – kurz nach dem Urknall. (hook and scene 1); 360 Millionen Sonnen – kurz nach dem Urknall. (final scene)",
+        "problem": "Overstated precision. 360 million solar masses is an approximate reference value within a range of about 210 to 780 million, but the script presents it as exact.",
+        "fix": "Add 'rund': 'Ein schwarzes Loch, rund 360 Millionen Sonnen schwer – kurz nach dem Urknall.' / 'Rund 360 Millionen Sonnen – kurz nach dem Urknall.'"
+      },
+      {
+        "text": "Euclid findet den ältesten Quasar – 360 Mio. Sonnen schwer 🕳️ (metadata.title)",
+        "problem": "Absolute claim and false precision. The sources support 'most distant/earliest known' quasar, not an absolute record, and the mass is approximate.",
+        "fix": "Euclid findet den ältesten bekannten Quasar – rund 360 Mio. Sonnen schwer 🕳️"
+      }
+    ]
+  },
+  "research_sources": [
+    {
+      "title": "Euclid breaks own quasar record by 40 million years (ESA)",
+      "url": "https://www.esa.int/articles/about-us/directorates/science/euclid/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "title": "Euclid breaks own quasar record by 40 million years (Leiden University)",
+      "url": "https://www.universiteitleiden.nl/en/news/2026/11/euclid-breaks-own-quasar-record-by-40-million-years"
+    },
+    {
+      "title": "Euclid: Discovery of a quasar at z=8.13 hosting a 360-million-solar-mass black hole (arXiv, Wolf et al.)",
+      "url": "https://arxiv.org/html/2611.31385"
+    },
+    {
+      "title": "New quasar record tightens constraints on black hole formation scenarios (Phys.org)",
+      "url": "https://phys.org/news/2026-11-quasar-tightens-constraints-black-hole.html"
+    },
+    {
+      "title": "Most Distant Quasar Found by Euclid Telescope: Slow-Feeding Black Hole Needed Rapid Early Growth (Tech Times)",
+      "url": "https://www.techtimes.com/articles/331465/20261124/most-distant-quasar-found-euclid-telescope-slow-feeding-black-hole-needed-rapid-early-growth.htm"
+    },
+    {
+      "title": "Euclid: Discovery of 31 new quasars at 6.6 < z < 7.8 (Astronomy & Astrophysics)",
+      "url": "https://www.aanda.org/articles/aa/full_html/2026/07/aa58883-26/aa58883-26.html"
+    },
+    {
+      "title": "Euclid spots the oldest known quasars (Astronomy.com)",
+      "url": "https://www.astronomy.com/science/euclid-spots-the-oldest-known-quasars/"
+    },
+    {
+      "title": "Euclid entdeckt älteste Quasare im Universum (Universität Hamburg, MIN-Fakultät)",
+      "url": "https://www.min.uni-hamburg.de/en/ueber-die-fakultaet/aktuelles/2026/0706-euclid-entdeckt-aelteste-quasare-im-universum.html"
+    },
+    {
+      "title": "Dún Aonghasa (Wikipedia)",
+      "url": "https://en.wikipedia.org/wiki/D%C3%BAn_Aonghasa"
+    }
+  ],
+  "llm_provider": "claude_cli",
+  "topic": "Euclid hat den ältesten Quasar entdeckt – wie kann sein Licht uns noch erreichen?",
+  "research_method": "claude_websearch"
+}

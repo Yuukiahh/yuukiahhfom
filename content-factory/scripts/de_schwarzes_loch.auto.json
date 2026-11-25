@@ -132,7 +132,7 @@
     },
     {
       "narration": "An deinen Füßen zieht die Schwerkraft stärker als am Kopf.",
-      "visual": "physics",
+      "visual": "atom3d",
       "params": {
         "palette": "teal"
       },

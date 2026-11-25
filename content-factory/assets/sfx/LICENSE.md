@@ -17,7 +17,7 @@ monetised videos, without asking permission and without attribution.
   each in its own frequency lane, moving pitch, short lengths, high-passed to
   avoid mud, top end tamed), following the `game-sfx` workflow; every file was
   audited with its `doctor` (peak, LUFS, crest, spectral balance, spectrogram).
-* Format: 48 kHz, 16-bit PCM, stereo, peak-normalised to -1 dBFS, tail trimmed
+* Format: 48 kHz, 16-bit PCM, stereo, true-peak-normalised to -1 dBTP (4x oversampled), tail trimmed
   at -60 dB with a 15 ms fade-out. The onset stays at t = 0 so timed cues line
   up (whoosh peaks ~0.25 s in, risers end exactly at their nominal length).
 * Rebuild (deterministic, identical output):

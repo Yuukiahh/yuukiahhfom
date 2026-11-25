@@ -59,7 +59,7 @@
     },
     {
       "narration": "Der Chip heißt Willow, von Google. Je mehr Qubits, desto weniger Fehler.",
-      "visual": "quantum",
+      "visual": "atom3d",
       "params": {
         "palette": "ice"
       },
@@ -178,7 +178,7 @@
     },
     {
       "narration": "Dafür fahren in den USA schon Autos ohne Fahrer.",
-      "visual": "flyover",
+      "visual": "terrain3d",
       "params": {
         "palette": "teal"
       },
@@ -214,7 +214,7 @@
     },
     {
       "narration": "Doppelt so viele wie knapp ein Jahr zuvor.",
-      "visual": "data",
+      "visual": "datacity3d",
       "params": {
         "palette": "teal"
       },
@@ -312,7 +312,7 @@
     },
     {
       "narration": "KJ hat eine seltene Krankheit: CPS1-Mangel.",
-      "visual": "genome",
+      "visual": "dna3d",
       "params": {
         "palette": "teal"
       },
@@ -348,7 +348,7 @@
     },
     {
       "narration": "Er ist der erste Patient überhaupt mit so einer maßgeschneiderten CRISPR-Therapie.",
-      "visual": "helix",
+      "visual": "dna3d",
       "params": {
         "palette": "teal"
       },

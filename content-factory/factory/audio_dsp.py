@@ -50,7 +50,7 @@ def _resp(kind: str, f: np.ndarray, fc: float, q: float = 0.707, order: int = 2)
 def fft_filter(x: np.ndarray, sr: int, kind: str, fc: float, q: float = 0.707, order: int = 2) -> np.ndarray:
     """Zero-phase FFT filter (fine for one-shots and whole buses)."""
     n = x.shape[0]
-    L = fft_len(n + 64)
+    L = fft_len(n + min(n, sr // 2) + 64)  # zero-pad so filter tails do not wrap around
     X = np.fft.rfft(x, L, axis=0)
     h = _resp(kind, np.fft.rfftfreq(L, 1 / sr), fc, q, order)
     return np.fft.irfft(X * (h[:, None] if x.ndim == 2 else h), L, axis=0)[:n]
@@ -59,7 +59,7 @@ def fft_filter(x: np.ndarray, sr: int, kind: str, fc: float, q: float = 0.707, o
 def fft_chain(x: np.ndarray, sr: int, specs) -> np.ndarray:
     """Several zero-phase filters in one FFT. specs: [(kind, fc[, q[, order]]), ...]"""
     n = x.shape[0]
-    L = fft_len(n + 64)
+    L = fft_len(n + min(n, sr // 2) + 64)  # zero-pad so filter tails do not wrap around
     X = np.fft.rfft(x.astype(np.float32, copy=False) if n > 1_000_000 else x, L, axis=0)
     f = np.fft.rfftfreq(L, 1 / sr)
     h = np.ones_like(f)

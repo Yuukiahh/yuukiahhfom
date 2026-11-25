@@ -102,7 +102,8 @@ def test_sfx_assets_committed_and_clean():
         x, sr = sf.read(f, always_2d=True)
         assert sr == 48000 and x.shape[1] == 2, f.name
         pk = 20 * np.log10(np.abs(x).max())
-        assert -1.6 < pk <= -0.9, (f.name, pk)
+        assert -3.0 < pk <= -0.99, (f.name, pk)
+        assert audio_dsp.true_peak_db(x) <= -0.95, f.name
         assert np.abs(x[-3:]).max() < 0.01, f.name            # faded out
     assert len(audio._scan_sfx(audio.ASSETS_SFX)["whoosh"]) >= 3
 

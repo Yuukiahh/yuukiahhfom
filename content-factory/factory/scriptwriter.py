@@ -103,6 +103,20 @@ def fact_check(script: dict, research: dict) -> tuple[dict, dict]:
         "verdict": res.get("verdict"), "issues": res.get("issues", [])}
 
 
+VISUAL_ALIASES = {
+    "physics": "atom3d", "quantum": "atom3d", "atom": "atom3d", "particle": "atom3d", "particles": "atom3d",
+    "flyover": "terrain3d", "landscape": "terrain3d", "mountains": "terrain3d", "terrain": "terrain3d",
+    "data": "datacity3d", "server": "datacity3d", "city": "datacity3d", "computer": "datacity3d", "robot": "datacity3d",
+    "genome": "dna3d", "helix": "dna3d", "gene": "dna3d", "cell": "dna3d",
+    "globe": "globe3d", "world": "globe3d", "map": "globe3d",
+    "hyperspace": "warp3d", "speed": "warp3d", "travel": "warp3d", "light": "warp3d",
+    "milkyway": "galaxy3d", "milky_way": "galaxy3d", "universe": "galaxy3d", "quasar": "galaxy3d", "cosmos": "galaxy3d",
+    "saturn": "ringplanet3d", "rings": "ringplanet3d", "jupiter": "planet", "moon": "planet",
+    "satellite": "probe", "rocket": "probe", "telescope": "probe",
+    "network": "neural3d", "mind": "neural3d", "thought": "neural3d",
+}
+
+
 def normalise(s: dict, fmt: str, lang: str) -> dict:
     s.setdefault("format", fmt)
     s.setdefault("language", lang)
@@ -110,6 +124,9 @@ def normalise(s: dict, fmt: str, lang: str) -> dict:
     s.setdefault("claims", [])
     s.setdefault("metadata", {})
     for i, sc in enumerate(s.get("scenes", [])):
+        v = str(sc.get("visual", "")).lower().strip()
+        if v in VISUAL_ALIASES and VISUAL_ALIASES[v] in KINDS:
+            sc["visual"] = VISUAL_ALIASES[v]
         if sc.get("visual") not in KINDS:
             sc["visual"] = {"space": "nebula", "ai": "neural", "technology": "circuit", "future": "grid",
                             "mystery": "fog"}.get(s.get("niche"), "abstract")
