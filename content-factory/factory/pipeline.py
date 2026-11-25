@@ -135,7 +135,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
                       "fade_in": i == 0, "time_offset": rng.uniform(0, 5),
                       "overlay": sc.get("overlay") if cfg().get("overlays.enabled", True) else None,
                       "overlay_start": round((0.0 if i == 0 else cuts[i - 1]) - g0 + (2.5 if i == 0 else 0.12), 3),
-                      "overlay_end": round((total if i == n - 1 else cuts[i]) - g0 - 0.08, 3),
+                      "overlay_end": round(((total - 2.25) if i == n - 1 else cuts[i]) - g0 - 0.08, 3),  # clear of CTA card
                       "overlay_y": float(cfg().get("overlays.y", 0.36)),
                       "tag": script.get("tag") if cfg().get("overlays.enabled", True) else None,
                       "tag_from": max(0.0, 2.4 - g0), "lang": lang,
