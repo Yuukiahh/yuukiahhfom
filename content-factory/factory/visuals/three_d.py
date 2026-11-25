@@ -970,14 +970,14 @@ class Terrain3D(Scene3D):
         disc = np.clip(sr - dd + 0.5, 0, 1) * stripes
         sky = sky * (1 - disc[..., None]) + sun_col * disc[..., None] * 1.05
         glow = np.exp(-np.clip(dd - sr, 0, None) / (W * 0.10))[..., None] * np.array([255, 60, 150], np.float32) * 0.3
-        self.sky = (sky + glow).astype(np.float32)
+        self.sky = np.clip(sky + glow, 0, 255).astype(np.float32)
         gy = np.clip((yy - self.hy) / (H - self.hy), 0, 1)
         self.ground = (lerp_col((40, 6, 46), (3, 1, 8), gy[..., 0] ** 0.3)[:, None, :] * np.ones((1, W, 1), np.float32))
         self.cols_x = np.arange(W, dtype=np.float32)
 
     def frame(self, t):
         R = self.R
-        vz = 6.0
+        vz = float(self.p.get("fly", 4.5))
         cz = t * vz
         cx = 0.9 * math.sin(t * 0.23)
         cyh = 2.2 + 0.25 * math.sin(t * 0.31)
@@ -1233,7 +1233,8 @@ class DataCity3D(Scene3D):
             ff = math.exp(-max(0.0, rz - 2.0) / 9.0)
             c = (self.ca * (1 - hue) + self.cb * hue) * ff + fogc * (1 - ff) * 0.3
             pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in V]
-            d.line(pts, fill=tuple(int(v) for v in np.clip(c * 1.2 + 40 * ff, 0, 255)), width=max(1, int(0.05 * f / V[0, 2])))
+            d.line(pts, fill=tuple(int(v) for v in np.clip(c * 1.1 + 25 * ff, 0, 255)),
+                   width=int(np.clip(0.04 * f / V[0, 2], 1, 7 * self.k + 1)))
         # towers, far to near
         items = []
         for row in range(k0 - 1, k0 + int(far)):
@@ -1284,9 +1285,7 @@ class DataCity3D(Scene3D):
                 nb = int(h / 0.35)
                 for j in range(1, nb):
                     yb = j * 0.35
-                    lit = ((j * 7 + int(self.pulse[pr, ci] * 13) + int(t * 1.5)) % 5) != 0
-                    if not lit:
-                        continue
+                    lit = min(1.0, max(0.12, 0.45 + 0.8 * math.sin(t * 1.1 + j * 1.7 + float(self.pulse[pr, ci]) * 13)))
                     segs = []
                     if cpos[2] < z0:
                         segs.append(((x0 + 0.04, yb, z0), (x1 - 0.04, yb, z0)))
@@ -1299,7 +1298,7 @@ class DataCity3D(Scene3D):
                         if (Vs[:, 2] < near).any():
                             continue
                         pts = [(W * 0.5 + p[0] * f / p[2], H * 0.5 - p[1] * f / p[2]) for p in Vs]
-                        cc = emis * 0.85 * ff + fogc * (1 - ff) * 0.4
+                        cc = emis * (0.85 * lit) * ff + fogc * (1 - ff) * 0.4
                         d.line(pts, fill=tuple(int(v) for v in cc), width=max(1, int(0.03 * f / max(0.3, Vs[0, 2]))))
         # stars above the skyline (additive, under the opaque canvas is fine: sky is dark)
         self.draw_sky()
