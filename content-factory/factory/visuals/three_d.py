@@ -223,7 +223,7 @@ class Renderer:
         if r is None:
             self._push(fine, x, y, col, self.W, self.H)
         else:
-            small = r < 0.8
+            small = r < 1.0
             mid = (~small) & (r < 3.0)
             big = (r >= 3.0) & (r < 10.0)
             huge = r >= 10.0
@@ -247,7 +247,8 @@ class Renderer:
                         for oy in (-1, 0, 1):
                             self._push(self._coarse, xl + ox * rl, yl + oy * rl, cl, self.Wc, self.Hc)
         if bloom:
-            self._push(self._soft, x / ds, y / ds, col * (bloom / ds ** 2), self.Ws, self.Hs)
+            st = len(x) // 25000 + 1  # the blurred 1/4-res glow does not need every particle
+            self._push(self._soft, x[::st] / ds, y[::st] / ds, col[::st] * (st * bloom / ds ** 2), self.Ws, self.Hs)
 
     def soft(self, x, y, col):
         """Deposit directly into the blurred quarter-res buffer (screen px coords, energy units)."""
@@ -287,7 +288,7 @@ class Renderer:
         s = s.astype(np.float32)
         return x0[seg] + dx[seg] * s, y0[seg] + dy[seg] * s, seg, s, (L / n)[seg].astype(np.float32)
 
-    def lines(self, x0, y0, x1, y1, c0, c1=None, width=0.0, layer="back", bloom=0.35, spacing=0.8, maxn=400):
+    def lines(self, x0, y0, x1, y1, c0, c1=None, width=0.0, layer="back", bloom=0.35, spacing=1.0, maxn=400):
         """Anti-aliased additive screen-space lines. c0/c1 (N,3): colour (per px of length) at both ends."""
         x0, y0, x1, y1 = (np.asarray(a, np.float32) for a in (x0, y0, x1, y1))
         if len(x0) == 0:
@@ -304,8 +305,12 @@ class Renderer:
         xs, ys, seg, s, step = self.sample_segments(x0, y0, x1, y1, spacing, maxn)
         col = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * step[:, None]
         r = np.asarray(width, np.float32)
-        r = r[seg] if r.ndim else r
-        self.points(xs, ys, col, r if np.any(r) else None, layer, bloom)
+        r = r[seg] if r.ndim else np.broadcast_to(r, xs.shape)
+        # a bilinear-splatted line is already ~1.5 px wide: only wider lines need bigger footprints
+        r = np.where(r < 1.4, 0.0, r)
+        self.points(xs, ys, col, r, layer, bloom=0)
+        if bloom and len(xs):  # glow from every 4th sample is plenty for the 1/4-res bloom buffer
+            self._push(self._soft, xs[::4] / self.ds, ys[::4] / self.ds, col[::4] * (4 * bloom / self.ds ** 2), self.Ws, self.Hs)
 
     def lines3d(self, A, B, c0, c1=None, width=0.0, width_world=0.0, near=0.05, layer="back", bloom=0.35):
         xa, ya, za, ia = self.project(A)
@@ -406,31 +411,38 @@ class Renderer:
             small = np.asarray(canvas.reduce(self.ds), np.float32)
             soft[:small.shape[0], :small.shape[1]] += small * 0.5
         if isinstance(base, tuple):
-            y0, x0, reg = base
-            sm = reg[::self.ds, ::self.ds]
-            sy, sx = y0 // self.ds, x0 // self.ds
-            hh, ww = min(sm.shape[0], self.Hs - sy), min(sm.shape[1], self.Ws - sx)
-            soft[sy:sy + hh, sx:sx + ww] += sm[:hh, :ww] * 0.35
+            base = [base]
+        if isinstance(base, list):
+            for item in base:
+                y0, x0, reg = item[:3]
+                bw = item[3] if len(item) > 3 else 0.35
+                if bw <= 0:
+                    continue
+                sm = reg[(-y0) % self.ds::self.ds, (-x0) % self.ds::self.ds]
+                sy, sx = -(-y0 // self.ds), -(-x0 // self.ds)
+                hh, ww = min(sm.shape[0], self.Hs - sy), min(sm.shape[1], self.Ws - sx)
+                soft[sy:sy + hh, sx:sx + ww] += sm[:hh, :ww] * bw
         # bloom: two gaussian radii on the quarter-res buffer, recombined, upsampled once (bilinear)
         s8 = Image.fromarray(np.clip(soft, 0, 255).astype(np.uint8))
         b1 = np.asarray(s8.filter(ImageFilter.GaussianBlur(radii[0] * self.k)), np.float32)
         b2 = np.asarray(s8.filter(ImageFilter.GaussianBlur(radii[1] * self.k)), np.float32)
         comb = b1 * bloom[0] + b2 * bloom[1] + soft * 0.25
-        up = Image.fromarray(np.clip(comb, 0, 255).astype(np.uint8)).resize(
-            (self.W, self.H), Image.BILINEAR, box=(0, 0, self.W / self.ds, self.H / self.ds))
-        up = np.asarray(up)
+        comb8 = np.clip(comb, 0, 255).astype(np.uint8)
+        box = (0, 0, self.W / self.ds, self.H / self.ds)
         out = np.empty((self.H, self.W, 3), np.float32)
         store = self._fine["back"] + self._fine["front"]
         n = self.W * self.H
         if store:
             idx = np.concatenate([s[0] for s in store])
             wc = np.concatenate([s[1] for s in store], axis=1)
-            for c in range(3):
+        for c in range(3):  # per-channel 'L' upsampling is faster than RGB and gives contiguous planes
+            up = np.asarray(Image.fromarray(np.ascontiguousarray(comb8[..., c])).resize((self.W, self.H), Image.BILINEAR, box=box))
+            if store:
                 acc = np.bincount(idx, wc[c], minlength=n)[:n].reshape(self.H, self.W)
-                acc += up[..., c]
+                acc += up
                 out[..., c] = acc
-        else:
-            out[:] = up
+            else:
+                out[..., c] = up
         # tone-map the additive light only; designed base colours (sky, planet, canvas) are added after
         den = out  # in place: y = white - white*k/(x+k)
         den += knee / exposure
@@ -438,9 +450,10 @@ class Renderer:
         den += white
         if canvas is not None:
             den += np.asarray(canvas)[:self.H, :self.W]
-        if isinstance(base, tuple):
-            y0, x0, reg = base
-            den[y0:y0 + reg.shape[0], x0:x0 + reg.shape[1]] += reg
+        if isinstance(base, list):
+            for item in base:
+                y0, x0, reg = item[:3]
+                den[y0:y0 + reg.shape[0], x0:x0 + reg.shape[1]] += reg
         elif base is not None:
             den += base
         return den
@@ -972,7 +985,7 @@ class Terrain3D(Scene3D):
         glow = np.exp(-np.clip(dd - sr, 0, None) / (W * 0.10))[..., None] * np.array([255, 60, 150], np.float32) * 0.3
         self.sky = np.clip(sky + glow, 0, 255).astype(np.float32)
         gy = np.clip((yy - self.hy) / (H - self.hy), 0, 1)
-        self.ground = (lerp_col((40, 6, 46), (3, 1, 8), gy[..., 0] ** 0.3)[:, None, :] * np.ones((1, W, 1), np.float32))
+        self.ground = np.ascontiguousarray(np.broadcast_to(lerp_col((40, 6, 46), (3, 1, 8), gy[..., 0] ** 0.3)[:, None, :], (H, W, 3)))
         self.cols_x = np.arange(W, dtype=np.float32)
 
     def frame(self, t):
@@ -1025,9 +1038,12 @@ class Terrain3D(Scene3D):
             cc = (c0[seg] + (c1[seg] - c0[seg]) * s[:, None]) * step[:, None]
             R.points(xs[vis], ys[vis], cc, w[seg], bloom=0.5)
         sil = occ[-1]
-        yy = np.arange(self.H, dtype=np.float32)[:, None]
-        mask = (yy > sil[None, :])[..., None]
-        base = np.where(mask, self.ground, self.sky)
+        # sky above the highest silhouette point, ground below the lowest, per-pixel test only in between
+        y_lo = int(np.clip(np.floor(sil.min()), 0, self.H))
+        y_hi = int(np.clip(np.ceil(sil.max()) + 1, y_lo, self.H))
+        yy = np.arange(y_lo, y_hi, dtype=np.float32)[:, None]
+        band = np.where((yy > sil[None, :])[..., None], self.ground[y_lo:y_hi], self.sky[y_lo:y_hi])
+        base = [(0, 0, self.sky[:y_lo], 0.0), (y_lo, 0, band, 0.0), (y_hi, 0, self.ground[y_hi:], 0.0)]
         return R.finish(base=base, bloom=(0.6, 0.55), radii=(1.4, 7.0))
 
 
