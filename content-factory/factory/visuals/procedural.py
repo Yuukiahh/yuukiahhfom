@@ -579,3 +579,6 @@ def make_scene(kind: str, w: int, h: int, seed: int, params: dict | None = None)
 
 # True-3D scenes register themselves into KINDS on import (kept in a separate module).
 from . import three_d as _three_d  # noqa: E402,F401
+# Topical (news / business / tech / politics) backgrounds, same self-registration pattern; imported
+# after three_d because topical.py builds on its renderer.
+from . import topical as _topical  # noqa: E402,F401
