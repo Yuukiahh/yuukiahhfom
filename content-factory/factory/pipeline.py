@@ -155,6 +155,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         media_items.append({**m, "scene": i} if m else {"scene": i, "source": "procedural-3d", "type": "generated",
                                                        "kind": sc["visual"], "license": "Original render (own work)"
                                                        + ("; card textures = user-provided photos" if sc.get("params", {}).get("images") else "")})
+        is_photo = bool(m and m.get("type") == "image")
         bumps = [round(w["start"] - g0, 3) for w in words if w["scene"] == i
                  and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm]
         specs.append({"w": W, "h": H, "fps": FPS, "duration": dur, "kind": sc["visual"], "params": sc.get("params", {}),
@@ -163,9 +164,10 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
                       "media": m, "out": str(work / f"scene_{i:02d}.mp4"), "shakes": [0.02] if i == 0 or sc.get("sfx") == "impact" else [],
                       "fade_in": i == 0, "time_offset": rng.uniform(0, 5),
                       "overlay": sc.get("overlay") if cfg().get("overlays.enabled", True) else None,
-                      "overlay_start": round((0.0 if i == 0 else cuts[i - 1]) - g0 + (2.5 if i == 0 else 0.12), 3),
+                      "overlay_start": round((0.0 if i == 0 else cuts[i - 1]) - g0 + (2.5 if i == 0 else 0.12) + (0.9 if is_photo else 0.0), 3),
                       "overlay_end": round(((total - 2.25) if i == n - 1 else cuts[i]) - g0 - 0.08, 3),  # clear of CTA card
-                      "overlay_y": float(cfg().get("overlays.y", 0.36)),
+                      "overlay_y": 0.205 if is_photo else float(cfg().get("overlays.y", 0.36)),
+                      "dof": not is_photo,  # never blur the user's photos
                       "tag": script.get("tag") if cfg().get("overlays.enabled", True) else None,
                       "tag_from": max(0.0, 2.4 - g0), "lang": lang,
                       "source_label": sc.get("source_label") if cfg().get("overlays.enabled", True) else None})
