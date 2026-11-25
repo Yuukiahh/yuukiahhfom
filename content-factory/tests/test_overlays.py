@@ -52,3 +52,18 @@ def test_fmt_value():
     assert overlays.fmt_value(2999, "$") == "$2,999"
     assert overlays.fmt_value(31, "%", signed=True) == "+31%"
     assert overlays.fmt_value(-5.86, "%", signed=True) == "-5.9%"
+
+
+def test_holo_cards_use_user_photos(tmp_path):
+    from PIL import Image
+
+    from factory.visuals.procedural import make_scene
+    paths = []
+    for k, col in enumerate([(200, 40, 40), (40, 40, 200)]):
+        p = tmp_path / f"card{k}.jpg"
+        Image.new("RGB", (300, 420), col).save(p)
+        paths.append(str(p))
+    sc = make_scene("holo_cards", 216, 384, 1, {"images": paths, "mode": "fan"})
+    assert len(sc.cards) == 7
+    f = sc.render(1.0)
+    assert np.isfinite(f).all()

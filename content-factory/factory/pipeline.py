@@ -96,6 +96,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     work.mkdir(parents=True, exist_ok=True)
     (folder / "script.json").write_text(json.dumps(script, ensure_ascii=False, indent=2), "utf-8")
     rng = random.Random(script.get("seed") or random.randint(0, 10 ** 9))
+    user_images = _user_media(script.get("user_media"))
 
     # ---- voice
     progress("voice", 0.3)
@@ -139,10 +140,15 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         g1 = total if i == n - 1 else cuts[i] + T / 2
         dur = round(g1 - g0, 4)
         m = None
-        if sc.get("visual_source", "auto") != "procedural":
+        if user_images and sc.get("visual") in ("holo_cards", "cards", "trading_cards", "tcg", "card_pack", "collectibles", "pack_opening"):
+            sc = {**sc, "params": {**sc.get("params", {}), "images": user_images[i % len(user_images):] + user_images[:i % len(user_images)]}}
+        elif user_images and sc.get("photo"):  # scene explicitly showing one of the user's photos full-frame
+            m = {"path": user_images[i % len(user_images)], "type": "image", "source": "user", "license": "User-provided photo (own work)"}
+        if m is None and sc.get("visual_source", "auto") != "procedural":
             m = media_mod.fetch(sc, work / "media", script.get("niche", ""))
         media_items.append({**m, "scene": i} if m else {"scene": i, "source": "procedural-3d", "type": "generated",
-                                                       "kind": sc["visual"], "license": "Original render (own work)"})
+                                                       "kind": sc["visual"], "license": "Original render (own work)"
+                                                       + ("; card textures = user-provided photos" if sc.get("params", {}).get("images") else "")})
         bumps = [round(w["start"] - g0, 3) for w in words if w["scene"] == i
                  and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm]
         specs.append({"w": W, "h": H, "fps": FPS, "duration": dur, "kind": sc["visual"], "params": sc.get("params", {}),
@@ -259,6 +265,21 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     progress("done", 1.0)
     return {"video_id": video_id, "path": str(final), "folder": str(folder), "qc": report, "metadata": meta,
             "render_seconds": round(time.time() - t_start, 1), "voice": voice_info}
+
+
+IMG_EXT = (".jpg", ".jpeg", ".png", ".webp")
+
+
+def _user_media(folder: str | None) -> list[str]:
+    """Photos the user provides (e.g. their own card photos) - used as card textures / photo scenes."""
+    if not folder:
+        return []
+    p = Path(folder)
+    if not p.is_absolute():
+        p = cfg().path("general.data_dir").parent / folder if not (Path.cwd() / folder).exists() else Path.cwd() / folder
+    if not p.exists():
+        return []
+    return sorted(str(x) for x in p.iterdir() if x.suffix.lower() in IMG_EXT)
 
 
 def _theme(accent: str | None) -> dict:

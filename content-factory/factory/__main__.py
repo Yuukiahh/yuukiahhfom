@@ -77,6 +77,7 @@ def main(argv=None) -> int:
         m.add_argument("--preset", default=None)
         m.add_argument("--voice", default=None)
         m.add_argument("--script", default=None, help="fertiges Skript-JSON verwenden")
+        m.add_argument("--media", default=None, help="Ordner mit eigenen Fotos (z.B. Fotos deiner Karten) – werden im Video verwendet")
     sub.add_parser("worker")
     for s in ("start", "pause", "stop", "status"):
         sub.add_parser(s)
@@ -134,6 +135,8 @@ def main(argv=None) -> int:
                                              lambda s, p: print(f"[{p:4.0%}] {s}", flush=True))
         if a.voice:
             script["voice"] = a.voice
+        if a.media:
+            script["user_media"] = str(Path(a.media).resolve())
         if a.preset:
             script["preset"] = a.preset
         res = pipeline.produce(script, progress=lambda s, p: print(f"[{p:4.0%}] {s}", flush=True))

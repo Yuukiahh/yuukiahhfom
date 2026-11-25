@@ -70,6 +70,29 @@ def _card_texture(w: int, h: int, rng: np.random.Generator, accent, rarity: int)
     return im
 
 
+def _photo_card(path: str, w: int, h: int, accent) -> Image.Image:
+    """A user-supplied photo of a real card (own photo) mapped to card shape with a light holo foil + border."""
+    from PIL import ImageOps
+    im = ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+    im = ImageOps.fit(im, (w, h), Image.LANCZOS, centering=(0.5, 0.5))
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    band = (xx / w * 0.8 + yy / h * 0.6) % 1.0
+    foil = np.zeros((h, w, 3), np.float32)
+    for hv in np.linspace(0, 1, 7):
+        r, g, b = colorsys.hsv_to_rgb(hv, 0.6, 1.0)
+        foil += np.exp(-((band - hv) * 7) ** 2)[..., None] * np.array([r, g, b]) * 255
+    arr = np.asarray(im, np.float32)
+    arr = 255 - (255 - arr) * (255 - foil / foil.max() * 38) / 255  # subtle holo screen
+    out = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).convert("RGBA")
+    r = int(w * 0.05)
+    d = ImageDraw.Draw(out)
+    d.rounded_rectangle([0, 0, w - 1, h - 1], r, outline=(255, 236, 170, 255), width=max(3, w // 60))
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, w - 1, h - 1], r, fill=255)
+    out.putalpha(mask)
+    return out
+
+
 def _quad_coeffs(dst, src):
     """Perspective coefficients mapping output (dst) quad -> input (src) rectangle (PIL PERSPECTIVE)."""
     A, B = [], []
@@ -100,7 +123,11 @@ class HoloCards(Scene):
             d.ellipse([x - r, y - r, x + r, y + r], fill=col)
         self.bg = base + np.asarray(pil.filter(ImageFilter.GaussianBlur(10)), np.float32) * 0.8
         self.cw, self.ch = int(W * 0.34), int(W * 0.34 * 1.4)
-        self.cards = [_card_texture(self.cw, self.ch, rng, self.accent, int(rng.integers(1, 6))) for _ in range(7)]
+        photos = [p for p in (self.p.get("images") or []) if p]
+        if photos:  # real cards: the user's own photos
+            self.cards = [_photo_card(photos[k % len(photos)], self.cw, self.ch, self.accent) for k in range(7)]
+        else:
+            self.cards = [_card_texture(self.cw, self.ch, rng, self.accent, int(rng.integers(1, 6))) for _ in range(7)]
         self.phase = rng.random((7, 4)) * 6.28
         self.sparks = rng.random((260, 4)).astype(np.float32)
 

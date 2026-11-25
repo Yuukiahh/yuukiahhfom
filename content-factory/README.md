@@ -40,6 +40,13 @@ Trends ─▶ Thema ─▶ Recherche ─▶ Skript+Storyboard ─▶ Faktencheck
 * **MoneyPrinterTurbo-Skill** (offiziell, v1.3.2) liegt unter `.claude/skills/moneyprinterturbo-video/`
   und wird vom Installer nach `%USERPROFILE%\.claude\skills` kopiert.
 
+### Eigene Fotos verwenden (z. B. echte Karten)
+Leg Fotos von Dingen, die du selbst besitzt (Sammelkarten, Produkte …), in einen Ordner und gib ihn mit:
+`python -m factory video "My Little Pony Karten Trend" --format 30s --media "C:\Users\du\Bilder\karten"`.
+Die Fotos erscheinen dann als schwebende 3D-Karten mit Holo-Glanz, Tiefenunschärfe und allen Effekten.
+Szenen mit `"photo": true` im Skript zeigen ein Foto im Vollbild. Fremde Markenkunst wird bewusst nicht 1:1
+nachgebaut (Urheberrecht). Nutze deine eigenen Fotos oder offizielle Presse-Bilder mit Erlaubnis.
+
 ## Schnellstart (Windows 11)
 
 ```powershell
