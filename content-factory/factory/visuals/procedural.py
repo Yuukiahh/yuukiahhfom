@@ -101,7 +101,7 @@ class Nebula(Scene):
         yy, xx = np.mgrid[0:self.H, 0:self.W].astype(np.float32)
         cx, cy = self.W * self.rng.uniform(0.35, 0.65), self.H * self.rng.uniform(0.3, 0.6)
         core = np.exp(-(((xx - cx) / (self.W * 0.55)) ** 2 + ((yy - cy) / (self.H * 0.4)) ** 2))
-        v = np.clip((n * 0.65 + n2 * 0.35) * (0.45 + 0.75 * core), 0, 1) ** 1.6
+        v = np.clip((n * 0.65 + n2 * 0.35) * (0.6 + 0.8 * core), 0, 1) ** 1.35
         neb = colorize(v, pal)
         self.base = screen(neb, starfield(self.W, self.H, self.rng, 0.0006, 0.00002))
         self.near = starfield(self.W, self.H, self.rng, 0.00012, 0.00003)
@@ -509,13 +509,14 @@ class Fusion(Scene):
             rx, ry = W * 0.42, W * 0.42 * abs(math.cos(a)) + 6
             d.ellipse([W / 2 - rx, H * 0.45 - ry, W / 2 + rx, H * 0.45 + ry], outline=(40, 120, 255), width=3)
         self.cage = glow(np.asarray(pil, np.float32) * 0.55, 6, 1.0)
+        self.bg = Nebula(self.ow, self.oh, int(rng.integers(1 << 30)), palette="violet").base * 0.55
 
     def render(self, t):
         u = ((self.ang / (2 * np.pi) + 0.5 + t * 0.08) * 511).astype(np.int32) % 512
         v = ((self.r * 3 - t * 0.25) * 511).astype(np.int32) % 512
         core = np.clip(1 - self.r / 0.3, 0, 1) ** 1.5
         val = np.clip(self.tex[v, u] * 0.6 + core * 0.9 + 0.08 * math.sin(t * 6), 0, 1) * np.clip(1 - self.r / 0.36, 0, 1)
-        return colorize(val, self.cols) + self.cage
+        return screen(self.bg, colorize(val, self.cols)) + self.cage
 
 
 class DNA(Scene):

@@ -120,6 +120,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         fit = min(100, int(100 * (width * 0.88) / max(1, len(st['text']) * size * 2.3 * 0.62)))
         anim = anim.replace("fscx40\\fscy40", f"fscx{int(fit*0.4)}\\fscy{int(fit*0.4)}").replace(
             "fscx108\\fscy108", f"fscx{int(fit*1.08)}\\fscy{int(fit*1.08)}").replace("fscx100\\fscy100", f"fscx{fit}\\fscy{fit}")
+        bw, bh = int(width * 0.86), int(size * 2.6)
+        box = f"m 0 0 l {bw} 0 l {bw} {bh} l 0 {bh}"
+        ev.append(f"Dialogue: 3,{_ts(s)},{_ts(e)},Stat,,0,0,0,,{{\\an5\\pos({width//2},{int(height*0.36 + size*0.55)})"
+                  f"\\fad(120,200)\\1c&H000000&\\1a&H70&\\bord0\\shad0\\blur40\\p1}}{box}{{\\p0}}")
         ev.append(f"Dialogue: 4,{_ts(s)},{_ts(e)},StatGlow,,0,0,0,,{{\\an5{pos}{anim}\\blur14}}{st['text']}")
         ev.append(f"Dialogue: 5,{_ts(s)},{_ts(e)},Stat,,0,0,0,,{{\\an5{pos}{anim}}}{st['text']}")
         if st.get("sub"):
