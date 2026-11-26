@@ -226,7 +226,7 @@ Vary the types; do not use the same type more than 3 times. Write overlay text i
 Overlay types and their "data":
 - headline  {{"kicker": "BREAKING|NEWS|UPDATE|FACT", "text": "<= 70 chars", "source": "outlet", "date": "short date"}}
 - timeline  {{"events": [{{"date": "...", "label": "<= 18 chars"}}] (2-4 events, chronological), "active": index}}
-- bars      {{"title": "...", "unit": "%|...", "items": [{{"label": "...", "value": number}}] (2-4, negative allowed)}}
+- bars      {{"title": "...", "unit": "%|...", "signed": true only if the values are changes (+31%), "items": [{{"label": "...", "value": number}}] (2-4, negative allowed)}}
 - counter   {{"value": number, "prefix": "+|", "suffix": "%| Mio.|...", "label": "<= 30 chars", "decimals": 0|1}}
 - quote     {{"text": "<= 110 chars, verbatim or close paraphrase from a source", "source": "who said it / outlet"}}
 - person    {{"name": "...", "role": "...", "status": "<= 16 chars", "status_color": "green|red|yellow"}}

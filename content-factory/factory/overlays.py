@@ -189,7 +189,7 @@ def r_bars(d: dict, t: float, dur: float, W: int) -> Image.Image:
             dr.rounded_rectangle([x, base, x + bw * 0.6, base + hh], 12, fill=(*col, 255))
             ty = base + hh + 8
         shown = v * g
-        txt = fmt_value(shown, unit, signed=has_neg or unit in ("%", "pp", "Pp"), ref=v, locale=d.get("locale", "en"))
+        txt = fmt_value(shown, unit, signed=has_neg or bool(d.get("signed")) or unit in ("pp", "Pp"), ref=v, locale=d.get("locale", "en"))
         if g > 0.05:
             dr.text((x + bw * 0.3 - fv.getlength(txt) / 2, ty), txt, font=fv, fill=(*col, 255))
         lab = str(it.get("label", ""))
