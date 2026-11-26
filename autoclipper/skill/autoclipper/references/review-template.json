@@ -1,0 +1,13 @@
+{
+  "<clip id from clips.json>": {
+    "shorts_title": "Warum Oktopusse nicht gern schwimmen",
+    "tiktok_description": "Drei Herzen – und eins hört beim Schwimmen auf zu schlagen. Wusstest du das?",
+    "hashtags": ["#oktopus", "#meeresbiologie", "#wissenschaftsfakten", "#lernenmittiktok", "#fyp"],
+    "why": "Absurder Fakt in Satz 1, Auflösung am Ende, hohe Teilbarkeit.",
+    "review": {"hook": 88, "retention": 80, "emotion": 70, "entertainment": 78, "virality": 84}
+  },
+  "<another clip id>": {
+    "drop": true,
+    "drop_reason": "Beginnt mit 'wie gesagt' und ist ohne das vorherige Thema unverständlich."
+  }
+}

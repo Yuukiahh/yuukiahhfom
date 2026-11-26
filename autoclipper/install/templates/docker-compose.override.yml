@@ -1,0 +1,19 @@
+# AutoClipper: added next to SupoClip's docker-compose.yml (Compose loads it automatically).
+# Gives the video worker the NVIDIA GPU (Whisper on CUDA; NVENC available to ffmpeg)
+# and keeps downloaded Whisper models across rebuilds.
+services:
+  worker:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, video]
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+    volumes:
+      - whisper_cache:/root/.cache/whisper
+
+volumes:
+  whisper_cache:
