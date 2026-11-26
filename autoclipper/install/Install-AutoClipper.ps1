@@ -14,6 +14,8 @@
 .PARAMETER OllamaModel   Local LLM for clip selection (default gpt-oss:20b, fits a 16 GB RTX 5070 Ti)
 .PARAMETER WhisperModel  Whisper size: turbo (default, near large-v3 quality, ~6 GB VRAM), large-v3, medium
 .PARAMETER SkipSelfTest  Do not run the end-to-end self test at the end
+.PARAMETER SkipClaudePermissions  Do not add allow rules to ~\.claude\settings.json (add them yourself)
+.PARAMETER NoOllamaLanFallback    Stop instead of switching Ollama to 0.0.0.0 when containers cannot reach it
 #>
 [CmdletBinding()]
 param(
@@ -21,7 +23,9 @@ param(
     [string]$OllamaModel = 'gpt-oss:20b',
     [string]$WhisperModel = 'turbo',
     [string]$SupoClipCommit = '29ca74f9f38f7107bfca1939fd017ae7a0f147a8',
-    [switch]$SkipSelfTest
+    [switch]$SkipSelfTest,
+    [switch]$SkipClaudePermissions,
+    [switch]$NoOllamaLanFallback
 )
 
 # 'Continue': in Windows PowerShell 5.1, 'Stop' turns any stderr line of a native tool (git, docker,
@@ -69,7 +73,10 @@ function Protect-File([string]$path) {
         $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($id, 'FullControl', 'Allow')
         $acl.AddAccessRule($rule)
     }
-    Set-Acl -Path $path -AclObject $acl -ErrorAction Stop
+    # Not Set-Acl: on a rerun (file already protected) Windows PowerShell's Set-Acl also tries to
+    # write the SACL and fails with "SeSecurityPrivilege" for a normal user. The .NET call only
+    # writes the sections this object changed (the DACL).
+    [System.IO.File]::SetAccessControl($path, $acl)
 }
 
 function Write-Utf8NoBom([string]$path, [string]$text) {
@@ -279,6 +286,9 @@ if (-not (Wait-Http 'http://127.0.0.1:3107' 600)) { Warn 'web app on http://loca
 
 # Ollama reachable from inside the containers?
 $probe = docker exec supoclip-worker sh -c 'curl -s -m 10 http://host.docker.internal:11434/api/version' 2>$null
+if (-not $probe -and $NoOllamaLanFallback) {
+    Fail 'containers cannot reach Ollama on localhost (-NoOllamaLanFallback: not switching Ollama to 0.0.0.0)'
+}
 if (-not $probe) {
     Warn 'containers cannot reach Ollama on localhost: letting Ollama listen on all interfaces.'
     Warn 'If Windows Firewall asks about Ollama, allow PRIVATE networks only (never public).'
@@ -324,10 +334,23 @@ Ok "account $email (web login password in $SecretFile)"
 
 # --------------------------------------------------------------------------------------------
 Step '9/12 AutoClipper toolkit + SupoClip MCP server'
-uv tool install --force --python 3.12 (Join-Path $RepoRoot 'toolkit') 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail 'uv tool install autoclipper failed' }
-uv tool install --force --python 3.12 (Join-Path $SupoDir 'mcp') 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail 'uv tool install supoclip-mcp failed' }
+# uv keeps its Python builds and tool environments under %APPDATA% by default. When this installer
+# runs inside a packaged (MSIX) app such as the Claude desktop app, Windows silently redirects AppData
+# writes to a private per-app folder, while the junctions uv creates point to the real path and break
+# ("Missing expected target directory for Python minor version link"). Keep uv's data under the user
+# profile instead, which is never redirected, so the tools also work from any normal terminal.
+foreach ($kv in @(@('UV_PYTHON_INSTALL_DIR', (Join-Path $env:USERPROFILE '.local\share\uv\python')),
+                   @('UV_TOOL_DIR', (Join-Path $env:USERPROFILE '.local\share\uv\tools')))) {
+    if (-not [Environment]::GetEnvironmentVariable($kv[0], 'User')) {
+        [Environment]::SetEnvironmentVariable($kv[0], $kv[1], 'User')
+    }
+    Set-Item -Path ("env:" + $kv[0]) -Value ([Environment]::GetEnvironmentVariable($kv[0], 'User'))
+}
+if (-not $env:UV_CACHE_DIR) { $env:UV_CACHE_DIR = Join-Path $env:USERPROFILE '.cache\uv' }
+$uvOut = uv tool install --force --python 3.12 (Join-Path $RepoRoot 'toolkit') 2>&1 | Out-String
+if ($LASTEXITCODE -ne 0) { Log $uvOut; Fail 'uv tool install autoclipper failed' }
+$uvOut = uv tool install --force --python 3.12 (Join-Path $SupoDir 'mcp') 2>&1 | Out-String
+if ($LASTEXITCODE -ne 0) { Log $uvOut; Fail 'uv tool install supoclip-mcp failed' }
 Refresh-Path
 $desktop = [Environment]::GetFolderPath('Desktop')     # follows OneDrive redirection
 $outRoot = Join-Path $desktop 'AI Clips'
@@ -356,7 +379,10 @@ Ok "toolkit installed, clips go to $outRoot"
 Step '10/12 Claude Code: MCP server, skill, CLAUDE.md'
 if (-not (Have 'claude')) {
     Warn 'Claude Code CLI not found: installing the official native build ...'
-    Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression
+    # Own scope: Invoke-Expression would otherwise run the downloaded script in this scope, and its
+    # $ErrorActionPreference = 'Stop' would turn the next native stderr line into a fatal error.
+    & { Invoke-RestMethod https://claude.ai/install.ps1 | Invoke-Expression }
+    $ErrorActionPreference = 'Continue'
     Refresh-Path
 }
 $mcpExe = (Get-Command supoclip-mcp -ErrorAction SilentlyContinue).Source
@@ -399,6 +425,9 @@ Ok "CLAUDE.md updated: $claudeMd"
 
 # Let the AutoClipper commands run without a permission prompt each time.
 $settingsPath = Join-Path $claudeHome 'settings.json'
+if ($SkipClaudePermissions) {
+    Warn "skipped: allow rules 'Bash(autoclipper:*)' and 'mcp__supoclip' in $settingsPath (-SkipClaudePermissions)"
+} else {
 $cs = $null
 if (Test-Path $settingsPath) { $cs = Get-Content $settingsPath -Raw | ConvertFrom-Json }
 if (-not $cs) { $cs = [pscustomobject]@{} }
@@ -411,6 +440,7 @@ foreach ($rule in @('Bash(autoclipper:*)', 'mcp__supoclip')) {
 $cs.permissions.allow = $allow.ToArray()
 Write-Utf8NoBom $settingsPath ($cs | ConvertTo-Json -Depth 20)
 Ok 'Claude Code permissions for AutoClipper set'
+}
 
 # --------------------------------------------------------------------------------------------
 Step '11/12 Health check'
