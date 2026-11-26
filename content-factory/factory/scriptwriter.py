@@ -23,7 +23,7 @@ from . import llm
 from .render import CAMERA_MOVES
 from .visuals.procedural import KINDS
 
-WPS = {"en": 2.65, "de": 2.55}  # words per second at speed ~1.08
+WPS = {"en": 2.35, "de": 2.3}  # measured words per second of finished videos (incl. pauses, intro, outro)
 FORMATS = {"short": (25, 45), "long": (60, 90)}
 
 SYSTEM = """You are a top-tier short-form video scriptwriter (TikTok / Instagram Reels / YouTube Shorts) and a rigorous
