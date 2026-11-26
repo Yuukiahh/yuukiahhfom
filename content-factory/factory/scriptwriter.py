@@ -304,7 +304,7 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
             sc["overlay"] = {"type": ov["type"], "data": {**ov["data"], "locale": lang}}
             ch = ov.get("chips") or ov["data"].get("chips")
             if isinstance(ch, list) and ch:
-                sc["overlay"]["chips"] = [str(x)[:26] for x in ch[:3]]
+                sc["overlay"]["chips"] = [str(x) for x in ch[:3]]
             used += 1
         if (pl or {}).get("source_label"):
             sc["source_label"] = str(pl["source_label"])[:60]

@@ -555,9 +555,18 @@ def r_meter(d: dict, t: float, dur: float, W: int) -> Image.Image:
     return im
 
 
+def _clip(s: str, n: int) -> str:
+    """Shorten at a word boundary with an ellipsis (never cut words in half)."""
+    s = s.strip()
+    if len(s) <= n:
+        return s
+    cut = s[:n - 1].rsplit(" ", 1)[0].rstrip(" ,;:-–·")
+    return (cut or s[:n - 1]) + "…"
+
+
 def chips(items: list, t: float, W: int) -> Image.Image | None:
     """Row of small detail chips under the main card (extra facts / examples)."""
-    items = [str(x)[:26] for x in (items or [])[:3] if str(x).strip()]
+    items = [_clip(str(x), 30) for x in (items or [])[:3] if str(x).strip()]
     if not items:
         return None
     f = F(30, "bold")
