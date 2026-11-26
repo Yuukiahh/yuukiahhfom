@@ -106,11 +106,11 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     voice_dur = sf.info(voice_wav).duration
     # length guard: if the voice overshoots the target length, re-synthesise up to 15 % faster
     _lo, _hi = scriptwriter.fmt_bounds(script.get("format", "short"))
-    if voice_dur + 1.0 > _hi + 1.5 and not script.get("no_speed_fit"):
+    if voice_dur + 1.0 > _hi + 0.3 and not script.get("no_speed_fit"):
         base_voice = script.get("voice") or ""
         parts = base_voice.split("|") if "|" in base_voice else []
         cur = float(parts[2]) if len(parts) > 2 else float(cfg().get("tts.speed", 1.0) if not isinstance(cfg().get("tts.speed"), dict) else 1.0)
-        factor = min(1.15, (voice_dur + 1.0) / (_hi + 0.5))
+        factor = min(1.15, (voice_dur + 1.0) / (_hi - 0.5))
         new_speed = round(cur * factor, 3)
         if parts:
             fitted = "|".join([parts[0], parts[1], str(new_speed)])
