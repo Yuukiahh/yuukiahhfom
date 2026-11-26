@@ -587,3 +587,6 @@ from . import cards as _cards  # noqa: E402,F401  (trading-card scene)
 # initialised; when the entry point is topical.py itself, importing creator later self-registers).
 if hasattr(_topical, "KINDS_TOPICAL"):
     from . import creator as _creator  # noqa: E402,F401
+    # Egg-heist / pet-tycoon game scenes build on creator's base class: same guard one level deeper.
+    if hasattr(_creator, "KINDS_CREATOR"):
+        from . import eggs as _eggs  # noqa: E402,F401

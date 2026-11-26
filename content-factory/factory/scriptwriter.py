@@ -209,6 +209,10 @@ VISUAL_CATALOG = {
     "money_rain": "gold coins and banknotes raining onto piles; params.intensity 0..1 (money, income, payouts, getting rich)",
     "analytics_dash": "creator analytics dashboard with growing graph, KPI tiles; params.trend up|down|volatile (views, followers, stats, growth, RPM)",
     "ai_studio": "AI generator UI: prompt box typing, image tiles materialising (AI tools, generating images/videos, prompts)",
+    "egg_nest": "floating low-poly sky island with nests of glossy eggs (common/rare/epic/legendary), guard spotlight; params.rarity common|rare|epic|legendary (egg games, nests, biomes, rarities)",
+    "egg_heist": "blocky runner sprints across a sky-bridge carrying a stolen glowing egg, guards chasing; params.speed 0..1 (stealing, chase, escape, running back to base)",
+    "egg_hatch": "egg shakes, cracks and bursts into confetti revealing a cute pet; params.rarity (hatching, pet reveal, luck, rare pets)",
+    "pet_base": "tycoon base: bouncing pets popping +$ income, cash counter, treadmill speed training; params.income 0..1 (pets earning money, tycoon, upgrades, treadmill)",
     "creator_desk": "creator setup: ring light, phone on tripod, mic, editing monitor (UGC, filming, content creators, setup)",
 }
 
