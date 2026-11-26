@@ -301,7 +301,7 @@ def assemble(clips: list[str], durations: list[float], transitions: list[str], t
     fc.append("[mus][key]sidechaincompress=threshold=0.025:ratio=7:attack=12:release=320[duck]")
     fc.append(f"[{vi + 2}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=-5dB[sfx]")
     fc.append(f"[voice][duck][sfx]amix=inputs=3:normalize=0,atrim=0:{total:.3f},"
-              f"loudnorm=I={cfg().get('render.loudness_lufs', -14)}:TP=-1.5:LRA=9,aresample=48000,alimiter=limit=0.82:attack=2:release=60:level=disabled[aout]")
+              f"loudnorm=I={cfg().get('render.loudness_lufs', -14)}:TP=-1.5:LRA=9,aresample=48000,alimiter=limit=0.75:attack=1:release=60:level=disabled[aout]")
     cmd = ["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", ";".join(fc),
            "-map", "[vout]", "-map", "[aout]", *video_encoder(), "-r", str(fps),
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", cfg().get("render.audio_bitrate", "192k"),
