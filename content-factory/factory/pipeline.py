@@ -132,7 +132,9 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     media_items, specs = [], []
     tkinds = (TSETS.get(preset) or TSETS["cinematic"])[:]
     rng.shuffle(tkinds)
-    sfx_events: list[tuple[float, str, float]] = [(0.0, "impact", 0.85), (0.05, "braam", 0.45), (0.25, "sparkle", 0.35)]
+    # opening "hit" (impact + braam + sparkle) - off by default since the user dislikes it; [audio] intro_sfx = true restores it
+    sfx_events: list[tuple[float, str, float]] = ([(0.0, "impact", 0.85), (0.05, "braam", 0.45), (0.25, "sparkle", 0.35)]
+                                                  if cfg().get("audio.intro_sfx", False) else [])
     stats = []
     emph_norm = {re.sub(r"[^a-z0-9äöüß]", "", e.lower()) for sc in script["scenes"] for e in sc.get("emphasis", [])}
     for i, sc in enumerate(script["scenes"]):

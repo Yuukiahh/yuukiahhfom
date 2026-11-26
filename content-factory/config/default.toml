@@ -108,3 +108,6 @@ project_folder = "AI Content Factory"
 
 [costs]
 monthly_budget_eur = 0.0         # 0 = nur kostenlose Dienste erlaubt
+
+[audio]
+intro_sfx = false   # loud "impact/braam" hit at second 0 (disabled on request)
