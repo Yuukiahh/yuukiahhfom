@@ -78,6 +78,10 @@ MOODS = {
     "inspire": dict(key="G", mode="major", progs=[[0, 4, 5, 3], [5, 3, 0, 4]], bpm=104, feel="four", lead="piano",
                     pad="saw", bass="pulse8", arp="piano", motifs=["climb", "call", "arc"], sc=0.45, verb=(2.4, 0.3),
                     bright=0.65, clap=True, add9=True),
+    # reflective motivation bed: slow piano + soft pad, no drums/bass hits (ambient=True caps the energy)
+    "reflective": dict(key="D", mode="major", progs=[[0, 4, 5, 3], [5, 3, 0, 4], [0, 5, 3, 4]], bpm=72, feel="half",
+                       lead="piano", pad="soft", bass="sub", arp="piano", motifs=["arc", "lazy", "call"], sc=0.0,
+                       verb=(3.4, 0.42), bright=0.35, clap=False, add9=True, ambient=True, max_energy=0.3),
 }
 
 
@@ -522,15 +526,18 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
     # ---------------------------------------------------------------- per bar
     for bi, b in enumerate(P.bars):
         e = b.energy
+        if M.get("ambient"):
+            e = min(e, M.get("max_energy", 0.3))
         if b.kind == "tail":
             continue
         ci = b.chord
         chord = chord_midis(ci)
         # ---- END HIT: resolve on the tonic and let it ring
         if b.kind == "end":
-            E.put(E.drums, E.kick(kstyle), b.t, 1.0)
-            E.put(E.drums, E.crash(), b.t, 1.0, send=0.25)
-            E.kicks.append(b.t)
+            if not M.get("ambient"):
+                E.put(E.drums, E.kick(kstyle), b.t, 1.0)
+                E.put(E.drums, E.crash(), b.t, 1.0, send=0.25)
+                E.kicks.append(b.t)
             ring = max(0.8, duration - b.t)
             cut = 900 + 2600 * M["bright"]
             E.put(E.music, E.pad(M["pad"], chord, ring, cut, cut * 0.5), b.t, 0.55, send=0.5)
@@ -576,7 +583,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
                 E.put(E.drums, E.snare(sstyle), b.t + s * s16, 0.45 + 0.15 * j, send=0.1)
             if "toms" in feel:
                 E.put(E.drums, E.tom(82), b.t + 14 * s16, 0.8)
-        if b.roll:  # snare roll: 8ths -> 16ths -> 32nds, rising
+        if b.roll and not M.get("ambient"):  # snare roll: 8ths -> 16ths -> 32nds, rising
             pos = []
             pos += [b.t + k * 2 * s16 for k in range(4)]
             pos += [b.t + (8 + k) * s16 for k in range(4)]
@@ -585,7 +592,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
                 v = 0.25 + 0.75 * (j / len(pos)) ** 1.5
                 E.put(E.drums, E.snare(sstyle), t, v * 0.8, send=0.1)
             E.put(E.fx, E.riser(bar), b.t, 1.0, send=0.2)
-        if b.crash and b.t >= -0.01:
+        if b.crash and b.t >= -0.01 and not M.get("ambient"):
             E.put(E.drums, E.crash(), max(0.0, b.t), 0.9, send=0.25)
             if b.kind == "drop" and b.energy >= 0.8:
                 E.put(E.bass, E.subdrop(), b.t, 0.7)
@@ -624,7 +631,13 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
             lvl = 0.42 if e >= 0.5 else 0.55
             E.put(E.music, E.pad(M["pad"], chord, bar, c0, c1), b.t, lvl, send=0.35)
         # ---- arp
-        if M["arp"] and e >= 0.75 and not b.roll:
+        if M.get("ambient") and M["arp"]:  # slow broken-chord piano: 8th notes, soft
+            tones = list(chord) + [chord[0] + 12]
+            for s in range(0, 16, 2):
+                mi = tones[(s // 2) % len(tones)] + 12
+                E.put(E.music, E.panned(("arp", mi), lambda mi=mi: E.tone(M["arp"], mi, s16 * 3.5), -0.3 + 0.6 * ((s // 2) % 2)),
+                      st_time(b, s), 0.16 * (1.0 if s % 8 == 0 else 0.7), send=0.45, dly=0.25)
+        elif M["arp"] and e >= 0.75 and not b.roll:
             tones = list(chord) + [c + 12 for c in chord]
             order = tones + tones[-2:0:-1]
             for s in range(16):
@@ -632,7 +645,7 @@ def render(duration: float, mood: str = "cosmic", sr: int = 44100, seed: int | N
                 E.put(E.music, E.panned(("arp", mi), lambda mi=mi: E.tone(M["arp"], mi, s16 * 0.9), 0.5 if s % 2 else -0.5),
                       st_time(b, s), 0.2 * (1.0 if s % 4 == 0 else 0.75), send=0.25, dly=0.35)
         # ---- lead hook
-        lead_on = (b.kind in ("intro", "drop") and e >= 0.45) or (b.kind == "breakdown")
+        lead_on = (b.kind in ("intro", "drop") and e >= 0.45) or (b.kind == "breakdown") or (M.get("ambient") and bi % 2 == 1)
         if lead_on and not (b.roll and b.kind != "intro"):
             half = (bi - drop_idx) % 2  # 2-bar phrase aligned to the drop
             for st, dg, ln in motif:
