@@ -85,6 +85,10 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     t_start = time.time()
     lang = script.get("language", cfg().get("general.language", "de"))
     preset = script.get("preset") or cfg().get("render.preset", "cinematic")
+    # minimal line-art motivation style ("minimal_mono" white lines on black / "minimal_gold" glowing gold figure):
+    # no info cards, no mascot, no sfx, calm camera, dip-to-black cuts, one-word / karaoke captions, reflective music
+    minimal = str(script.get("style", "")).startswith("minimal")
+    mtheme = "gold" if script.get("style") == "minimal_gold" else "mono"
     W, H, FPS = cfg().get("render.width"), cfg().get("render.height"), cfg().get("render.fps", 60)
     date = dt.date.today().isoformat()
     slug = slugify(script.get("title") or script.get("topic", "video"))
@@ -152,7 +156,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
             k = sum(1 for j in range(i) if j % 2 == 0)
             m = {"path": user_images[k % len(user_images)], "type": "image", "source": "user",
                  "license": "User-provided image (own photo or own AI generation)"}
-        if m is None and sc.get("visual_source", "auto") != "procedural":
+        if m is None and sc.get("visual_source", "auto") != "procedural" and not minimal:
             m = media_mod.fetch(sc, work / "media", script.get("niche", ""))
         media_items.append({**m, "scene": i} if m else {"scene": i, "source": "procedural-3d", "type": "generated",
                                                        "kind": sc["visual"], "license": "Original render (own work)"
@@ -185,12 +189,19 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
         for w in words:
             if w["scene"] == i and re.sub(r"[^a-z0-9äöüß]", "", w["text"].lower()) in emph_norm:
                 sfx_events.append((w["start"], "swish_text", 0.22))
-        if sc.get("stat") and not (sc.get("overlay") and cfg().get("overlays.enabled", True)):
+        if sc.get("stat") and not minimal and not (sc.get("overlay") and cfg().get("overlays.enabled", True)):
             st_words = [w for w in words if w["scene"] == i]
             st0 = st_words[0]["start"] if st_words else start
             stats.append({"text": sc["stat"]["text"], "sub": sc["stat"].get("sub", ""), "start": st0 + 0.08,
                           "end": min(end - 0.08, st0 + 2.6)})
             sfx_events += [(st0 + 0.08, "pop", 0.7), (st0 + 0.08, "sub_drop", 0.5)]
+    if minimal:
+        tkinds = ["dip"]
+        for i, sp in enumerate(specs):
+            sp.update({"params": {**sp["params"], "theme": mtheme, "t0": round(0.0 if i == 0 else cuts[i - 1], 3)},
+                       "camera": "still", "shots": [(0.0, "still")], "bumps": [], "shakes": [], "overlay": None,
+                       "tag": None, "source_label": None, "cine": False, "handheld": 0.0, "contrast": 0.04,
+                       "vignette": 0.12, "grain": 1.2, "bloom": 0.1, "target_luma": 0.0, "time_offset": 0.0})
     tspecs, tnames = [], []
     for i, b in enumerate(cuts):
         k = tkinds[i % len(tkinds)]
@@ -201,12 +212,14 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     cta_text = cfg().lang_value("brand.cta", lang) or ("Folge für mehr!" if lang == "de" else "Follow for more!")
     cta = {"text": cta_text, "start": max(0.0, total - 2.1), "end": total}
     sfx_events.append((cta["start"], "notification", 0.45))
+    if minimal:
+        sfx_events, cta = [], None
 
     # ---- audio beds
     progress("music", 0.48)
     lib = audio.build_sfx_library(cfg().path("general.data_dir") / "sfx")
     music_wav, sfx_wav = work / "music.wav", work / "sfx.wav"
-    mood = script.get("mood") or audio.NICHE_MOOD.get(script.get("niche", ""), "cosmic")
+    mood = script.get("mood") or ("reflective" if minimal else audio.NICHE_MOOD.get(script.get("niche", ""), "cosmic"))
     music_info = f"Original procedural score ({mood})"
     track = getattr(audio, "pick_library_track", lambda *a: None)(mood, total)
     if track and hasattr(audio, "fit_track"):
@@ -223,10 +236,14 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     # ---- captions + mascot
     emphasis = [e for sc in script["scenes"] for e in sc.get("emphasis", [])]
     theme = _theme(script.get("accent"))
-    ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta,
-                              style=theme.get("subs"))
+    if minimal:
+        ass = subtitles.build_minimal_ass(words, work / "subs.ass", emphasis, W, H, mtheme)
+        theme = {**theme, "progress": "#F2B33D" if mtheme == "gold" else "#BDBDBD"}
+    else:
+        ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta,
+                                  style=theme.get("subs"))
     mascot_track, cues = None, []
-    if cfg().get("mascot.enabled", True) and mascot.available():
+    if cfg().get("mascot.enabled", True) and mascot.available() and not minimal:
         cues = mascot.plan_cues(script, words, spans, total, stats)
         mascot_track = mascot.render_track(cues, voice_wav, total, FPS, work / "mascot.mov",
                                            int(cfg().get("mascot.size", 440)))

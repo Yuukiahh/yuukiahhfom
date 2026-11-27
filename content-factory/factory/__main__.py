@@ -78,6 +78,8 @@ def main(argv=None) -> int:
         m.add_argument("--voice", default=None)
         m.add_argument("--script", default=None, help="fertiges Skript-JSON verwenden")
         m.add_argument("--media", default=None, help="Ordner mit eigenen Fotos (z.B. Fotos deiner Karten) – werden im Video verwendet")
+        m.add_argument("--style", default=None, choices=["minimal_mono", "minimal_gold"],
+                       help="Minimal-Linien-Stil (Motivation): weiße Linien auf Schwarz oder goldene Figur")
     sub.add_parser("worker")
     for s in ("start", "pause", "stop", "status"):
         sub.add_parser(s)
@@ -129,10 +131,17 @@ def main(argv=None) -> int:
             return 0
         from .config import cfg
         lang = a.lang or (script or {}).get("language") or cfg().get("general.language")
+        if not script and a.style:
+            from . import scriptwriter
+            print("[ 10%] script (minimal style)", flush=True)
+            script, _ = scriptwriter.write_minimal(topic, a.format if a.format != "short" else "45s", lang)
         if not script:
             from .trends.engine import classify
             script = pipeline.prepare_script(topic, a.niche or classify(topic)[0] or "facts", a.format, lang,
                                              lambda s, p: print(f"[{p:4.0%}] {s}", flush=True))
+        if a.style:
+            script["style"] = a.style
+            script.setdefault("voice", cfg().get("minimal.voice", "kokoro|am_onyx:0.6,am_michael:0.4|0.92"))
         if a.voice:
             script["voice"] = a.voice
         if a.media:

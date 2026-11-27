@@ -56,6 +56,7 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     a = next((s for s in info["streams"] if s["codec_type"] == "audio"), None)
     dur = float(info["format"]["duration"])
     W, H = cfg().get("render.width"), cfg().get("render.height")
+    minimal = str(script.get("style", "")).startswith("minimal")  # dark line-art style: mostly black by design
     add("resolution", (v["width"], v["height"]) == (W, H), f"{v['width']}x{v['height']}")
     fr = v.get("avg_frame_rate", "0/1").split("/")
     fps = float(fr[0]) / max(1.0, float(fr[1]))
@@ -83,7 +84,7 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("no_dead_air", not sil, f"{len(sil)} silent gaps >1s", "error")
     blk = re.findall(r"black_start:([\d.]+) black_end:([\d.]+)", _filter_log(video, vf="blackdetect=d=0.6:pix_th=0.06"))
     blk = [(float(s), float(e)) for s, e in blk if float(s) > 0.5]
-    add("no_black_frames", not blk, str(blk[:3]))
+    add("no_black_frames", not blk or minimal, str(blk[:3]) + (" (line-art style: dark by design)" if minimal and blk else ""))
     frz = re.findall(r"freeze_duration: ([\d.]+)", _filter_log(video, vf="freezedetect=n=0.0008:d=4"))
     add("no_frozen_video", not frz, f"{len(frz)} frozen segments >4s", "warn")
 
@@ -113,7 +114,8 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("hook_timing", first_word < 0.6, f"first word at {first_word:.2f}s")
     claims = script.get("claims", [])
     srcs = {c.get("source") for c in claims if c.get("source")}
-    add("facts_sourced", len(claims) >= 2 and all(c.get("source") for c in claims), f"{len(claims)} claims, {len(srcs)} sources")
+    if claims or not minimal:  # motivational monologues make no factual claims
+        add("facts_sourced", len(claims) >= 2 and all(c.get("source") for c in claims), f"{len(claims)} claims, {len(srcs)} sources")
     fc = script.get("fact_check", {})
     add("fact_check", fc.get("verdict") in ("pass", "fix", "manual"), json.dumps(fc)[:200], "warn")
     lic_ok = all(m.get("license") for m in media)
@@ -128,7 +130,7 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
         if p.stdout:
             sheet_vals.append(np.frombuffer(p.stdout, np.uint8).astype(np.float32))
     means = [x.mean() for x in sheet_vals]
-    add("visual_brightness", all(m > 12 for m in means), "mean luma " + ", ".join(f"{m:.0f}" for m in means))
+    add("visual_brightness", all(m > (2 if minimal else 12) for m in means), "mean luma " + ", ".join(f"{m:.0f}" for m in means))
     diffs = [np.abs(sheet_vals[i] - sheet_vals[i + 1]).mean() for i in range(len(sheet_vals) - 1)]
     add("visual_variety", all(d > 4 for d in diffs), "frame diffs " + ", ".join(f"{d:.0f}" for d in diffs), "warn")
 
@@ -138,11 +140,11 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     fake = [n for n in nums if not re.search(rf"\b{n}\b", narr)]
     add("title_honest", not fake, f"Titel verspricht Nr. {', '.join(fake)}, die im Video nicht vorkommt" if fake else "ok", "warn")
     extra = extra or {}
-    if extra.get("shots"):
+    if extra.get("shots") and not minimal:
         n_cuts = extra["shots"]
         asl = dur / max(1, n_cuts)
         add("pacing", asl <= 3.2, f"Ø Einstellungslänge {asl:.1f}s ({n_cuts} Einstellungen) – Ziel ≤ 3,2 s", "warn")
-    if cfg().get("mascot.enabled", True):
+    if cfg().get("mascot.enabled", True) and not minimal:
         add("mascot", extra.get("mascot_cues", 0) >= 2, f"{extra.get('mascot_cues', 0)} Maskottchen-Auftritte", "warn")
 
     errors = [c for c in checks if not c["ok"] and c["severity"] == "error"]

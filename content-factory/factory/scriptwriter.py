@@ -328,3 +328,70 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
             sc.setdefault("params", {}).setdefault("accent", res["accent"])
     script["overlays_planned"] = used
     return script
+
+
+# ------------------------------------------------------------------ minimal line-art motivation style
+MINIMAL_SYSTEM = """You write ORIGINAL short-form motivational monologues in the style of minimalist line-art
+motivation shorts (calm, deep narrator voice, black screen, a lone figure, simple visual metaphors).
+Voice: second person ("you"), intimate, honest, punchy. Very short lines, often fragments. Rhythm and repetition
+("Tomorrow turns into next week. Next week turns into next year."). A sharp opening line, a turn in the middle,
+a quiet powerful last line. Never copy known speeches, quotes or other creators' scripts. No invented statistics,
+studies or quotes; no promise of guaranteed or quick riches; "get rich" means discipline, skills, saving,
+investing early, long-term thinking. No emojis. Output JSON only."""
+
+MINIMAL_PROMPT = """Write a {format} ({min_s}-{max_s} s, {min_w}-{max_w} words) monologue in {language_name} about: "{topic}"
+
+Split it into {n_min}-{n_max} scenes; each scene = ONE short sentence or fragment (3-12 words) and one visual
+metaphor that shows it. Visuals (key: meaning):
+{catalog}
+Vary the visuals (no visual twice in a row), match the metaphor to the line.
+
+Return JSON:
+{{"title": "...", "hook": "<first line, max 10 words>", "hook_text": "<= 5 words",
+  "scenes": [{{"narration": "...", "visual": "<key>", "params": {{"label": "<optional ONE short uppercase word shown in
+  the scene, e.g. TOMORROW, NEXT YEAR, FEAR, SOMEDAY - only where it fits, else omit>"}}, "emphasis": ["<one key word>"]}}],
+  "metadata": {{"title": "<TikTok caption <= 80 chars>", "description": "<1-2 lines>", "hashtags": ["motivation", "..."]}}}}
+The first scene's narration must start with the hook."""
+
+
+def minimal_catalog() -> dict:
+    try:
+        from .visuals.lineart import CATALOG  # provided by the line-art scene module
+        return {k: v for k, v in CATALOG.items() if k in KINDS}
+    except Exception:
+        return {k: k for k in KINDS if str(k).startswith("la_")}
+
+
+def write_minimal(topic: str, fmt: str = "45s", lang: str = "en") -> tuple[dict, str]:
+    lo, hi = fmt_bounds(fmt)
+    min_w, max_w = target_words(fmt, lang)
+    cat = minimal_catalog()
+    prompt = MINIMAL_PROMPT.format(format=fmt, topic=topic, min_s=lo, max_s=hi, min_w=min_w, max_w=max_w,
+                                   language_name={"en": "English", "de": "German (Deutsch)"}.get(lang, lang),
+                                   n_min=max(8, hi // 4), n_max=max(12, hi // 3),
+                                   catalog="\n".join(f"- {k}: {v}" for k, v in cat.items()))
+    s, provider = llm.complete_json(prompt, MINIMAL_SYSTEM)
+    s.setdefault("format", fmt)
+    s.setdefault("language", lang)
+    s.setdefault("claims", [])
+    s.setdefault("metadata", {})
+    s["mood"] = "reflective"
+    s["niche"] = "motivation"
+    keys = list(cat) or ["abstract"]
+    prev = None
+    for i, sc in enumerate(s.get("scenes", [])):
+        v = str(sc.get("visual", "")).strip()
+        if v not in KINDS or v == prev:
+            v = next(k for k in keys[i % len(keys):] + keys if k != prev)
+        sc["visual"], prev = v, v
+        sc["params"] = sc.get("params") if isinstance(sc.get("params"), dict) else {}
+        if sc["params"].get("label"):
+            sc["params"]["label"] = str(sc["params"]["label"]).upper()[:14]
+        sc["camera"] = "still"
+        sc.setdefault("emphasis", [])
+        sc["sfx"] = "none"
+        sc["visual_source"] = "procedural"
+        sc["narration"] = re.sub(r"\s+", " ", sc.get("narration", "")).strip()
+    s["topic"] = topic
+    s["llm_provider"] = provider
+    return s, provider

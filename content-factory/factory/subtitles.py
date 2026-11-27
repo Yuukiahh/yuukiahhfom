@@ -190,3 +190,73 @@ def ass_filter_arg(ass_file: Path) -> str:
     def esc(p):
         return str(p).replace("\\", "/").replace(":", r"\:").replace("'", r"\'")
     return f"ass='{esc(ass_file)}':fontsdir='{esc(FONT_DIR)}'"
+
+
+# ------------------------------------------------------------------ minimal motivation styles
+def build_minimal_ass(words: list[dict], out: Path, emphasis: list[str], width: int = 1080, height: int = 1920,
+                      theme: str = "mono") -> Path:
+    """Captions for the minimal line-art motivation style.
+
+    mono: exactly one word at a time, lowercase, small and clean, centred low (like the classic line-art shorts).
+    gold: the current sentence as a karaoke line near the top - spoken words bright, upcoming words dim,
+          emphasis words big and gold.
+    """
+    emph = {_norm(e) for phrase in emphasis for e in phrase.split()}
+    WHITE, DIM, GOLD = "&H00F2F2F2&", "&HB0F2F2F2&", _ass_color("#F2B33D")
+    head = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {width}
+PlayResY: {height}
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Mono,Inter,64,&H00F2F2F2,&H00F2F2F2,&H00000000,&H96000000,-1,0,0,0,100,100,0.5,0,1,0,3,5,0,0,0,1
+Style: Line,Inter,58,&H00F2F2F2,&H00F2F2F2,&H00000000,&H96000000,-1,0,0,0,100,100,0,0,1,0,2,8,90,90,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    ev: list[str] = []
+    ws = [w for w in words if _clean(w["text"])]
+    if theme == "mono":
+        y = int(height * 0.715)
+        for i, w in enumerate(ws):
+            t0 = w["start"]
+            t1 = ws[i + 1]["start"] if i + 1 < len(ws) and ws[i + 1]["start"] - w["end"] < 0.6 else w["end"] + 0.25
+            txt = _clean(w["text"]).strip(".,!?:;").lower()
+            big = _norm(w["text"]) in emph
+            sz = r"\fs76" if big else ""
+            ev.append(f"Dialogue: 1,{_ts(t0)},{_ts(t1)},Mono,,0,0,0,,{{\\pos({width // 2},{y}){sz}\\fad(60,60)}}{txt}")
+    else:
+        # sentence lines: split on scene change / sentence end / max 7 words
+        lines, cur = [], []
+        for w in ws:
+            cur.append(w)
+            if re.search(r"[.!?]$", w["text"]) or len(cur) >= 7 or (cur and cur[0].get("scene") != w.get("scene")):
+                lines.append(cur)
+                cur = []
+        if cur:
+            lines.append(cur)
+        for li, ln in enumerate(lines):
+            start = ln[0]["start"]
+            end = (lines[li + 1][0]["start"] if li + 1 < len(lines) else ln[-1]["end"] + 0.6)
+            end = min(end, ln[-1]["end"] + 1.2)
+            # one event per spoken-word step: words up to k bright, rest dim
+            for k, w in enumerate(ln):
+                t0 = w["start"] if k else start
+                t1 = ln[k + 1]["start"] if k + 1 < len(ln) else end
+                parts = []
+                for j, x in enumerate(ln):
+                    tx = _clean(x["text"])
+                    if _norm(x["text"]) in emph:
+                        col = GOLD if j <= k else "&HB03DB3F2&"
+                        parts.append(f"{{\\c{col}\\fs70}}{tx}{{\\fs58}}")
+                    else:
+                        parts.append(f"{{\\c{WHITE if j <= k else DIM}}}{tx}")
+                fade = r"\fad(120,0)" if k == 0 else ""
+                fade = fade if k == 0 else ""
+                ev.append(f"Dialogue: 1,{_ts(t0)},{_ts(t1)},Line,,0,0,{int(height * 0.115)},,{{{fade}}}" + " ".join(parts))
+    out.write_text(head + "\n".join(ev) + "\n", "utf-8")
+    return out

@@ -73,6 +73,8 @@ def _move(move: str, u: float, t: float, k: float = 1.0) -> tuple[float, float, 
         return 1.0, (-0.85 + 1.7 * e) * k, 0, 0
     if move == "orbit":
         return 1.04 - 0.07 * e, 0.35 * math.sin(u * math.pi), 0, (-2.5 + 5.0 * e) * k
+    if move == "still":  # calm, almost static (minimal line-art style)
+        return 1.0 - 0.025 * e * k, 0, 0, 0
     if move == "dolly_tilt":
         return 1.08 - 0.12 * e, 0, (0.5 - 1.0 * e) * k, (1.5 - 3 * e) * k
     return 1.06 - 0.05 * e, 0.4 * math.sin(t * 0.5), 0.3 * math.cos(t * 0.4), 0.6 * math.sin(t * 0.3)
@@ -85,7 +87,7 @@ def camera_at(spec: dict, t: float) -> tuple[float, float, float, float]:
     s0, move = shots[idx]
     s1 = shots[idx + 1][0] if idx + 1 < len(shots) else dur
     s, dx, dy, rot = _move(move, (t - s0) / max(0.1, s1 - s0), t, spec.get("intensity", 1.0))
-    if idx % 2 == 1:  # punch-in on alternate shots (jump-cut feel)
+    if idx % 2 == 1 and move != "still":  # punch-in on alternate shots (jump-cut feel)
         s *= 0.9
     # handheld micro motion
     hh = spec.get("handheld", 0.6)
@@ -161,7 +163,7 @@ def render_scene_clip(spec: dict) -> str:
     ovl = OverlayLayer(spec, w, h)
     ovl = ovl if ovl.active() else None
     cine = None
-    if cfg().get("render.cinematic", True):
+    if cfg().get("render.cinematic", True) and spec.get("cine", True):
         from .cinefx import CineFX
         cine = CineFX(spec, w, h, spec["seed"])
     for i in range(n):
