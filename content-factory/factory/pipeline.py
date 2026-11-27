@@ -88,7 +88,7 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     # minimal line-art motivation style ("minimal_mono" white lines on black / "minimal_gold" glowing gold figure):
     # no info cards, no mascot, no sfx, calm camera, dip-to-black cuts, one-word / karaoke captions, reflective music
     minimal = str(script.get("style", "")).startswith("minimal")
-    mtheme = "gold" if script.get("style") == "minimal_gold" else "mono"
+    mtheme = script.get("theme") or (str(script.get("style", ""))[8:] if str(script.get("style", "")).startswith("minimal_") else "mono")
     W, H, FPS = cfg().get("render.width"), cfg().get("render.height"), cfg().get("render.fps", 60)
     date = dt.date.today().isoformat()
     slug = slugify(script.get("title") or script.get("topic", "video"))
@@ -196,10 +196,12 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
                           "end": min(end - 0.08, st0 + 2.6)})
             sfx_events += [(st0 + 0.08, "pop", 0.7), (st0 + 0.08, "sub_drop", 0.5)]
     if minimal:
-        tkinds = ["dip"]
+        tkinds = ["dip", "whip_up", "zoom_punch", "dip", "whip_left", "luma"] if script.get("pace") != "calm" else ["dip"]
+        rng.shuffle(tkinds)
         for i, sp in enumerate(specs):
             sp.update({"params": {**sp["params"], "theme": mtheme, "t0": round(0.0 if i == 0 else cuts[i - 1], 3)},
-                       "camera": "still", "shots": [(0.0, "still")], "bumps": [], "shakes": [], "overlay": None,
+                       "camera": "still", "shots": [(0.0, "still" if script.get("pace") == "calm" else ("push_in", "pull_out")[i % 2])],
+                       "bumps": [], "shakes": [], "overlay": None, "intensity": 0.35,
                        "tag": None, "source_label": None, "cine": False, "handheld": 0.0, "contrast": 0.04,
                        "vignette": 0.12, "grain": 1.2, "bloom": 0.1, "target_luma": 0.0, "time_offset": 0.0})
     tspecs, tnames = [], []
@@ -212,8 +214,10 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     cta_text = cfg().lang_value("brand.cta", lang) or ("Folge für mehr!" if lang == "de" else "Follow for more!")
     cta = {"text": cta_text, "start": max(0.0, total - 2.1), "end": total}
     sfx_events.append((cta["start"], "notification", 0.45))
-    if minimal:
-        sfx_events, cta = [], None
+    if minimal:  # only soft whooshes on the cuts (no hits, no text swishes, no CTA)
+        sfx_events = [(t, k, v * 0.45) for t, k, v in sfx_events if k in ("whoosh", "whoosh_soft", "swoosh", "swoosh_reverse")
+                      and t > 0.5] if script.get("pace") != "calm" else []
+        cta = None
 
     # ---- audio beds
     progress("music", 0.48)
@@ -237,8 +241,8 @@ def produce(script: dict, job_id: int | None = None, progress: Progress = _noop,
     emphasis = [e for sc in script["scenes"] for e in sc.get("emphasis", [])]
     theme = _theme(script.get("accent"))
     if minimal:
-        ass = subtitles.build_minimal_ass(words, work / "subs.ass", emphasis, W, H, mtheme)
-        theme = {**theme, "progress": "#F2B33D" if mtheme == "gold" else "#BDBDBD"}
+        ass = subtitles.build_minimal_ass(words, work / "subs.ass", emphasis, W, H, mtheme, script.get("caption_mode"))
+        theme = {**theme, "progress": subtitles.MINIMAL_CAPTION.get(mtheme, subtitles.MINIMAL_CAPTION["mono"])[1]}
     else:
         ass = subtitles.build_ass(words, work / "subs.ass", emphasis, stats, script.get("hook_text"), W, H, cta=cta,
                                   style=theme.get("subs"))

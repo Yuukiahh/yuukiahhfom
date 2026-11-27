@@ -339,17 +339,32 @@ a quiet powerful last line. Never copy known speeches, quotes or other creators'
 studies or quotes; no promise of guaranteed or quick riches; "get rich" means discipline, skills, saving,
 investing early, long-term thinking. No emojis. Output JSON only."""
 
-MINIMAL_PROMPT = """Write a {format} ({min_s}-{max_s} s, {min_w}-{max_w} words) monologue in {language_name} about: "{topic}"
+MINIMAL_FORMATS = {
+    "rich_poor": ("Rich vs Poor contrast. Alternate short contrast lines ('Poor people scroll. Rich people read.'); "
+                  "use la_split (params.action one of phone|spend|sleep|car|complain|learn, optional params.left/right "
+                  "labels like POOR/RICH or BROKE/WEALTHY) for most contrast lines, la_typo for 1-2 punch lines "
+                  "(params.text = 1-3 words), end with a lesson."),
+    "life_story": ("Stickman goes through life: tell one person's life in stages (birth, school, first job, 30s, 40s, old age) "
+                   "and the choice that changed it; use la_life with params.stage 0-4 as the spine, mixed with fitting metaphor "
+                   "scenes; end with a lesson for the viewer."),
+    "truths": ("Harsh life truths: 4-6 numbered truths ('Truth number one: ...'), each introduced by a la_typo scene "
+               "(params.text e.g. 'TRUTH #1' or a 1-3 word punch) followed by a metaphor scene that shows it."),
+    "metaphor": "Classic visual-metaphor monologue: each line shown by one strong metaphor scene.",
+}
 
-Split it into {n_min}-{n_max} scenes; each scene = ONE short sentence or fragment (3-12 words) and one visual
-metaphor that shows it. Visuals (key: meaning):
+MINIMAL_PROMPT = """Write a {format} ({min_s}-{max_s} s, {min_w}-{max_w} words) script in {language_name} about: "{topic}"
+FORMAT: {fmt_rule}
+
+Split it into {n_min}-{n_max} scenes; each scene = ONE short sentence or fragment (3-10 words, fast spoken pace) and one
+visual that shows it. Visuals (key: meaning):
 {catalog}
-Vary the visuals (no visual twice in a row), match the metaphor to the line.
+Vary the visuals (no visual twice in a row unless the format needs it), match the visual to the line, use params.
 
 Return JSON:
 {{"title": "...", "hook": "<first line, max 10 words>", "hook_text": "<= 5 words",
-  "scenes": [{{"narration": "...", "visual": "<key>", "params": {{"label": "<optional ONE short uppercase word shown in
-  the scene, e.g. TOMORROW, NEXT YEAR, FEAR, SOMEDAY - only where it fits, else omit>"}}, "emphasis": ["<one key word>"]}}],
+  "scenes": [{{"narration": "...", "visual": "<key>", "params": {{"label": "<optional ONE short uppercase word>",
+  "action": "...", "left": "...", "right": "...", "stage": 0, "text": "<1-3 WORDS for la_typo>", "mode": "..."}} (only the
+  params that apply), "emphasis": ["<one key word>"]}}],
   "metadata": {{"title": "<TikTok caption <= 80 chars>", "description": "<1-2 lines>", "hashtags": ["motivation", "..."]}}}}
 The first scene's narration must start with the hook."""
 
@@ -362,21 +377,24 @@ def minimal_catalog() -> dict:
         return {k: k for k in KINDS if str(k).startswith("la_")}
 
 
-def write_minimal(topic: str, fmt: str = "45s", lang: str = "en") -> tuple[dict, str]:
+def write_minimal(topic: str, fmt: str = "45s", lang: str = "en", form: str = "metaphor") -> tuple[dict, str]:
     lo, hi = fmt_bounds(fmt)
     min_w, max_w = target_words(fmt, lang)
+    min_w, max_w = int(min_w * 1.12), int(max_w * 1.12)  # faster narration (speed ~1.12)
     cat = minimal_catalog()
     prompt = MINIMAL_PROMPT.format(format=fmt, topic=topic, min_s=lo, max_s=hi, min_w=min_w, max_w=max_w,
                                    language_name={"en": "English", "de": "German (Deutsch)"}.get(lang, lang),
-                                   n_min=max(8, hi // 4), n_max=max(12, hi // 3),
+                                   fmt_rule=MINIMAL_FORMATS.get(form, MINIMAL_FORMATS["metaphor"]),
+                                   n_min=max(12, int(hi / 3.2)), n_max=max(16, int(hi / 2.4)),
                                    catalog="\n".join(f"- {k}: {v}" for k, v in cat.items()))
     s, provider = llm.complete_json(prompt, MINIMAL_SYSTEM)
     s.setdefault("format", fmt)
     s.setdefault("language", lang)
     s.setdefault("claims", [])
     s.setdefault("metadata", {})
-    s["mood"] = "reflective"
+    s["mood"] = {"rich_poor": "lofi", "life_story": "reflective", "truths": "mystery", "metaphor": "inspire"}.get(form, "reflective")
     s["niche"] = "motivation"
+    s["format_kind"] = form
     keys = list(cat) or ["abstract"]
     prev = None
     for i, sc in enumerate(s.get("scenes", [])):
@@ -385,6 +403,8 @@ def write_minimal(topic: str, fmt: str = "45s", lang: str = "en") -> tuple[dict,
             v = next(k for k in keys[i % len(keys):] + keys if k != prev)
         sc["visual"], prev = v, v
         sc["params"] = sc.get("params") if isinstance(sc.get("params"), dict) else {}
+        if sc["params"].get("text"):
+            sc["params"]["text"] = str(sc["params"]["text"]).upper()[:24]
         if sc["params"].get("label"):
             sc["params"]["label"] = ",".join(x.strip()[:14] for x in str(sc["params"]["label"]).upper().split(",") if x.strip())
         sc["camera"] = "still"
