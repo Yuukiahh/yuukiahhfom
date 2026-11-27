@@ -81,7 +81,9 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("true_peak", tp <= -0.5, f"{tp:.1f} dBTP")
 
     # silence / black / freeze
-    sil = re.findall(r"silence_duration: ([\d.]+)", _filter_log(video, af="silencedetect=n=-45dB:d=1.0"))
+    _sl = _filter_log(video, af="silencedetect=n=-45dB:d=1.0")
+    sil = [d for st, d in re.findall(r"silence_start: ([\d.]+)[\s\S]*?silence_duration: ([\d.]+)", _sl)
+           if float(st) < float(info["format"]["duration"]) - 1.6]  # quiet fade-out at the very end is fine
     add("no_dead_air", not sil, f"{len(sil)} silent gaps >1s", "error")
     blk = re.findall(r"black_start:([\d.]+) black_end:([\d.]+)", _filter_log(video, vf="blackdetect=d=0.6:pix_th=0.06"))
     blk = [(float(s), float(e)) for s, e in blk if float(s) > 0.5]
