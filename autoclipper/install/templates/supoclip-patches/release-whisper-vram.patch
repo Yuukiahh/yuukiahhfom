@@ -1,0 +1,116 @@
+diff --git a/backend/src/media/transcription.py b/backend/src/media/transcription.py
+index fe0f446..141496c 100644
+--- a/backend/src/media/transcription.py
++++ b/backend/src/media/transcription.py
+@@ -584,6 +584,43 @@ def _get_whisper_model(model_name: str = "base"):
+     return _WHISPER_MODEL_CACHE[model_name]
+ 
+ 
++def whisper_release_enabled() -> bool:
++    """Whether Whisper models give their GPU memory back when not in use (WHISPER_RELEASE_GPU, default on).
++
++    The worker shares one GPU with a local LLM (Ollama). A cached model keeps 1-3 GB of VRAM that the
++    LLM needs during the analysis; on Windows/WSL the driver then pages the LLM out to system memory and
++    it slows down tenfold. Reloading a model from the local cache costs a few seconds.
++    """
++    import os
++
++    return (os.getenv("WHISPER_RELEASE_GPU") or "true").strip().lower() not in ("0", "false", "no", "off")
++
++
++def release_whisper_models(model_names: Optional[List[str]] = None) -> List[str]:
++    """Drop cached Whisper models (all when ``model_names`` is None) and free their GPU memory.
++
++    Safe while another job still transcribes: it keeps its own reference until it is done, and the
++    next caller loads the model again.
++    """
++    names = [name for name in (model_names if model_names is not None else list(_WHISPER_MODEL_CACHE))
++             if name in _WHISPER_MODEL_CACHE]
++    for name in names:
++        _WHISPER_MODEL_CACHE.pop(name, None)
++    if names:
++        import gc
++
++        gc.collect()
++        try:
++            import torch
++
++            if torch.cuda.is_available():
++                torch.cuda.empty_cache()
++        except Exception:  # noqa: BLE001 - freeing memory is best effort
++            pass
++        logger.info("Released Whisper model(s) from memory: %s", ", ".join(names))
++    return names
++
++
+ def transcribe_with_whisper(
+     video_path: Path, model_name: str = "base", language: Optional[str] = None
+ ) -> Dict[str, Any]:
+@@ -878,9 +915,14 @@ def _get_transcript_with_whisper(video_path: Path, runtime_config) -> str:
+     """Get transcript using local Whisper with word-level timestamps."""
+     model_name = runtime_config.whisper_model
+     logger.info("Starting Whisper transcription with model: %s", model_name)
+-    whisper_result = transcribe_with_whisper(
+-        video_path, model_name, runtime_config.transcription_language or None
+-    )
++    try:
++        whisper_result = transcribe_with_whisper(
++            video_path, model_name, runtime_config.transcription_language or None
++        )
++    finally:
++        # The analysis that follows runs on the local LLM, which needs this VRAM.
++        if whisper_release_enabled():
++            release_whisper_models([model_name])
+ 
+     formatted_lines = format_transcript_for_analysis(whisper_result)
+     cache_transcript_data(video_path, whisper_result)
+diff --git a/backend/src/workers/tasks.py b/backend/src/workers/tasks.py
+index a827bfe..6f5a9a4 100644
+--- a/backend/src/workers/tasks.py
++++ b/backend/src/workers/tasks.py
+@@ -411,12 +411,36 @@ from .queue_delay import on_video_job_start
+ arq_resilience.install()
+ 
+ 
++# Video jobs running in this process; when the last one ends, cached Whisper models are released.
++_ACTIVE_VIDEO_JOBS = 0
++
++
+ async def on_video_job_begin(ctx) -> None:
++    global _ACTIVE_VIDEO_JOBS
++    _ACTIVE_VIDEO_JOBS += 1
+     await on_video_job_start(ctx)
+     # Lets the render autoscaler see that this machine is busy (host_jobs.py).
+     await host_jobs.record_job_start(ctx)
+ 
+ 
++async def on_video_job_end(ctx) -> None:
++    global _ACTIVE_VIDEO_JOBS
++    _ACTIVE_VIDEO_JOBS = max(0, _ACTIVE_VIDEO_JOBS - 1)
++    try:
++        await host_jobs.record_job_end(ctx)
++    finally:
++        if _ACTIVE_VIDEO_JOBS == 0:
++            # An idle worker must not keep Whisper (edge listening, transcription) in VRAM that the
++            # local LLM needs (media/transcription.py: whisper_release_enabled).
++            try:
++                from ..media.transcription import release_whisper_models, whisper_release_enabled
++
++                if whisper_release_enabled():
++                    release_whisper_models()
++            except Exception as exc:  # noqa: BLE001 - never fail a job over freeing memory
++                logger.warning("Could not release Whisper models: %s", exc)
++
++
+ # Worker configuration for arq
+ class WorkerSettings:
+     """Configuration for arq worker."""
+@@ -464,7 +488,7 @@ class WorkerSettings:
+     cron_jobs = []
+ 
+     on_job_start = on_video_job_begin
+-    on_job_end = host_jobs.record_job_end
++    on_job_end = on_video_job_end
+ 
+     on_startup = on_worker_startup
+     on_shutdown = on_worker_shutdown

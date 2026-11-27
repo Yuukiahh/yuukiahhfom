@@ -1,0 +1,2 @@
+# git apply needs these byte for byte (SupoClip's checkout uses LF); never convert line endings.
+*.patch -text

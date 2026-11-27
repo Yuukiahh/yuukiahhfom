@@ -15,11 +15,15 @@ if ($LASTEXITCODE -ne 0) {
     do { Start-Sleep 5; docker info 2>$null | Out-Null } while ($LASTEXITCODE -ne 0 -and (Get-Date) -lt $deadline)
 }
 if (-not (Up 'http://127.0.0.1:11434/api/version')) {
-    Start-Process (Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe')
+    # Through Explorer: Ollama gets the current user environment (OLLAMA_*, LLAMA_ARG_FIT_TARGET), not
+    # this shell's, which may be older (see Install-AutoClipper.ps1, Start-Ollama).
+    Start-Process explorer.exe -ArgumentList ('"' + (Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe') + '"')
 }
 Push-Location (Join-Path $InstallRoot 'supoclip')
 docker compose up -d
 Pop-Location
 $deadline = (Get-Date).AddMinutes(5)
 while (-not (Up 'http://127.0.0.1:8000/health') -and (Get-Date) -lt $deadline) { Start-Sleep 5 }
-autoclipper doctor
+$cli = (Get-Command autoclipper -ErrorAction SilentlyContinue).Source
+if (-not $cli) { $cli = Join-Path $env:USERPROFILE '.local\bin\autoclipper.exe' }   # not on PATH in older shells
+& $cli doctor

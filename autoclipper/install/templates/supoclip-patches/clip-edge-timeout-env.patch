@@ -1,0 +1,25 @@
+diff --git a/backend/src/ai.py b/backend/src/ai.py
+index eaa7cff..aef88e8 100644
+--- a/backend/src/ai.py
++++ b/backend/src/ai.py
+@@ -730,7 +730,19 @@ Rules:
+ - Judge only what the sentences say. Stay content-neutral.
+ - Return valid JSON only, with a "clips" list holding one entry per clip."""
+ 
+-CLIP_EDGE_TIMEOUT_SECONDS = 60
++def _env_seconds(name: str, default: float) -> float:
++    import os
++
++    try:
++        value = float(os.getenv(name) or default)
++    except ValueError:
++        return default
++    return value if value > 0 else default
++
++
++# CLIP_EDGE_TIMEOUT_SECONDS: a local LLM answers one request at a time, so the concurrent reviews queue
++# and each one's budget includes the wait (AutoClipper sets 180 for Ollama).
++CLIP_EDGE_TIMEOUT_SECONDS = _env_seconds("CLIP_EDGE_TIMEOUT_SECONDS", 60)
+ CLIP_EDGE_CONCURRENCY = 4
+ 
+ _edge_agent: Optional[Agent[None, ClipEdgeReview]] = None

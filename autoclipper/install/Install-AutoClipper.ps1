@@ -13,6 +13,9 @@
 .PARAMETER InstallRoot   Where SupoClip and settings live (default: %USERPROFILE%\AutoClipper)
 .PARAMETER OllamaModel   Local LLM for clip selection (default gpt-oss:20b, fits a 16 GB RTX 5070 Ti)
 .PARAMETER WhisperModel  Whisper size: turbo (default, near large-v3 quality, ~6 GB VRAM), large-v3, medium
+.PARAMETER OllamaVramReserveMiB  VRAM (MiB) llama.cpp keeps free when it places the LLM (LLAMA_ARG_FIT_TARGET,
+                         default 4096). It moves a few MoE experts to the CPU instead of letting Windows page
+                         the model out when Whisper or desktop apps need VRAM. 0 = fill the GPU.
 .PARAMETER SkipSelfTest  Do not run the end-to-end self test at the end
 .PARAMETER SkipClaudePermissions  Do not add allow rules to ~\.claude\settings.json (add them yourself)
 .PARAMETER NoOllamaLanFallback    Stop instead of switching Ollama to 0.0.0.0 when containers cannot reach it
@@ -23,6 +26,7 @@ param(
     [string]$OllamaModel = 'gpt-oss:20b',
     [string]$WhisperModel = 'turbo',
     [string]$SupoClipCommit = '29ca74f9f38f7107bfca1939fd017ae7a0f147a8',
+    [ValidateRange(0, 65536)][int]$OllamaVramReserveMiB = 4096,
     [switch]$SkipSelfTest,
     [switch]$SkipClaudePermissions,
     [switch]$NoOllamaLanFallback
@@ -58,6 +62,21 @@ function Refresh-Path {
     $env:Path = "$machine;$user;$env:USERPROFILE\.local\bin"
 }
 function Have([string]$cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
+
+function Stop-Ollama {
+    # llama-server is Ollama's model runner; it can outlive a killed server and keep the VRAM.
+    Get-Process 'ollama*', 'llama-server' -ErrorAction SilentlyContinue | Stop-Process -Force
+    Start-Sleep 2
+}
+function Start-Ollama {
+    # Through Explorer, so Ollama runs in the normal user session with the current user environment
+    # (OLLAMA_*, LLAMA_ARG_FIT_TARGET). Started as our child it would inherit this process's
+    # environment, which is stale when the script runs from an app started before the variables were
+    # set (and virtualised when that app is packaged/MSIX).
+    $app = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe'
+    if (Test-Path $app) { Start-Process explorer.exe -ArgumentList ('"' + $app + '"') }
+    else { Start-Process 'ollama' -ArgumentList 'serve' -WindowStyle Hidden }
+}
 
 function New-Secret([int]$bytes = 32) {
     $b = New-Object byte[] $bytes
@@ -181,18 +200,24 @@ if (Test-Path $dockerSettings) {
 # --------------------------------------------------------------------------------------------
 Step '4/12 Ollama (local LLM) configuration + model'
 # Long transcripts need a large context; flash attention + q8 KV cache keep it inside 16 GB VRAM.
+# LLAMA_ARG_FIT_TARGET (Ollama passes it to llama.cpp's fit): VRAM in MiB kept free when the model is
+# placed. Without it gpt-oss:20b fills the GPU, Windows reports more free VRAM than there is (Whisper
+# in the WSL worker is not counted), and once Whisper or desktop apps need memory the driver pages the
+# model out to system RAM: 3-10x slower, analysis windows time out. 4096 moves a few MoE experts to
+# the CPU: ~85 instead of ~140 tok/s on an RTX 5070 Ti, but steady.
+$restartOllama = $false
 foreach ($kv in @(@('OLLAMA_CONTEXT_LENGTH', '32768'), @('OLLAMA_FLASH_ATTENTION', '1'),
-                   @('OLLAMA_KV_CACHE_TYPE', 'q8_0'), @('OLLAMA_KEEP_ALIVE', '10m'))) {
+                   @('OLLAMA_KV_CACHE_TYPE', 'q8_0'), @('OLLAMA_KEEP_ALIVE', '10m'),
+                   @('LLAMA_ARG_FIT_TARGET', "$OllamaVramReserveMiB"))) {
     if ([Environment]::GetEnvironmentVariable($kv[0], 'User') -ne $kv[1]) {
         [Environment]::SetEnvironmentVariable($kv[0], $kv[1], 'User')
-        Set-Item -Path ("env:" + $kv[0]) -Value $kv[1]
         $restartOllama = $true
     }
+    Set-Item -Path ("env:" + $kv[0]) -Value $kv[1]   # also for an 'ollama serve' started from here
 }
-if ($restartOllama) { Get-Process 'ollama*' -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2 }
+if ($restartOllama) { Stop-Ollama }
 if (-not (Wait-Http 'http://127.0.0.1:11434/api/version' 5)) {
-    $app = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe'
-    if (Test-Path $app) { Start-Process $app } else { Start-Process 'ollama' -ArgumentList 'serve' -WindowStyle Hidden }
+    Start-Ollama
     if (-not (Wait-Http 'http://127.0.0.1:11434/api/version' 90)) { Fail 'Ollama does not answer on port 11434' }
 }
 Ok 'Ollama running'
@@ -215,6 +240,19 @@ git config core.autocrlf false
 git fetch --quiet origin $SupoClipCommit 2>$null
 git -c advice.detachedHead=false checkout --quiet --force $SupoClipCommit
 if ($LASTEXITCODE -ne 0) { Fail "cannot check out SupoClip $SupoClipCommit" }
+# Local fixes on top of the pinned commit (templates\supoclip-patches). Applying is idempotent: a patch
+# that is already in the tree is skipped; one that no longer fits (other commit) only warns.
+foreach ($patch in Get-ChildItem (Join-Path $PSScriptRoot 'templates\supoclip-patches') -Filter *.patch -ErrorAction SilentlyContinue) {
+    git apply --check $patch.FullName 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        git apply --whitespace=nowarn $patch.FullName
+        if ($LASTEXITCODE -eq 0) { Ok "patch $($patch.Name)" } else { Warn "patch $($patch.Name) failed to apply" }
+    } else {
+        git apply --reverse --check $patch.FullName 2>$null
+        if ($LASTEXITCODE -eq 0) { Ok "patch $($patch.Name) (already applied)" }
+        else { Warn "patch $($patch.Name) does not fit SupoClip $($SupoClipCommit.Substring(0,12)); skipped" }
+    }
+}
 Pop-Location
 Ok "SupoClip at $($SupoClipCommit.Substring(0,12))"
 
@@ -294,8 +332,8 @@ if (-not $probe) {
     Warn 'If Windows Firewall asks about Ollama, allow PRIVATE networks only (never public).'
     [Environment]::SetEnvironmentVariable('OLLAMA_HOST', '0.0.0.0:11434', 'User')
     $env:OLLAMA_HOST = '0.0.0.0:11434'
-    Get-Process 'ollama*' -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2
-    Start-Process (Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe')
+    Stop-Ollama
+    Start-Ollama
     Wait-Http 'http://127.0.0.1:11434/api/version' 60 | Out-Null
     $probe = docker exec supoclip-worker sh -c 'curl -s -m 10 http://host.docker.internal:11434/api/version' 2>$null
     if (-not $probe) { Fail 'containers still cannot reach Ollama' }

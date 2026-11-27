@@ -12,6 +12,11 @@ services:
               capabilities: [gpu, compute, utility, video]
     environment:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+      # Whisper hands its VRAM back after transcribing and when the worker is idle, so the local LLM
+      # (Ollama, same GPU) is not paged out to system memory (install/templates/supoclip-patches/release-whisper-vram.patch).
+      - WHISPER_RELEASE_GPU=${WHISPER_RELEASE_GPU:-true}
+      # Each clip's edge review waits for the single local LLM slot; 60 s (SupoClip's default) runs out.
+      - CLIP_EDGE_TIMEOUT_SECONDS=${CLIP_EDGE_TIMEOUT_SECONDS:-180}
     volumes:
       - whisper_cache:/root/.cache/whisper
 
