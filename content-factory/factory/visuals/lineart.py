@@ -2900,7 +2900,7 @@ class LATypo(LAStory):
         for ln in lines:
             f = font(100, "Display")
             w100 = f.getlength(ln)
-            sizes.append(min(0.27 * ow, 0.86 * ow * 100 / max(1.0, w100)))
+            sizes.append(min(0.24 * ow, 0.74 * ow * 100 / max(1.0, w100)))
         lead = 0.14
         tot = sum(s * (0.74 + lead) for s in sizes) - sizes[-1] * lead
         lim = 0.38 * self.oh
