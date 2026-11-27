@@ -590,3 +590,7 @@ if hasattr(_topical, "KINDS_TOPICAL"):
     # Egg-heist / pet-tycoon game scenes build on creator's base class: same guard one level deeper.
     if hasattr(_creator, "KINDS_CREATOR"):
         from . import eggs as _eggs  # noqa: E402,F401
+# Minimalist line-art motivation scenes only need Scene/KINDS (defined above), so they register
+# unconditionally; when lineart.py is the entry point this returns the partially initialised module
+# and lineart registers itself once it finishes executing.
+from . import lineart as _lineart  # noqa: E402,F401
