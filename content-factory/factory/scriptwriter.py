@@ -399,7 +399,10 @@ def write_minimal(topic: str, fmt: str = "45s", lang: str = "en", form: str = "m
     prev = None
     for i, sc in enumerate(s.get("scenes", [])):
         v = str(sc.get("visual", "")).strip()
-        if v not in KINDS or v == prev:
+        prm = sc.get("params") if isinstance(sc.get("params"), dict) else {}
+        if v not in KINDS and prm.get("action"):
+            v = "la_split"
+        if v not in KINDS or (v == prev and v not in ("la_split", "la_life", "la_typo")):
             v = next(k for k in keys[i % len(keys):] + keys if k != prev)
         sc["visual"], prev = v, v
         sc["params"] = sc.get("params") if isinstance(sc.get("params"), dict) else {}
