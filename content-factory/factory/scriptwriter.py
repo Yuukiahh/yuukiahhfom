@@ -334,8 +334,9 @@ def plan_overlays(script: dict, research: dict | None = None) -> dict:
 MINIMAL_SYSTEM = """You write ORIGINAL short-form motivational monologues in the style of minimalist line-art
 motivation shorts (calm, deep narrator voice, black screen, a lone figure, simple visual metaphors).
 Voice: second person ("you"), intimate, honest, punchy. Very short lines, often fragments. Rhythm and repetition
-("Tomorrow turns into next week. Next week turns into next year."). A sharp opening line, a turn in the middle,
-a quiet powerful last line. Never copy known speeches, quotes or other creators' scripts. No invented statistics,
+(e.g. "One more scroll. One more excuse. One more year."). A sharp opening line, a turn in the middle,
+a quiet powerful last line. Never copy known speeches, quotes or other creators' scripts; when given a story arc,
+reuse only its structure and invent all sentences yourself. No invented statistics,
 studies or quotes; no promise of guaranteed or quick riches; "get rich" means discipline, skills, saving,
 investing early, long-term thinking. No emojis. Output JSON only."""
 
@@ -350,6 +351,21 @@ MINIMAL_FORMATS = {
     "truths": ("Harsh life truths: 4-6 numbered truths ('Truth number one: ...'), each introduced by a la_typo scene "
                "(params.text e.g. 'TRUTH #1' or a 1-3 word punch) followed by a metaphor scene that shows it."),
     "metaphor": "Classic visual-metaphor monologue: each line shown by one strong metaphor scene.",
+    # story arcs learned from the user's reference videos (structure only - always new wording)
+    "rise_up": ("STORY ARC 'rise up' (~45-55 s), follow these beats in order with NEW wording: "
+                "1) the choice: stay down here or go up (la_stairs); 2) the pain: tired of living the same life, "
+                "living it afraid (la_clock / la_crowd); 3) the call: start now - not tomorrow, not next week, not next "
+                "month (la_calendar with those labels, la_walk); 4) the objection killed: there will always be problems, "
+                "always something in the way - so you might as well start now (la_wall breaking); 5) the reframe: failing "
+                "is okay, fail as often as you can, that is how you end up successful (la_fall_rise, la_stairs); "
+                "6) the close: not trying is the only thing that is not okay - so jump / go up (la_stairs or la_mountain). "
+                "Conversational, repetitive, raw, like someone talking to a friend."),
+    "dont_wait": ("STORY ARC 'don't wait' (~20-30 s, very short), beats in order with NEW wording: 1) not on Monday, "
+                  "not tomorrow (la_calendar); 2) the chain: tomorrow becomes next week, next week becomes next year "
+                  "(la_calendar with labels); 3) the image: a year later you are still in the same place, watching others "
+                  "live the life you want (la_crowd); 4) the twist: they are not better than you, they just started "
+                  "(la_typo with 'THEY STARTED'-like 1-2 words); 5) the pressure: every day you wait, someone else takes "
+                  "your spot (la_hourglass / la_clock); 6) close: start now (la_typo or la_door)."),
 }
 
 MINIMAL_PROMPT = """Write a {format} ({min_s}-{max_s} s, {min_w}-{max_w} words) script in {language_name} about: "{topic}"
@@ -392,7 +408,8 @@ def write_minimal(topic: str, fmt: str = "45s", lang: str = "en", form: str = "m
     s.setdefault("language", lang)
     s.setdefault("claims", [])
     s.setdefault("metadata", {})
-    s["mood"] = {"rich_poor": "lofi", "life_story": "reflective", "truths": "mystery", "metaphor": "inspire"}.get(form, "reflective")
+    s["mood"] = {"rich_poor": "lofi", "life_story": "reflective", "truths": "mystery", "metaphor": "inspire",
+                 "rise_up": "reflective", "dont_wait": "reflective"}.get(form, "reflective")
     s["niche"] = "motivation"
     s["format_kind"] = form
     keys = list(cat) or ["abstract"]

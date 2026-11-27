@@ -81,7 +81,7 @@ def main(argv=None) -> int:
         m.add_argument("--style", default=None, choices=["minimal_mono", "minimal_gold", "minimal_paper", "minimal_blueprint",
                                                           "minimal_neon", "minimal_chalk"],
                        help="Minimal-Linien-Stil (Motivation) mit Farbwelt")
-        m.add_argument("--form", default="metaphor", choices=["metaphor", "rich_poor", "life_story", "truths"],
+        m.add_argument("--form", default="metaphor", choices=["metaphor", "rich_poor", "life_story", "truths", "rise_up", "dont_wait"],
                        help="Format im Minimal-Stil: Metaphern, Rich vs Poor, Lebensweg, harte Wahrheiten")
     sub.add_parser("worker")
     for s in ("start", "pause", "stop", "status"):
