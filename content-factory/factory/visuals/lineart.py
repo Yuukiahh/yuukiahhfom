@@ -799,7 +799,7 @@ class LineArt(Scene):
         u = self.u
         sec = max(0, int(math.floor(t + self.t0)))
         s = f"{sec // 60}:{sec % 60:02d}" if sec < 6000 else f"{sec // 3600}:{(sec // 60) % 60:02d}"
-        x, y = self.X(0.885), self.Y(0.175)
+        x, y = self.X(0.885), self.Y(0.24)  # below the karaoke caption line
         pen.text((x, y), s, 92 * u, self.th["accent"], 1.0, "rs", "Display", 0.0)
         pen.text((x - 2 * u, y + 34 * u), "TIME GONE", 21 * u, self.th["line"], 0.75, "rm", "Bold", 0.28)
 

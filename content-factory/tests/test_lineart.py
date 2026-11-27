@@ -68,7 +68,7 @@ def test_gold_timer_counts_time():
     s = make_scene("la_walk", 270, 480, 1, {"theme": "gold", "t0": 5})
     assert s.show_timer
     a, b = s.render(1.2), s.render(2.2)  # 0:06 -> 0:07
-    box = (slice(int(s.Y(0.09)), int(s.Y(0.2))), slice(int(s.X(0.62)), int(s.X(0.93))))
+    box = (slice(int(s.Y(0.15)), int(s.Y(0.27))), slice(int(s.X(0.62)), int(s.X(0.93))))
     assert np.abs(a[box] - b[box]).max() > 50
     assert not make_scene("la_walk", 108, 192, 1, {"theme": "mono"}).show_timer
     assert not make_scene("la_walk", 108, 192, 1, {"theme": "gold", "timer": False}).show_timer
