@@ -386,7 +386,7 @@ def write_minimal(topic: str, fmt: str = "45s", lang: str = "en") -> tuple[dict,
         sc["visual"], prev = v, v
         sc["params"] = sc.get("params") if isinstance(sc.get("params"), dict) else {}
         if sc["params"].get("label"):
-            sc["params"]["label"] = str(sc["params"]["label"]).upper()[:14]
+            sc["params"]["label"] = ",".join(x.strip()[:14] for x in str(sc["params"]["label"]).upper().split(",") if x.strip())
         sc["camera"] = "still"
         sc.setdefault("emphasis", [])
         sc["sfx"] = "none"

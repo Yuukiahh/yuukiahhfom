@@ -65,7 +65,8 @@ def run(video: Path, script: dict, words: list[dict], media: list[dict], voice_d
     add("audio", a is not None and a["codec_name"] == "aac" and int(a.get("sample_rate", 0)) == 48000,
         f"{a and a['codec_name']} {a and a.get('sample_rate')}")
     lo, hi = fmt_bounds(script.get("format", "short"))
-    add("duration", lo - 3 <= dur <= hi + 5, f"{dur:.1f}s (target {lo}-{hi})")
+    slack = 10 if str(script.get("style", "")).startswith("minimal") else 3  # calm monologues run shorter
+    add("duration", lo - slack <= dur <= hi + 5, f"{dur:.1f}s (target {lo}-{hi})")
     br = int(info["format"].get("bit_rate", 0))
     add("bitrate", br > 4_000_000, f"{br/1e6:.1f} Mbit/s", "warn")
 
